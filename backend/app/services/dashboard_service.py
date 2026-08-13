@@ -1,0 +1,183 @@
+from datetime import datetime
+from typing import Any, Dict
+
+from app.models.category import Category
+from app.models.product import Product
+from app.models.user import User
+from app.models.order import Order
+from app.models.order_item import OrderItem
+from app.models.inventory import Inventory
+from app.schemas.order import OrderResponse, OrderItemResponse
+from app.schemas.product import ProductResponse
+
+
+class DashboardService:
+    async def get_admin_dashboard_metrics(self) -> Dict[str, Any]:
+        """Assembles dashboard metrics using Motor aggregation queries directly to bypass Beanie cursor issues."""
+        # 1. User counters
+        total_users = await User.find().count()
+        total_customers = await User.find(User.role == "CUSTOMER").count()
+        total_admins = await User.find(User.role == "ADMIN").count()
+
+        # 2. Catalog counters
+        total_categories = await Category.find(Category.status != "deleted").count()
+        total_products = await Product.find(Product.status != "deleted").count()
+
+        # 3. Order status counters
+        total_orders = await Order.find().count()
+        pending_orders = await Order.find(Order.order_status == "Pending").count()
+        completed_orders = await Order.find(Order.order_status == "Delivered").count()
+        cancelled_orders = await Order.find(Order.order_status == "Cancelled").count()
+
+        # 4. Total revenue aggregation
+        rev_pipeline = [
+            {"$match": {"order_status": {"$ne": "Cancelled"}}},
+            {"$group": {"_id": None, "total_revenue": {"$sum": "$total"}}},
+        ]
+        rev_cursor = Order.get_pymongo_collection().aggregate(rev_pipeline)
+        rev_results = await rev_cursor.to_list(length=None)
+        total_revenue = round(rev_results[0]["total_revenue"], 2) if rev_results else 0.0
+
+        # 5. Today's orders and revenue
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_orders = await Order.find(Order.created_at >= today_start).count()
+        
+        today_rev_pipeline = [
+            {
+                "$match": {
+                    "created_at": {"$gte": today_start},
+                    "order_status": {"$ne": "Cancelled"},
+                }
+            },
+            {"$group": {"_id": None, "revenue": {"$sum": "$total"}}},
+        ]
+        today_rev_cursor = Order.get_pymongo_collection().aggregate(today_rev_pipeline)
+        today_rev_results = await today_rev_cursor.to_list(length=None)
+        today_revenue = (
+            round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
+        )
+
+        # 6. Top Selling Products
+        top_prod_pipeline = [
+            {"$group": {
+                "_id": "$product_id",
+                "total_quantity": {"$sum": "$quantity"},
+                "total_revenue": {"$sum": {"$multiply": ["$quantity", "$price"]}}
+            }},
+            {"$sort": {"total_quantity": -1}},
+            {"$limit": 5}
+        ]
+        top_prod_cursor = OrderItem.get_pymongo_collection().aggregate(top_prod_pipeline)
+        top_prod_results = await top_prod_cursor.to_list(length=None)
+        top_selling_products = []
+        for item in top_prod_results:
+            prod = await Product.get(item["_id"])
+            top_selling_products.append({
+                "product_id": str(item["_id"]),
+                "name": prod.name if prod else "Unknown Product",
+                "quantity_sold": item["total_quantity"],
+                "revenue_generated": round(item["total_revenue"], 2),
+            })
+
+        # 7. Top Categories (Join OrderItem -> Product -> Group by category_id)
+        top_cat_pipeline = [
+            {"$lookup": {
+                "from": "Products",
+                "localField": "product_id",
+                "foreignField": "_id",
+                "as": "product"
+            }},
+            {"$unwind": "$product"},
+            {"$group": {
+                "_id": "$product.category_id",
+                "sales_count": {"$sum": "$quantity"},
+                "revenue": {"$sum": {"$multiply": ["$quantity", "$price"]}}
+            }},
+            {"$sort": {"sales_count": -1}},
+            {"$limit": 5}
+        ]
+        top_cat_cursor = OrderItem.get_pymongo_collection().aggregate(top_cat_pipeline)
+        top_cat_results = await top_cat_cursor.to_list(length=None)
+        top_categories = []
+        for r in top_cat_results:
+            cat = await Category.get(r["_id"])
+            top_categories.append({
+                "category_id": str(r["_id"]),
+                "name": cat.name if cat else "Unknown Category",
+                "sales_count": r["sales_count"],
+                "revenue_generated": round(r["revenue"], 2)
+            })
+
+        # 8. Stock alerts
+        low_stock_products_count = await Inventory.find(
+            {"$expr": {"$lte": ["$current_stock", "$minimum_stock"]}}
+        ).count()
+        out_of_stock_products_count = await Inventory.find(
+            Inventory.current_stock == 0
+        ).count()
+
+        # 9. Recent Orders list
+        recent_orders = await Order.find().sort(-Order.created_at).limit(5).to_list()
+        recent_orders_out = []
+        for order in recent_orders:
+            items = await OrderItem.find(OrderItem.order_id == order.id).to_list()
+            items_out = []
+            for item in items:
+                prod = await Product.get(item.product_id)
+                item_resp = OrderItemResponse.convert_id(item)
+                if prod:
+                    item_resp["product"] = ProductResponse.convert_id(prod)
+                items_out.append(OrderItemResponse(**item_resp))
+            order_resp = OrderResponse.convert_id(order)
+            order_resp["items"] = items_out
+            recent_orders_out.append(OrderResponse(**order_resp))
+
+        # 10. Monthly Revenue & Orders
+        monthly_pipeline = [
+            {"$match": {"order_status": {"$ne": "Cancelled"}}},
+            {"$group": {
+                "_id": {
+                    "year": {"$year": "$created_at"},
+                    "month": {"$month": "$created_at"}
+                },
+                "revenue": {"$sum": "$total"},
+                "orders_count": {"$sum": 1}
+            }},
+            {"$sort": {"_id.year": 1, "_id.month": 1}}
+        ]
+        monthly_cursor = Order.get_pymongo_collection().aggregate(monthly_pipeline)
+        monthly_results = await monthly_cursor.to_list(length=None)
+        monthly_data = []
+        for r in monthly_results:
+            monthly_data.append({
+                "month": f"{r['_id']['year']}-{r['_id']['month']:02d}",
+                "revenue": round(r["revenue"], 2),
+                "orders_count": r["orders_count"]
+            })
+
+        return {
+            "counters": {
+                "total_users": total_users,
+                "total_customers": total_customers,
+                "total_admins": total_admins,
+                "total_categories": total_categories,
+                "total_products": total_products,
+                "total_orders": total_orders,
+                "pending_orders": pending_orders,
+                "completed_orders": completed_orders,
+                "cancelled_orders": cancelled_orders,
+            },
+            "revenue": {
+                "total_revenue": total_revenue,
+                "today_orders": today_orders,
+                "today_revenue": today_revenue,
+            },
+            "stock_alerts": {
+                "low_stock_count": low_stock_products_count,
+                "out_of_stock_count": out_of_stock_products_count,
+            },
+            "top_selling_products": top_selling_products,
+            "top_categories": top_categories,
+            "recent_orders": recent_orders_out,
+            "monthly_trends": monthly_data,
+        }

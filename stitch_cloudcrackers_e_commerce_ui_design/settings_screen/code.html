@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudCrackers - Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#bb152c",
+                    "on-primary-fixed-variant": "#92001c",
+                    "surface-container-low": "#f3f4f5",
+                    "surface": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed": "#410007",
+                    "on-surface": "#191c1d",
+                    "tertiary-container": "#747479",
+                    "surface-dim": "#d9dadb",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b1f",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "surface-bright": "#f8f9fa",
+                    "secondary-fixed-dim": "#ffb950",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "surface-container": "#edeeef",
+                    "background": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "outline": "#8f6f6e",
+                    "on-secondary-fixed": "#291800",
+                    "secondary": "#825500",
+                    "on-secondary-container": "#6b4500",
+                    "secondary-fixed": "#ffddb3",
+                    "tertiary-fixed-dim": "#c7c6cb",
+                    "inverse-primary": "#ffb3b1",
+                    "on-secondary-fixed-variant": "#624000",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5b5c60",
+                    "on-surface-variant": "#5b403f",
+                    "primary": "#b7102a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#fffbff",
+                    "inverse-surface": "#2e3132",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary-fixed-variant": "#46464b",
+                    "on-tertiary-container": "#fefcff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary-fixed": "#e3e2e7",
+                    "secondary-container": "#ffae1d",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-container-highest": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "80px",
+                    "gutter": "16px",
+                    "sm": "12px",
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e1e3e4; border-radius: 10px; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface">
+<!-- TopAppBar from JSON -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 duration-150">menu</button>
+<span class="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed-dim">CloudCrackers</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 duration-150">search</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-5xl mx-auto">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-lg text-on-surface">Settings</h1>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Sidebar Navigation (Internal to Settings) -->
+<nav class="hidden md:flex flex-col col-span-4 gap-base h-fit sticky top-24">
+<a class="flex items-center gap-md p-md bg-primary-container text-on-primary-container font-bold rounded-lg transition-all active:scale-98" href="#account">
+<span class="material-symbols-outlined">person</span>
+<span class="font-body-lg text-body-lg">Account</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="#notifications">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-body-lg text-body-lg">Notifications</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="#privacy">
+<span class="material-symbols-outlined">security</span>
+<span class="font-body-lg text-body-lg">Privacy &amp; Security</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="#preferences">
+<span class="material-symbols-outlined">tune</span>
+<span class="font-body-lg text-body-lg">App Preferences</span>
+</a>
+<a class="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="#about">
+<span class="material-symbols-outlined">info</span>
+<span class="font-body-lg text-body-lg">About</span>
+</a>
+</nav>
+<!-- Settings Sections -->
+<div class="col-span-1 md:col-span-8 flex flex-col gap-lg">
+<!-- Account Section -->
+<section class="bg-surface-container-lowest rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-surface-variant/50 overflow-hidden" id="account">
+<div class="p-lg border-b border-surface-variant/30 flex items-center gap-md">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-surface-container-high border-2 border-primary/10">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a person with a friendly expression, set against a clean, minimalist studio background with soft high-key lighting. The style is modern and premium, using a neutral color palette that complements the brand's sophisticated and energetic e-commerce aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv2sYoeeWIWkPN8dXVoEjVh0JSlHpbyq5ET8qZScT36270ysdLh_bdz7e6SyWD1HbaWpV4CgvTASIFkx78dj4ZMM4SOEi3LvXB-F4c1yqzuJBJvIX0l5VoSy_6yJXBWdF1vIoL2vJ6Zpg5AiBcj8R65aua0LwlHdN-lDaSR8_-VS0Tlpeky6J-l8u5b2GBFzL22qJcx2HuDf3NEl6nIiN6QXt5_9Dw7yYwmmHFwvm4Lls_l6oJzk3D"/>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface">Alex Thompson</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">alex.t@cloudcrackers.com</p>
+</div>
+<button class="ml-auto px-md py-sm border-1.5 border-on-surface rounded-lg font-body-md text-on-surface hover:bg-surface-container-high transition-colors">Edit Profile</button>
+</div>
+<div class="p-md">
+<div class="flex items-center justify-between p-md hover:bg-surface-container-low transition-colors rounded-lg cursor-pointer">
+<div class="flex flex-col">
+<span class="font-body-lg text-body-lg text-on-surface">CloudCrackers Pro</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Manage your subscription and billing details</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Notifications Section -->
+<section id="notifications">
+<h3 class="font-label-lg text-label-lg text-primary uppercase tracking-widest mb-base ml-base">Notifications</h3>
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-surface-variant/50">
+<div class="flex items-center justify-between p-md border-b border-surface-variant/30">
+<div class="flex flex-col">
+<span class="font-body-lg text-body-lg text-on-surface">Promotions &amp; Offers</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Get notified about seasonal firework sales</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-md">
+<div class="flex flex-col">
+<span class="font-body-lg text-body-lg text-on-surface">Order Updates</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Shipping alerts and delivery confirmation</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Privacy Section -->
+<section id="privacy">
+<h3 class="font-label-lg text-label-lg text-primary uppercase tracking-widest mb-base ml-base">Privacy &amp; Security</h3>
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-surface-variant/50">
+<div class="p-md flex items-center justify-between border-b border-surface-variant/30 hover:bg-surface-container-low transition-colors rounded-t-xl cursor-pointer">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">lock</span>
+<span class="font-body-lg text-body-lg text-on-surface">Change Password</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<div class="p-md flex items-center justify-between border-b border-surface-variant/30 hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">verified_user</span>
+<span class="font-body-lg text-body-lg text-on-surface">Two-Factor Authentication</span>
+</div>
+<span class="px-base py-xs bg-secondary-container text-on-secondary-container font-label-lg text-label-lg rounded">ON</span>
+</div>
+<div class="p-md flex items-center justify-between hover:bg-surface-container-low transition-colors rounded-b-xl cursor-pointer">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">data_usage</span>
+<span class="font-body-lg text-body-lg text-on-surface">Data Sharing Preferences</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- App Preferences Section -->
+<section id="preferences">
+<h3 class="font-label-lg text-label-lg text-primary uppercase tracking-widest mb-base ml-base">App Preferences</h3>
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-surface-variant/50">
+<div class="p-md flex items-center justify-between border-b border-surface-variant/30">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">language</span>
+<span class="font-body-lg text-body-lg text-on-surface">Language</span>
+</div>
+<select class="bg-transparent font-body-md text-on-surface-variant focus:ring-0 border-none cursor-pointer">
+<option>English (US)</option>
+<option>Spanish</option>
+<option>French</option>
+</select>
+</div>
+<div class="p-md flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">dark_mode</span>
+<span class="font-body-lg text-body-lg text-on-surface">Theme</span>
+</div>
+<div class="flex bg-surface-container-high rounded-lg p-1">
+<button class="px-md py-1 bg-white rounded-md shadow-sm font-label-lg text-label-lg text-on-surface">Light</button>
+<button class="px-md py-1 font-label-lg text-label-lg text-on-surface-variant">Dark</button>
+</div>
+</div>
+</div>
+</section>
+<!-- About Section -->
+<section id="about">
+<h3 class="font-label-lg text-label-lg text-primary uppercase tracking-widest mb-base ml-base">About</h3>
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-surface-variant/50">
+<div class="p-md flex items-center justify-between border-b border-surface-variant/30 hover:bg-surface-container-low transition-colors rounded-t-xl cursor-pointer">
+<span class="font-body-lg text-body-lg text-on-surface">Terms of Service</span>
+<span class="material-symbols-outlined text-outline">open_in_new</span>
+</div>
+<div class="p-md flex items-center justify-between border-b border-surface-variant/30 hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-body-lg text-body-lg text-on-surface">Privacy Policy</span>
+<span class="material-symbols-outlined text-outline">open_in_new</span>
+</div>
+<div class="p-md flex items-center justify-between rounded-b-xl">
+<span class="font-body-lg text-body-lg text-on-surface">App Version</span>
+<span class="font-body-md text-body-md text-on-surface-variant">v4.2.1-stable</span>
+</div>
+</div>
+</section>
+<button class="w-full mt-lg py-md px-lg bg-surface-container-highest text-error font-body-lg font-bold rounded-lg border border-error/10 hover:bg-error/5 transition-all active:scale-95 duration-150">
+                    Log Out of CloudCrackers
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar from JSON (Visible on Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface dark:bg-surface-dim shadow-[0_-4px_15px_rgba(0,0,0,0.06)]">
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-label-lg text-label-lg">Categories</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-lg text-label-lg">Cart</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-label-lg text-label-lg">Wishlist</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-lg px-3 py-1 active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</div>
+</nav>
+<script>
+        // Simple micro-interaction for navigation highlight
+        document.querySelectorAll('nav.md\\:flex a').forEach(link => {
+            link.addEventListener('click', function() {
+                document.querySelectorAll('nav.md\\:flex a').forEach(l => {
+                    l.classList.remove('bg-primary-container', 'text-on-primary-container', 'font-bold');
+                    l.classList.add('text-on-surface-variant', 'hover:bg-surface-container-high');
+                });
+                this.classList.add('bg-primary-container', 'text-on-primary-container', 'font-bold');
+                this.classList.remove('text-on-surface-variant', 'hover:bg-surface-container-high');
+            });
+        });
+
+        // Smooth scroll for anchors
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body></html>

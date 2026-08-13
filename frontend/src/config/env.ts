@@ -1,0 +1,15 @@
+/**
+ * Environment Configuration
+ * Centralized location for environment variables and API endpoints.
+ */
+
+export const ENV = {
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/v1',
+  TIMEOUT: 15000, // 15 seconds
+  ENABLE_MOCK_API: process.env.EXPO_PUBLIC_ENABLE_MOCK === 'true' ? true : false,
+  GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '',
+  APP_VERSION: '2.4.0',
+  ENV_NAME: process.env.NODE_ENV || 'development',
+};
+
+export default ENV;

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudCrackers | Explore Categories</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline": "#8f6f6e",
+                    "inverse-on-surface": "#f0f1f2",
+                    "primary-container": "#db313f",
+                    "surface-container-low": "#f3f4f5",
+                    "outline-variant": "#e4bebc",
+                    "inverse-surface": "#2e3132",
+                    "on-primary-fixed-variant": "#92001c",
+                    "surface-tint": "#bb152c",
+                    "on-tertiary-fixed": "#1a1b1f",
+                    "on-secondary-fixed-variant": "#624000",
+                    "on-secondary-fixed": "#291800",
+                    "on-tertiary-fixed-variant": "#46464b",
+                    "tertiary-container": "#747479",
+                    "on-tertiary-container": "#fefcff",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#ffdad8",
+                    "primary": "#b7102a",
+                    "surface-container": "#edeeef",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#e3e2e7",
+                    "inverse-primary": "#ffb3b1",
+                    "surface-bright": "#f8f9fa",
+                    "on-surface-variant": "#5b403f",
+                    "on-error-container": "#93000a",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "on-surface": "#191c1d",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed": "#410007",
+                    "surface-container-highest": "#e1e3e4",
+                    "on-tertiary": "#ffffff",
+                    "secondary-fixed-dim": "#ffb950",
+                    "background": "#f8f9fa",
+                    "on-secondary-container": "#6b4500",
+                    "tertiary": "#5b5c60",
+                    "secondary": "#825500",
+                    "secondary-fixed": "#ffddb3",
+                    "surface": "#f8f9fa",
+                    "surface-dim": "#d9dadb",
+                    "surface-container-high": "#e7e8e9",
+                    "on-secondary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#fffbff",
+                    "secondary-container": "#ffae1d",
+                    "tertiary-fixed-dim": "#c7c6cb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "12px",
+                    "lg": "48px",
+                    "xs": "4px",
+                    "margin-desktop": "64px",
+                    "gutter": "16px",
+                    "md": "24px",
+                    "base": "8px",
+                    "xl": "80px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .category-card:hover .category-image {
+            transform: scale(1.05);
+        }
+        body {
+            background-color: #f8f9fa;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-lg text-on-background">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-95 duration-150 p-2 rounded-full">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">menu</span>
+</button>
+<h1 class="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed-dim">CloudCrackers</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-95 duration-150 p-2 rounded-full">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">search</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<!-- Animated Header Background Section -->
+<section class="relative h-48 md:h-64 mb-lg rounded-xl overflow-hidden shadow-sm">
+
+<div class="absolute inset-0 bg-black/20 flex flex-col justify-center items-center text-white px-md">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-center">Shop by Category</h2>
+<p class="font-body-lg text-body-lg mt-xs text-center opacity-90">Find the perfect spark for your celebration</p>
+</div>
+</section>
+<!-- Category Grid -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-gutter">
+<!-- Category 1: Aerial Shells -->
+<div class="category-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-neutral-100 transition-all duration-300 hover:shadow-lg">
+<div class="relative aspect-square overflow-hidden">
+<img class="category-image w-full h-full object-cover transition-transform duration-500" data-alt="A professional studio photograph of a premium multi-shot aerial firework shell on a clean white background. The image has a high-end commercial aesthetic with soft shadows and sharp details. The color palette is dominated by pristine whites and dark metallic textures, with a subtle red accent reflecting the CloudCrackers brand identity. Lighting is bright and even, highlighting the technical craftsmanship of the pyrotechnic product." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiSHpVRs1N2bmtQpPJJkeVR78eKsaLn7kdXo8hqaXo1ITSJUqpZ34JdqwY8Y26oMZP5q6g-veF3hPPKLXMCI7OxyIHe8uoIZ6PZE-sGRQU_VxqKFFKjUOHFlwFPAhF6btCI9st3yOFtXGnyv6MXacguz6KKAEFdtZ9ejl_Q73icHxnW8tsCFZAZ7JGkvfMvanHcTDY74n_N5GAEq4Iwq_0Ytl-C5rd7l-kB6sB3XZbZnriDWGxXkS6"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<div class="p-md text-center">
+<h3 class="font-title-lg text-body-lg font-bold text-on-surface truncate">Aerial Shells</h3>
+</div>
+</div>
+<!-- Category 2: Fountains -->
+<div class="category-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-neutral-100 transition-all duration-300 hover:shadow-lg">
+<div class="relative aspect-square overflow-hidden">
+<img class="category-image w-full h-full object-cover transition-transform duration-500" data-alt="A minimalist and vibrant image of a colorful firework fountain emitting a shower of golden sparks against a deep navy blue background. The aesthetic is modern and premium, echoing a luxury e-commerce platform. High-contrast lighting captures individual sparks in sharp detail. The scene is elegant and professional, using a sophisticated color palette of deep blues, bright golds, and the signature energetic red of CloudCrackers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOLiLRbbecbUEt32PoVcvp59eaQRj60zRCv0zSsbFzhJixNtuzbR4wLxVaz50S0Sj-UFh8I1vrGhgoSrt0OZzP1s3RrHXH7d1F3erXMhK-K-hfhg_A7fzUNzBJJv1-BItIdoYXJ30p7GjGxJzTLdYvTIjt9QwKWt8al8Km1CniDbYdzExcfJpCWjPvQdeY7Yf78uN7jeOMPAPCKx62zlnZ8sI3Nc2rPs3Ce-OJ1mRX3GkfNpm1_Gxn"/>
+</div>
+<div class="p-md text-center">
+<h3 class="font-title-lg text-body-lg font-bold text-on-surface truncate">Fountains</h3>
+</div>
+</div>
+<!-- Category 3: Rockets -->
+<div class="category-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-neutral-100 transition-all duration-300 hover:shadow-lg">
+<div class="relative aspect-square overflow-hidden">
+<img class="category-image w-full h-full object-cover transition-transform duration-500" data-alt="A pack of sleek, modern firework rockets arranged in an aesthetically pleasing geometric pattern. The style is clean and minimalist, set in a bright, high-key studio environment. The imagery focuses on the professional packaging and aerodynamic design of the products. Touches of vibrant red and secondary orange provide a pop of color against a neutral, soft gray background. The mood is one of premium quality and safe excitement." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBlVGvp6iyQ7mBZxrk_GuAalhjitFM7CslAnWc9bAUKwWf0GRWTOHxNMXdYXKfp7UvMBH6sN6XrZAP_S8U7Ek537_xIc5J-Y1sT5bDha-q92Z1Mg6tnvgIUsJDqVzsDr9oa4fxG7Asp4e3ucZRu6yPpmE2EEL8MjpbifKMu-uttRSkSvDwTzCJuxQie-fUnWnNoKydIWLPCFpKa9CxXQdA9wgMLQe8z8ripp2xraGQuZJoaqBJ_NPH"/>
+</div>
+<div class="p-md text-center">
+<h3 class="font-title-lg text-body-lg font-bold text-on-surface truncate">High-Fly Rockets</h3>
+</div>
+</div>
+<!-- Category 4: Sparklers -->
+<div class="category-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-neutral-100 transition-all duration-300 hover:shadow-lg">
+<div class="relative aspect-square overflow-hidden">
+<img class="category-image w-full h-full object-cover transition-transform duration-500" data-alt="A close-up, artistic shot of a lit sparkler emitting beautiful, crystalline sparks. The lighting is warm and atmospheric, set in a minimalist evening garden setting. The focus is sharp on the center of the sparkler, creating a stunning bokeh effect in the background. The visual style is premium and emotive, utilizing a rich palette of blacks and glowing oranges, aligned with the modern and energetic CloudCrackers brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATy1tIEAwFW7wBVCfKFBO9bgzd1pXPyr8Q2IXOL_2SQo5CtPtd53eSrh0r3zUsmoYbA2xbXeQGH_vX5iIl4MueH1lnhKXDxi6lUstqkSCkaNWAy4sczjzP4WKg5bU6NUJ6LSpzskyeJEoy7lo-IIcpck8DqqXflXHF_Fy3qdA2iTgnAYAD5sNtZ-tNTjlzGqpKABr0gxQFT_ZTQEOuljM8Pk6DhAT08tmrGqP5UL-o9veCzUOAQzAb"/>
+</div>
+<div class="p-md text-center">
+<h3 class="font-title-lg text-body-lg font-bold text-on-surface truncate">Sparklers</h3>
+</div>
+</div>
+<!-- Category 5: Roman Candles -->
+<div class="category-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-neutral-100 transition-all duration-300 hover:shadow-lg">
+<div class="relative aspect-square overflow-hidden">
+<img class="category-image w-full h-full object-cover transition-transform duration-500" data-alt="A collection of professional-grade Roman Candles displayed on a textured charcoal surface. The lighting is dramatic and directional, highlighting the cylindrical forms and premium labeling. The design aesthetic is clean, modern, and trustworthy. Colors are kept to a sophisticated palette of deep grays, silvers, and the brand's primary red, conveying both the thrill and the professional standard of the CloudCrackers product line." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8djDpERcqBVi-v-4OJRLckt5Og2LPRd6A4lc19FyaTCIQGDGb5GkQNNNjfJWBtCuzp5845rqQVZCGT8ODT1Snq3x4rHW5NgjeE81lqPei7I_NpEgPCWnv3avzWKls06w5wT-m1P4SRzq5jAnwXbbTV5Vdrk5Sk2HSN8JfIJyGGWviRxQXwiD9wKofgD3b5Ymwh-wq4yVvBWQgAjXHac1nJsWxNMB5ybxpKokdS86z2yrf63UlYnNh"/>
+</div>
+<div class="p-md text-center">
+<h3 class="font-title-lg text-body-lg font-bold text-on-surface truncate">Roman Candles</h3>
+</div>
+</div>
+<!-- Category 6: Assortments -->
+<div class="category-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-neutral-100 transition-all duration-300 hover:shadow-lg">
+<div class="relative aspect-square overflow-hidden">
+<img class="category-image w-full h-full object-cover transition-transform duration-500" data-alt="An overhead flat-lay of a curated fireworks assortment box, showing a variety of pyrotechnic items neatly organized. The style is highly professional and boutique, with a bright, clean lighting scheme. The color scheme is predominantly white and neutral with vibrant red and orange highlights from the product branding. It suggests a high-value, comprehensive package for a complete celebration, presented in a minimalist, modern retail fashion." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxlSQPTYn0Q3CM3NwzMLaY-VoqOxzPHSBpS5UWaYBwXlhOFLhFuA3M3HNLSK-hgrV1OkE394iW2aXqfH0IhXS6_JjFqN6f1PBPVQeZn-HJzUCMLGd5yj1DWp4NcPH86B7mRroj0pOXuWub_v0Bz_I95mq0EgLPM9aaFbJSK0BNOqfZggZtjNsraI7dgQWFBWS6_M71uPhzjkqZg_Y1YZwT_gqG8oXaBTgewZ-MOePu0DwXwpXsTsTj"/>
+</div>
+<div class="p-md text-center">
+<h3 class="font-title-lg text-body-lg font-bold text-on-surface truncate">Value Kits</h3>
+</div>
+</div>
+<!-- Category 7: Novelties -->
+<div class="category-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-neutral-100 transition-all duration-300 hover:shadow-lg">
+<div class="relative aspect-square overflow-hidden">
+<img class="category-image w-full h-full object-cover transition-transform duration-500" data-alt="Whimsical and fun novelty fireworks items like ground spinners and smoke bombs, arranged artistically on a white surface. The lighting is cheerful and bright, evoking a festive and accessible mood. The composition is clean and modern, using plenty of white space to emphasize the colorful products. The overall aesthetic is professional yet energetic, fitting for a family-friendly segment of the CloudCrackers e-commerce catalog." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsxTYhTLprXGp83AIDuKVpzjyJuhHTYXTtNZiECdR8EC5g6WwZK6G72b6GXmKMAYwMKKEEukARZczhnGCMeDguPKUut7arMayZYR4pf-KuNh0NVHmMFB95PfasziY3ADRqE4NQ9jNehlD2PZgYhDMApL2wxoZt8mDlsdhEo_McLcP3_EAFgjFMzoXXjIVamACaurEs2YQtsbigj59hmiZGXc-Cawq3JTK_0dd6Evt-ukuwWMNWKNX9"/>
+</div>
+<div class="p-md text-center">
+<h3 class="font-title-lg text-body-lg font-bold text-on-surface truncate">Novelties</h3>
+</div>
+</div>
+<!-- Category 8: Professional Gear -->
+<div class="category-card group cursor-pointer bg-white rounded-lg overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-neutral-100 transition-all duration-300 hover:shadow-lg">
+<div class="relative aspect-square overflow-hidden">
+<img class="category-image w-full h-full object-cover transition-transform duration-500" data-alt="A high-tech electronic firing system for fireworks, showcasing buttons, antennas, and a rugged industrial design. The photograph is taken in a professional, minimalist studio setting with high-end product photography lighting. The color palette uses metallic grays, deep blacks, and sharp red accents. The mood is technical, safe, and professional, targeting the serious pyrotechnic enthusiast with a premium and reliable equipment aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFC37u-Ywl1ZFmObgfpHPkN41RBzKU7h02bQOXEpoxEnaAXVFy57GR48EqKtilQ1Jca6tSmjmV5bSBFme2viObEnVYX2vDpO-q_glSg4m3vExq-d1rPj7tXSa9eRjpPZcC-uIdb3m1zOMdMCEHqAQz_TDmLZ8TuuwUMAjF8n2cxGX_-RlvUWi7Z6-x1yoNOstIv-mrASF2QJ1Laz3LmNP2muhK-qUzIDU5oBaqla-Bf9ydKCgPlTBX"/>
+</div>
+<div class="p-md text-center">
+<h3 class="font-title-lg text-body-lg font-bold text-on-surface truncate">Firing Systems</h3>
+</div>
+</div>
+</div>
+<!-- Featured Section -->
+<section class="mt-xl bg-primary-container text-on-primary-container p-lg rounded-xl flex flex-col md:flex-row items-center justify-between gap-md shadow-lg">
+<div class="md:w-2/3">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-base">CloudCrackers Elite</h2>
+<p class="font-body-lg text-body-lg opacity-90 max-w-xl">Join our loyalty program to unlock exclusive categories, wholesale pricing, and early access to new seasonal collections.</p>
+</div>
+<button class="bg-white text-primary px-lg py-sm rounded-lg font-bold hover:bg-neutral-100 transition-colors active:scale-95 duration-150">
+                Learn More
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface dark:bg-surface-dim shadow-[0_-4px_15px_rgba(0,0,0,0.06)]">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<!-- Categories (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-lg px-4 py-1.5 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-0.5">grid_view</span>
+<span class="font-label-lg text-label-lg">Categories</span>
+</a>
+<!-- Cart -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">shopping_cart</span>
+<span class="font-label-lg text-label-lg">Cart</span>
+</a>
+<!-- Wishlist -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">favorite</span>
+<span class="font-label-lg text-label-lg">Wishlist</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for category cards
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Flash feedback
+                card.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 100);
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudCrackers | Premium Pyrotechnics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .product-card:hover .quick-add-btn {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#8f6f6e",
+                        "inverse-on-surface": "#f0f1f2",
+                        "primary-container": "#db313f",
+                        "surface-container-low": "#f3f4f5",
+                        "outline-variant": "#e4bebc",
+                        "inverse-surface": "#2e3132",
+                        "on-primary-fixed-variant": "#92001c",
+                        "surface-tint": "#bb152c",
+                        "on-tertiary-fixed": "#1a1b1f",
+                        "on-secondary-fixed-variant": "#624000",
+                        "on-secondary-fixed": "#291800",
+                        "on-tertiary-fixed-variant": "#46464b",
+                        "tertiary-container": "#747479",
+                        "on-tertiary-container": "#fefcff",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#ffdad8",
+                        "primary": "#b7102a",
+                        "surface-container": "#edeeef",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#e3e2e7",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface-variant": "#5b403f",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "on-surface": "#191c1d",
+                        "on-background": "#191c1d",
+                        "on-primary-fixed": "#410007",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#ffb950",
+                        "background": "#f8f9fa",
+                        "on-secondary-container": "#6b4500",
+                        "tertiary": "#5b5c60",
+                        "secondary": "#825500",
+                        "secondary-fixed": "#ffddb3",
+                        "surface": "#f8f9fa",
+                        "surface-dim": "#d9dadb",
+                        "surface-container-high": "#e7e8e9",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#fffbff",
+                        "secondary-container": "#ffae1d",
+                        "tertiary-fixed-dim": "#c7c6cb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "12px",
+                        "lg": "48px",
+                        "xs": "4px",
+                        "margin-desktop": "64px",
+                        "gutter": "16px",
+                        "md": "24px",
+                        "base": "8px",
+                        "xl": "80px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-lg min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150">menu</button>
+<h1 class="text-title-lg font-title-lg font-bold text-primary">CloudCrackers</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150">search</button>
+</div>
+</header>
+<main class="pt-20 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<!-- Category Header -->
+<section class="mb-8 mt-4">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<nav class="flex items-center gap-2 text-on-surface-variant mb-2">
+<span class="font-label-lg text-label-lg">HOME</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-label-lg text-label-lg text-primary">PRO SHOWSTOPPERS</span>
+</nav>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Pro Showstoppers</h2>
+<p class="text-on-surface-variant font-body-md text-body-md mt-2 max-w-2xl">Experience professional-grade pyrotechnics with our curated selection of high-altitude display shells and synchronized multi-shot cakes.</p>
+</div>
+<div class="flex items-center gap-3">
+<span class="font-label-lg text-label-lg text-on-surface-variant">24 PRODUCTS</span>
+</div>
+</div>
+</section>
+<!-- Filter & Sort Bar -->
+<section class="sticky top-16 z-40 bg-background/95 backdrop-blur-md py-4 mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-surface-container-highest">
+<div class="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2 md:pb-0">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-high text-on-surface font-label-lg text-label-lg hover:bg-surface-container-highest transition-all">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                    FILTERS
+                </button>
+<div class="h-6 w-[1px] bg-outline-variant mx-2 hidden md:block"></div>
+<button class="px-4 py-2 rounded-full bg-primary-container text-on-primary-container font-label-lg text-label-lg">ALL ITEMS</button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high transition-all">MULTI-SHOT</button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high transition-all">SHELLS</button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container-high transition-all">BOUTIQUE</button>
+</div>
+<div class="flex items-center gap-4 ml-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="font-label-lg text-label-lg">SORT:</span>
+<select class="bg-transparent border-none font-label-lg text-label-lg text-on-surface focus:ring-0 cursor-pointer">
+<option>BEST SELLING</option>
+<option>PRICE: LOW TO HIGH</option>
+<option>PRICE: HIGH TO LOW</option>
+<option>NEWEST</option>
+</select>
+</div>
+<div class="hidden md:flex items-center border border-outline-variant rounded-lg overflow-hidden">
+<button class="p-2 bg-surface-container-high text-primary"><span class="material-symbols-outlined">grid_view</span></button>
+<button class="p-2 hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined">view_list</span></button>
+</div>
+</div>
+</section>
+<!-- Product Grid -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+<!-- Product Card 1 -->
+<div class="product-card group relative bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full border border-surface-container-highest">
+<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="High-end packaging for a professional firework cake called Midnight Fury, featuring matte black and vibrant red graphics against a clean studio background. The product is illuminated by soft, professional lighting that highlights its premium texture. The overall aesthetic is modern, sleek, and high-energy, matching a luxury retail environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPWHlIjdAQrgpUUtttBRVSmPTj6trgUC7eKEy-0oZMH4PpY0Rl7F-Hw_A0d3t_i1viX7L44xczB1M_78QsF4YcLQ4u19xnWp8ny9gxtKTnw2SzcQDs2LIZKUiVdsE6_zt4ISnyttPasOV80sM5ElpFnuKBDE7Z0bdrmWJXGrrBU86td-o5TetZ5ZDU7U7SJHwTmG95jaHExgKtI48j4FASc7TuY3o4Ivqp00ILc_Vha0gNHCrYqLN5"/>
+<div class="absolute top-3 left-3 flex flex-col gap-2">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-2 py-1 rounded tracking-wider">BESTSELLER</span>
+</div>
+<button class="absolute top-3 right-3 w-10 h-10 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<div class="quick-add-btn absolute bottom-0 left-0 w-full p-4 transform translate-y-full opacity-0 transition-all duration-300">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg shadow-lg hover:bg-primary-container active:scale-95 transition-all">
+                            QUICK ADD
+                        </button>
+</div>
+</div>
+<div class="p-4 flex-grow flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-secondary">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="text-[11px] text-on-surface-variant">(128)</span>
+</div>
+<h3 class="font-title-lg text-[18px] text-on-surface mb-1 group-hover:text-primary transition-colors">Midnight Fury Shells</h3>
+<p class="text-on-surface-variant text-body-md line-clamp-1 mb-3">6-inch professional display canister shells.</p>
+<div class="mt-auto flex items-center justify-between">
+<span class="font-bold text-primary text-title-lg">$89.99</span>
+<span class="text-label-lg text-outline font-medium line-through">$110.00</span>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="product-card group relative bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full border border-surface-container-highest">
+<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A luxurious firework box named Titanium Rain, designed with metallic silver and deep crimson accents. The scene is set in a high-end showroom with subtle ambient reflections. The lighting is crisp and cool, creating a premium, sophisticated feel. The product box looks sturdy and high-quality, standing out against a minimal gray background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrxmUUOLXnVfasxdNecdnY-eJjslHmwc2HBhLJi1agqFlSqflp7V7nb6hF05Fug7YzhnLSFpNkh2DKkp_5A0bpvKpf6KRjlhLGB4ed_PA2i7Jmj5etsEzd316MpN_GiCcfIdJSkz2LVvVYFDXnQaRM9rDIxTj-USdkggOssVN6hE35K1OC3abMM2j6JzzKVRzcSDbCxHwgltSH8ZrgGy3xSVFEfYjmjGxK-Gi97aYrCngF7ect6UOf"/>
+<div class="absolute top-3 left-3">
+<span class="bg-primary text-on-primary text-[10px] font-bold px-2 py-1 rounded tracking-wider">NEW ARRIVAL</span>
+</div>
+<button class="absolute top-3 right-3 w-10 h-10 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<div class="quick-add-btn absolute bottom-0 left-0 w-full p-4 transform translate-y-full opacity-0 transition-all duration-300">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg shadow-lg hover:bg-primary-container active:scale-95 transition-all">
+                            QUICK ADD
+                        </button>
+</div>
+</div>
+<div class="p-4 flex-grow flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-secondary">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]">star</span>
+</div>
+<span class="text-[11px] text-on-surface-variant">(45)</span>
+</div>
+<h3 class="font-title-lg text-[18px] text-on-surface mb-1 group-hover:text-primary transition-colors">Titanium Rain Cake</h3>
+<p class="text-on-surface-variant text-body-md line-clamp-1 mb-3">100-shot rapid fire silver glitter finale.</p>
+<div class="mt-auto">
+<span class="font-bold text-primary text-title-lg">$145.50</span>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="product-card group relative bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full border border-surface-container-highest">
+<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Close-up of a series of professional firework mortar tubes called Neon Nebula, featuring fluorescent orange and purple branding. The setting is clean and high-tech, with a soft focus on the background. Bright, modern light-mode lighting highlights the industrial yet aesthetic design of the equipment. Vibrant accents of red and orange suggest excitement and safety." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5KYPEVZIv7G5VSJsX9dpjAnmpsVOlwbD05JvCIaxLGsRNqb867cnESgfKX7GqFpyoVVK1OjQWynyHWsiyl1C29uxZ5ZVQfNkME1TwZzf6On5iaZF4v7UhzFWGOy2MsspOm1xdj0D69BS89vwxbMnUN90zsfZLx0UjQJ0eK1MjExL1p-xE4h5Xl8q4uz_Wb38pItrg42ZYr2vdrBsiu2IG7GgH6sMPDPxGwH4tx2KIHrM-5eJPx5wi"/>
+<button class="absolute top-3 right-3 w-10 h-10 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<div class="quick-add-btn absolute bottom-0 left-0 w-full p-4 transform translate-y-full opacity-0 transition-all duration-300">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg shadow-lg hover:bg-primary-container active:scale-95 transition-all">
+                            QUICK ADD
+                        </button>
+</div>
+</div>
+<div class="p-4 flex-grow flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-secondary">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="text-[11px] text-on-surface-variant">(92)</span>
+</div>
+<h3 class="font-title-lg text-[18px] text-on-surface mb-1 group-hover:text-primary transition-colors">Neon Nebula Pack</h3>
+<p class="text-on-surface-variant text-body-md line-clamp-1 mb-3">Color-changing multi-effect shells.</p>
+<div class="mt-auto">
+<span class="font-bold text-primary text-title-lg">$54.00</span>
+</div>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="product-card group relative bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full border border-surface-container-highest">
+<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Professional firework display kit named Crimson Sovereign, presented in a large high-quality wooden crate with elegant branding. The lighting is warm and inviting, similar to a boutique retail gallery. The scene is clean with plenty of white space, focusing on the craftsmanship and scale of the product. Accents of deep red and white dominate the visual palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABgnF0LDHMF_EVqu0SrWrbBeAnIL6kF7Ks1rihGVVyqMw7pmHnb5e4-_-VQ4dYIHSlFQRg-QKKBOt9Bw-T_ethx4eTksosAW7E_Ko_9hKgIxyvRpbSMyf4_SxyKWPZ2QJcEu72SLdiD0dJb5b5mRNe_p9gY1EW1SeveVj_SecgnjWCDsCpCbOpdbhrg32hrqqYEcIALQetVnJLgWIpR-WxqmWLs-kJZvV7oDmVWkNAZjXKEUE29k7G"/>
+<div class="absolute top-3 left-3">
+<span class="bg-on-surface text-surface text-[10px] font-bold px-2 py-1 rounded tracking-wider">LIMITED EDITION</span>
+</div>
+<button class="absolute top-3 right-3 w-10 h-10 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<div class="quick-add-btn absolute bottom-0 left-0 w-full p-4 transform translate-y-full opacity-0 transition-all duration-300">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg shadow-lg hover:bg-primary-container active:scale-95 transition-all">
+                            QUICK ADD
+                        </button>
+</div>
+</div>
+<div class="p-4 flex-grow flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-secondary">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="text-[11px] text-on-surface-variant">(310)</span>
+</div>
+<h3 class="font-title-lg text-[18px] text-on-surface mb-1 group-hover:text-primary transition-colors">Crimson Sovereign</h3>
+<p class="text-on-surface-variant text-body-md line-clamp-1 mb-3">Large-scale display finale box.</p>
+<div class="mt-auto">
+<span class="font-bold text-primary text-title-lg">$299.00</span>
+</div>
+</div>
+</div>
+<!-- More cards would repeat here for a full listing page... -->
+<!-- Adding a few more for visual density -->
+<div class="product-card group relative bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full border border-surface-container-highest">
+<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A set of high-performance firework rockets called Golden Willow, styled with gold foil and sleek black bodies. They are arranged artfully in a bright, modern studio. The lighting is dynamic, creating highlights on the metallic surfaces. The color scheme is premium gold, deep black, and crisp white, with subtle red brand markers for a cohesive look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiWkFya6vL6upvIb2DShuZpgS-FMdgBwa4kOe4pN-Oub6nttSKFwuS8iO9GQC-3Pb-awGpqbLzjRUDxxR3adutpdzoxcOOFW_8INcyg-ZdpURm_oa0FUbu9fjhxMQgJDVc8K4a05Vf4bWtMLq4KoFOvEQPw6ByytObRIxrPg4nemEhxf8H1p5Arm_S_G2VlecnojBsMKjFR9VP_EFMdqsifP_JYYjXizyTMoban1_uiQKwWHpay1_f"/>
+<button class="absolute top-3 right-3 w-10 h-10 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<div class="quick-add-btn absolute bottom-0 left-0 w-full p-4 transform translate-y-full opacity-0 transition-all duration-300">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg shadow-lg hover:bg-primary-container active:scale-95 transition-all">
+                            QUICK ADD
+                        </button>
+</div>
+</div>
+<div class="p-4 flex-grow flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-secondary">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]">star</span>
+</div>
+<span class="text-[11px] text-on-surface-variant">(67)</span>
+</div>
+<h3 class="font-title-lg text-[18px] text-on-surface mb-1 group-hover:text-primary transition-colors">Golden Willow Rockets</h3>
+<p class="text-on-surface-variant text-body-md line-clamp-1 mb-3">Extreme height weeping willow effect.</p>
+<div class="mt-auto">
+<span class="font-bold text-primary text-title-lg">$34.95</span>
+</div>
+</div>
+</div>
+<div class="product-card group relative bg-surface rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full border border-surface-container-highest">
+<div class="relative aspect-[4/5] overflow-hidden bg-surface-container-low">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Professional grade mortar firing tubes in a clean industrial aesthetic, named Cobalt Crush. The packaging features deep navy and electric blue gradients with high-contrast white text. The product is shot against a minimalist white background with soft shadows. The lighting is clean and professional, emphasizing the safety and quality of the construction." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrYrq5fuwWXwOJkfgV9cjRKkl58wk7kkTA5kTdae9zwDEMOVseg_xkmn4rBocsL49sOGlzMHEaBhWWKlAFLCYyF1H-XaqRPbOR4Rw0l50CkZ-4zM18K-2MEYfvD3zEcsxI7rfSYjkRJ2ncjQOVurw9b1brE7g0C5lMc8rw8xJr-Iy7VFlGavekfgPbhfYCIraW8fkei3HL2BXciGKmAyH_cGykYWdMh7Rs9XUHGLj-oIbr_reWtoA8"/>
+<button class="absolute top-3 right-3 w-10 h-10 rounded-full bg-surface/80 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<div class="quick-add-btn absolute bottom-0 left-0 w-full p-4 transform translate-y-full opacity-0 transition-all duration-300">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg shadow-lg hover:bg-primary-container active:scale-95 transition-all">
+                            QUICK ADD
+                        </button>
+</div>
+</div>
+<div class="p-4 flex-grow flex flex-col">
+<div class="flex items-center gap-1 mb-1">
+<div class="flex text-secondary">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[14px]">star</span>
+</div>
+<span class="text-[11px] text-on-surface-variant">(42)</span>
+</div>
+<h3 class="font-title-lg text-[18px] text-on-surface mb-1 group-hover:text-primary transition-colors">Cobalt Crush Mortar</h3>
+<p class="text-on-surface-variant text-body-md line-clamp-1 mb-3">Blue peony with crackling center.</p>
+<div class="mt-auto">
+<span class="font-bold text-primary text-title-lg">$72.00</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Pagination -->
+<div class="mt-16 flex items-center justify-center gap-2">
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-lg text-label-lg">1</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors font-label-lg text-label-lg">2</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors font-label-lg text-label-lg">3</button>
+<span class="mx-1">...</span>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors font-label-lg text-label-lg">8</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface shadow-[0_-4px_15px_rgba(0,0,0,0.06)]">
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-lg text-label-lg mt-1">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-lg px-3 py-1 active:scale-90 duration-200">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-label-lg text-label-lg mt-1">Categories</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-lg text-label-lg mt-1">Cart</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-label-lg text-label-lg mt-1">Wishlist</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-lg text-label-lg mt-1">Profile</span>
+</button>
+</nav>
+<script>
+        // Micro-interactions and toast for "Quick Add"
+        document.querySelectorAll('.quick-add-btn button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const productName = e.target.closest('.product-card').querySelector('h3').innerText;
+                
+                // Show a simple toast-like feedback
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-6 py-3 rounded-full shadow-xl z-[100] font-label-lg transition-all duration-300 opacity-0 translate-y-4';
+                toast.innerText = `Added ${productName} to cart`;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.classList.remove('opacity-0', 'translate-y-4');
+                }, 10);
+                
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-4');
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            });
+        });
+
+        // Toggle heart icon
+        document.querySelectorAll('.product-card button .material-symbols-outlined').forEach(icon => {
+            if (icon.innerText === 'favorite') {
+                icon.parentElement.addEventListener('click', (e) => {
+                    const isFilled = icon.style.fontVariationSettings.includes("'FILL' 1");
+                    icon.style.fontVariationSettings = isFilled ? "'FILL' 0" : "'FILL' 1";
+                    if (!isFilled) {
+                        icon.parentElement.classList.add('text-primary');
+                    } else {
+                        icon.parentElement.classList.remove('text-primary');
+                    }
+                });
+            }
+        });
+    </script>
+</body></html>

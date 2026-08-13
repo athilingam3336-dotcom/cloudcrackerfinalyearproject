@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order History - CloudCrackers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#bb152c",
+                    "on-primary-fixed-variant": "#92001c",
+                    "surface-container-low": "#f3f4f5",
+                    "surface": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed": "#410007",
+                    "on-surface": "#191c1d",
+                    "tertiary-container": "#747479",
+                    "surface-dim": "#d9dadb",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b1f",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "surface-bright": "#f8f9fa",
+                    "secondary-fixed-dim": "#ffb950",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "surface-container": "#edeeef",
+                    "background": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "outline": "#8f6f6e",
+                    "on-secondary-fixed": "#291800",
+                    "secondary": "#825500",
+                    "on-secondary-container": "#6b4500",
+                    "secondary-fixed": "#ffddb3",
+                    "tertiary-fixed-dim": "#c7c6cb",
+                    "inverse-primary": "#ffb3b1",
+                    "on-secondary-fixed-variant": "#624000",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5b5c60",
+                    "on-surface-variant": "#5b403f",
+                    "primary": "#b7102a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#fffbff",
+                    "inverse-surface": "#2e3132",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary-fixed-variant": "#46464b",
+                    "on-tertiary-container": "#fefcff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary-fixed": "#e3e2e7",
+                    "secondary-container": "#ffae1d",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-container-highest": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "80px",
+                    "gutter": "16px",
+                    "sm": "12px",
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .order-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+        .glass-effect {
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16">
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">menu</span>
+</button>
+<h1 class="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed-dim">CloudCrackers</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">search</span>
+</button>
+</div>
+</header>
+<main class="pt-24 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<!-- Header Section -->
+<section class="mb-lg">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Order History</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Review and track your previous pyrotechnic purchases.</p>
+</section>
+<!-- Stats Grid (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-lg">
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm flex items-center gap-4">
+<div class="bg-primary-fixed p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">shopping_bag</span>
+</div>
+<div>
+<p class="text-label-lg font-label-lg text-on-surface-variant uppercase">Total Orders</p>
+<p class="text-title-lg font-title-lg text-on-surface">24</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm flex items-center gap-4">
+<div class="bg-secondary-fixed p-3 rounded-lg">
+<span class="material-symbols-outlined text-secondary">local_shipping</span>
+</div>
+<div>
+<p class="text-label-lg font-label-lg text-on-surface-variant uppercase">In Transit</p>
+<p class="text-title-lg font-title-lg text-on-surface">2</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant shadow-sm flex items-center gap-4">
+<div class="bg-tertiary-fixed p-3 rounded-lg">
+<span class="material-symbols-outlined text-tertiary">savings</span>
+</div>
+<div>
+<p class="text-label-lg font-label-lg text-on-surface-variant uppercase">Total Spent</p>
+<p class="text-title-lg font-title-lg text-on-surface">$1,482.50</p>
+</div>
+</div>
+</div>
+<!-- Orders List -->
+<div class="space-y-gutter">
+<!-- Order 1: In Transit -->
+<div class="order-card bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<div class="p-md md:p-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container-low flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A high-quality studio shot of a professional-grade aerial firework shell labeled 'Supernova Blast'. The packaging is sleek and modern with vibrant red and metallic silver accents, set against a pristine white background. High-key soft lighting emphasizes the premium textures and colors of the product." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoum7swOtdclsKd9sBbC_PmeBiyHLDDBtsp8aPIOU0g4qEVXMniiVfuGV1zlcAwJAGdbfObfo6sFV4ffXb9No1dlW1IzNfNUjGv6wJXbd5YMC0fALXg0n6LpUkxXk7qtpCF94JMu1T0F3TU6I9Aj1o2-9inBJ9Xr5vvkqkMOW6aMqQ5LL6a0bDgrxCrSj05KxdPlMFe1ZaJbNhXrvIY0Ze8eWO_AyWS-69-lrgzPtT-gTS_oIbzukh"/>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-title-lg text-body-lg text-on-surface">Order #CC-89421</span>
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">In Transit</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Placed on Oct 24, 2023</p>
+</div>
+</div>
+<div class="flex flex-col md:items-end gap-1">
+<p class="font-title-lg text-title-lg text-primary">$189.99</p>
+<p class="font-label-lg text-label-lg text-on-surface-variant">3 Items</p>
+</div>
+<div class="w-full md:w-auto">
+<button class="w-full md:w-auto px-6 py-2.5 rounded-lg border-2 border-on-background text-on-background font-bold text-body-md hover:bg-on-background hover:text-white transition-all active:scale-95">
+                            View Details
+                        </button>
+</div>
+</div>
+<!-- Mini Tracker -->
+<div class="px-md md:px-lg pb-md md:pb-lg">
+<div class="relative w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="absolute left-0 top-0 h-full w-2/3 bg-secondary rounded-full"></div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Processing</span>
+<span class="text-[10px] font-bold text-secondary uppercase">In Transit</span>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Delivered</span>
+</div>
+</div>
+</div>
+<!-- Order 2: Delivered -->
+<div class="order-card bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<div class="p-md md:p-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container-low flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A macro photograph of an assorted pack of premium sparklers and fountain fireworks. The packaging features elegant gold foil and deep charcoal graphics, radiating a sense of luxury and celebration. The scene is lit with warm, ambient light that suggests a festive night atmosphere while maintaining a clean, high-end retail aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyo6MayNjWQqF7p2tINlGQzAI6uJBvnyL8T_hxm-785OCbiYQZthl8YTlLKVavJ2Nb3t9vYh5fTOKVFdnEhC2_5CtqT5r3m2LgBRvbYz01zRC067wF76XAFf0I7daAJxaOz_k39vP63zct9i8hlw3K31hS8uX20fS_XAtYa_aqizwSgsiq-3hy_8ErTeteYt6DxT4WxCw6z9pqlPHmMSL5lLX9cENegkc0SlakvX3F7pMcTKkYk3iV"/>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-title-lg text-body-lg text-on-surface">Order #CC-88102</span>
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Delivered</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Placed on Sep 12, 2023</p>
+</div>
+</div>
+<div class="flex flex-col md:items-end gap-1">
+<p class="font-title-lg text-title-lg text-primary">$452.10</p>
+<p class="font-label-lg text-label-lg text-on-surface-variant">12 Items</p>
+</div>
+<div class="w-full md:w-auto">
+<button class="w-full md:w-auto px-6 py-2.5 rounded-lg border-2 border-on-background text-on-background font-bold text-body-md hover:bg-on-background hover:text-white transition-all active:scale-95">
+                            View Details
+                        </button>
+</div>
+</div>
+</div>
+<!-- Order 3: Processing -->
+<div class="order-card bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<div class="p-md md:p-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container-low flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A sophisticated display of large mortar tubes and professional firing systems for fireworks displays. The equipment is constructed from brushed aluminum and heavy-duty polymers, styled with a minimalist industrial look. The lighting is crisp and cool, highlighting the precision engineering of the pyrotechnic hardware within a bright gallery-style environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApLZXgBrb1-H4WV-IA52Z4Nu_nwXn4kaqsuEL2lec3SBKla3LiKvONkkUpy9OrXNONX0HwIjHM4ZK2QnLudED1azSPm72E68Dzne9B1pDL_lBIO-fCPVda1eOvmKSe4snxuaxFKGaPjx2sB9ciJvIIycVlkV7A4Ziq-aK-HbHxjVsE20Enf4yaLKRt9f-mMm3l8Xv9ESgxrHy2xTW6z1mERPaUxsvlNDY1wzMidTjTep6QZbEk_p7Z"/>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-title-lg text-body-lg text-on-surface">Order #CC-89500</span>
+<span class="bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Processing</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Placed today at 10:24 AM</p>
+</div>
+</div>
+<div class="flex flex-col md:items-end gap-1">
+<p class="font-title-lg text-title-lg text-primary">$89.00</p>
+<p class="font-label-lg text-label-lg text-on-surface-variant">1 Item</p>
+</div>
+<div class="w-full md:w-auto">
+<button class="w-full md:w-auto px-6 py-2.5 rounded-lg border-2 border-on-background text-on-background font-bold text-body-md hover:bg-on-background hover:text-white transition-all active:scale-95">
+                            View Details
+                        </button>
+</div>
+</div>
+</div>
+<!-- Order 4: Delivered -->
+<div class="order-card bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<div class="p-md md:p-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container-low flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A collection of vibrant red and gold firecrackers arranged artistically on a white marble surface. The lighting is bright and airy, casting soft shadows that give depth to the geometric shapes of the products. The overall aesthetic is one of premium e-commerce luxury, blending traditional celebratory items with modern, high-key photography styles." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzlcJ2rLL5o5Lh0kVtH88P9blqguL5kHzX2QJcr3kOG_-j0eewauc7BpDLl3N9SmmaW0CImxn26WIXc9IDYwOItA9Bmvp5esGoPWgk3UnYTJP5M3VdsZxJJajV5oycWC0eRqeCJYtOZdhJqaS0bgpP88jhy9eBfbszOWvsf9aauZoxq985VqLWG3HGu_lwIqb7045M6Frxt1yQH5Ixmmuah3mmUYNngyeutQwTcnogyRA7AuXLToXD"/>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-title-lg text-body-lg text-on-surface">Order #CC-87443</span>
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Delivered</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Placed on Aug 04, 2023</p>
+</div>
+</div>
+<div class="flex flex-col md:items-end gap-1">
+<p class="font-title-lg text-title-lg text-primary">$751.41</p>
+<p class="font-label-lg text-label-lg text-on-surface-variant">18 Items</p>
+</div>
+<div class="w-full md:w-auto">
+<button class="w-full md:w-auto px-6 py-2.5 rounded-lg border-2 border-on-background text-on-background font-bold text-body-md hover:bg-on-background hover:text-white transition-all active:scale-95">
+                            View Details
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Load More -->
+<div class="mt-lg flex justify-center">
+<button class="text-on-surface-variant font-bold text-body-md flex items-center gap-2 hover:text-primary transition-colors py-4">
+                View Older Orders
+                <span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface dark:bg-surface-dim shadow-[0_-4px_15px_rgba(0,0,0,0.06)]">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined mb-1">grid_view</span>
+<span class="font-label-lg text-label-lg">Categories</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined mb-1">shopping_cart</span>
+<span class="font-label-lg text-label-lg">Cart</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined mb-1">favorite</span>
+<span class="font-label-lg text-label-lg">Wishlist</span>
+</button>
+<!-- ACTIVE TAB: Profile (Order History is a Profile sub-page) -->
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-lg px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for order card expansion or click simulation
+        document.querySelectorAll('.order-card button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const orderId = this.closest('.order-card').querySelector('.font-title-lg').innerText;
+                console.log('Viewing details for ' + orderId);
+                // In a real app, this would navigate to the order detail page
+            });
+        });
+    </script>
+</body></html>

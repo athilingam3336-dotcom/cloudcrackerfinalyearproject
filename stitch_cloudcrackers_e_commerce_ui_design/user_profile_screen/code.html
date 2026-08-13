@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .profile-card-shadow {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#bb152c",
+                      "on-primary-fixed-variant": "#92001c",
+                      "surface-container-low": "#f3f4f5",
+                      "surface": "#f8f9fa",
+                      "on-background": "#191c1d",
+                      "on-primary-fixed": "#410007",
+                      "on-surface": "#191c1d",
+                      "tertiary-container": "#747479",
+                      "surface-dim": "#d9dadb",
+                      "on-tertiary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "on-tertiary-fixed": "#1a1b1f",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#e1e3e4",
+                      "surface-bright": "#f8f9fa",
+                      "secondary-fixed-dim": "#ffb950",
+                      "primary-container": "#db313f",
+                      "primary-fixed": "#ffdad8",
+                      "surface-container": "#edeeef",
+                      "background": "#f8f9fa",
+                      "on-error-container": "#93000a",
+                      "outline": "#8f6f6e",
+                      "on-secondary-fixed": "#291800",
+                      "secondary": "#825500",
+                      "on-secondary-container": "#6b4500",
+                      "secondary-fixed": "#ffddb3",
+                      "tertiary-fixed-dim": "#c7c6cb",
+                      "inverse-primary": "#ffb3b1",
+                      "on-secondary-fixed-variant": "#624000",
+                      "error": "#ba1a1a",
+                      "tertiary": "#5b5c60",
+                      "on-surface-variant": "#5b403f",
+                      "primary": "#b7102a",
+                      "on-secondary": "#ffffff",
+                      "on-primary-container": "#fffbff",
+                      "inverse-surface": "#2e3132",
+                      "error-container": "#ffdad6",
+                      "surface-container-high": "#e7e8e9",
+                      "on-tertiary-fixed-variant": "#46464b",
+                      "on-tertiary-container": "#fefcff",
+                      "primary-fixed-dim": "#ffb3b1",
+                      "tertiary-fixed": "#e3e2e7",
+                      "secondary-container": "#ffae1d",
+                      "surface-container-lowest": "#ffffff",
+                      "outline-variant": "#e4bebc",
+                      "inverse-on-surface": "#f0f1f2",
+                      "surface-container-highest": "#e1e3e4"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "80px",
+                      "gutter": "16px",
+                      "sm": "12px",
+                      "xs": "4px",
+                      "base": "8px",
+                      "md": "24px",
+                      "lg": "48px",
+                      "margin-desktop": "64px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "title-lg": ["Inter"],
+                      "label-lg": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "headline-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150" data-icon="menu">menu</button>
+<span class="text-title-lg font-title-lg font-bold text-primary">CloudCrackers</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150" data-icon="search">search</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="pt-24 px-margin-mobile md:px-margin-desktop max-w-4xl mx-auto">
+<!-- Profile Hero Section -->
+<section class="mb-lg">
+<div class="flex flex-col md:flex-row items-center gap-md p-md bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30">
+<div class="relative group">
+<div class="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/10 transition-transform group-hover:scale-105 duration-300">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a confident customer, well-lit with soft high-key lighting, in a minimalist modern aesthetic. The background is a clean white with subtle warm undertones, reflecting a premium e-commerce brand identity. The individual wears modern, clean-cut attire in neutral tones, punctuated by a small red accessory that matches the brand's primary color." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCV8-3FhZVtA0Fjt6AaZnw3cE85M_e5pmdgyClV-cum995gGLSs44boitmYLkFiElaofmZZ-XiDtoDRe1tZpY3Vtjb5ovmMAI9oUundqO81Hy9izCvBWjFJ5nkOks888gR8BNKXO_7SXwk8QEfe1nCFtdlDdyLEjL5TEwOwazUCQCBFhM7fVa30e2OnfN6dJtMZZQKLEwmvFuHbdo785SSSrYeunKhSMDkmiRZi264pCA6aLAhv9eC_"/>
+</div>
+<button class="absolute bottom-1 right-1 bg-primary text-on-primary w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div class="text-center md:text-left">
+<h1 class="font-headline-lg text-headline-lg text-on-background mb-1">Alex Stratos</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">alex.stratos@premium-mail.com</p>
+<div class="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-xs font-semibold tracking-wide uppercase">Gold Member</span>
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-semibold tracking-wide uppercase">12 Orders</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Menu Options Grid / List -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Order History -->
+<a class="group flex items-center p-md bg-surface-container-lowest rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-all duration-200 active:scale-98" href="#">
+<div class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<div class="ml-4 flex-grow">
+<h3 class="font-title-lg text-title-lg text-on-surface">Order History</h3>
+<p class="text-sm text-on-surface-variant">View and track your previous purchases</p>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<!-- Wishlist -->
+<a class="group flex items-center p-md bg-surface-container-lowest rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-all duration-200 active:scale-98" href="#">
+<div class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<div class="ml-4 flex-grow">
+<h3 class="font-title-lg text-title-lg text-on-surface">Wishlist</h3>
+<p class="text-sm text-on-surface-variant">Your curated collection of favorites</p>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<!-- Notifications -->
+<a class="group flex items-center p-md bg-surface-container-lowest rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-all duration-200 active:scale-98" href="#">
+<div class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</div>
+<div class="ml-4 flex-grow">
+<h3 class="font-title-lg text-title-lg text-on-surface">Notifications</h3>
+<p class="text-sm text-on-surface-variant">Stay updated on sales and delivery</p>
+</div>
+<div class="bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full">3 NEW</div>
+</a>
+<!-- Settings -->
+<a class="group flex items-center p-md bg-surface-container-lowest rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-all duration-200 active:scale-98" href="#">
+<div class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</div>
+<div class="ml-4 flex-grow">
+<h3 class="font-title-lg text-title-lg text-on-surface">Settings</h3>
+<p class="text-sm text-on-surface-variant">Security, Privacy, and Preferences</p>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<!-- Help Center -->
+<a class="group flex items-center p-md bg-surface-container-lowest rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-all duration-200 active:scale-98" href="#">
+<div class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">help_center</span>
+</div>
+<div class="ml-4 flex-grow">
+<h3 class="font-title-lg text-title-lg text-on-surface">Help Center</h3>
+<p class="text-sm text-on-surface-variant">FAQ, Support, and Live Chat</p>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<!-- Logout -->
+<button class="group flex items-center p-md bg-surface-container-lowest rounded-xl border border-error/20 hover:bg-error/5 transition-all duration-200 active:scale-98 text-left w-full" onclick="handleLogout()">
+<div class="w-12 h-12 rounded-lg bg-error/10 flex items-center justify-center text-error group-hover:bg-error group-hover:text-on-error transition-colors">
+<span class="material-symbols-outlined">logout</span>
+</div>
+<div class="ml-4 flex-grow">
+<h3 class="font-title-lg text-title-lg text-error">Logout</h3>
+<p class="text-sm text-on-surface-variant">Sign out of your account</p>
+</div>
+</button>
+</section>
+<!-- Aesthetic Branding Section -->
+<div class="mt-xl text-center">
+<p class="text-label-lg font-label-lg text-outline uppercase tracking-widest opacity-60">CloudCrackers Premium v4.2.0</p>
+<div class="flex justify-center gap-gutter mt-4">
+<div class="w-8 h-1 bg-primary rounded-full"></div>
+<div class="w-8 h-1 bg-secondary rounded-full"></div>
+<div class="w-8 h-1 bg-outline-variant rounded-full"></div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface shadow-[0_-4px_15px_rgba(0,0,0,0.06)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-label-lg text-label-lg">Categories</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-lg text-label-lg">Cart</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-label-lg text-label-lg">Wishlist</span>
+</a>
+<!-- Active Tab: Profile -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-lg px-3 py-1 hover:bg-surface-container transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+<script>
+        function handleLogout() {
+            if (confirm("Are you sure you want to log out?")) {
+                console.log("User logged out");
+                // In a real app, logic would redirect to login screen
+            }
+        }
+
+        // Simple parallax or entry animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuItems = document.querySelectorAll('main > section:last-of-type > a, main > section:last-of-type > button');
+            menuItems.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    item.style.transition = 'all 0.4s ease-out';
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+    </script>
+</body></html>

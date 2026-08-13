@@ -1,0 +1,498 @@
+[
+  {
+    "_id": "660000000000000000000101",
+    "name": "Electric Sparklers Deluxe Pack (50 Pcs)",
+    "description": "Premium long-burning electric gold and silver wire sparklers designed for weddings, family parties, and Diwali celebrations.",
+    "price": 250.0,
+    "discount_price": null,
+    "category_id": "660000000000000000000001",
+    "stock": 150,
+    "images": [
+      "electric_sparklers.png"
+    ],
+    "rating": 4.9,
+    "reviews_count": 94,
+    "average_rating": 4.9,
+    "total_reviews": 94,
+    "rating_breakdown": {
+      "5": 85,
+      "4": 9,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": true,
+    "is_bestseller": true,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000102",
+    "name": "Starlight Pearl Color Sparklers (30 Pcs)",
+    "description": "Vibrant multi-colored sparklers with dense crystalline sparkle and cool burning spark emissions.",
+    "price": 180.0,
+    "discount_price": 150.0,
+    "category_id": "660000000000000000000001",
+    "stock": 80,
+    "images": [
+      "electric_sparklers.png"
+    ],
+    "rating": 4.8,
+    "reviews_count": 46,
+    "average_rating": 4.8,
+    "total_reviews": 46,
+    "rating_breakdown": {
+      "5": 38,
+      "4": 8,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": false,
+    "is_bestseller": false,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000103",
+    "name": "Dragon's Breath Ground Fountain",
+    "description": "Continuous multi-color fountain erupting up to 15 feet high with brilliant silver crackling rain and emerald embers.",
+    "price": 450.0,
+    "discount_price": 380.0,
+    "category_id": "660000000000000000000002",
+    "stock": 65,
+    "images": [
+      "flower_pot_fireworks.png"
+    ],
+    "rating": 4.8,
+    "reviews_count": 142,
+    "average_rating": 4.8,
+    "total_reviews": 142,
+    "rating_breakdown": {
+      "5": 120,
+      "4": 20,
+      "3": 2,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": true,
+    "is_bestseller": false,
+    "is_flash_sale": true,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000104",
+    "name": "Aanar Special Tri-Color Flower Pots (5 Pcs)",
+    "description": "Traditional giant Sivakasi flower pots with 3-stage colored bursts changing from crimson to gold to green.",
+    "price": 320.0,
+    "discount_price": null,
+    "category_id": "660000000000000000000002",
+    "stock": 90,
+    "images": [
+      "flower_pot_fireworks.png"
+    ],
+    "rating": 4.7,
+    "reviews_count": 65,
+    "average_rating": 4.7,
+    "total_reviews": 65,
+    "rating_breakdown": {
+      "5": 50,
+      "4": 13,
+      "3": 2,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": false,
+    "is_bestseller": false,
+    "is_flash_sale": false,
+    "is_recommended": false,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000105",
+    "name": "Deluxe Ground Chakkars (10 Pcs Box)",
+    "description": "High-speed spinning ground chakkars creating wide rings of golden glitter and radiant spark circles.",
+    "price": 280.0,
+    "discount_price": 220.0,
+    "category_id": "660000000000000000000003",
+    "stock": 120,
+    "images": [
+      "ground_chakkars_spinners.png"
+    ],
+    "rating": 4.9,
+    "reviews_count": 118,
+    "average_rating": 4.9,
+    "total_reviews": 118,
+    "rating_breakdown": {
+      "5": 105,
+      "4": 13,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": false,
+    "is_bestseller": true,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000106",
+    "name": "Whistling Zamin Spinner Wheel",
+    "description": "Acoustic novelty ground spinner emitting dynamic high-pitch whistle and spinning jade green fire rings.",
+    "price": 350.0,
+    "discount_price": null,
+    "category_id": "660000000000000000000003",
+    "stock": 45,
+    "images": [
+      "ground_chakkars_spinners.png"
+    ],
+    "rating": 4.7,
+    "reviews_count": 52,
+    "average_rating": 4.7,
+    "total_reviews": 52,
+    "rating_breakdown": {
+      "5": 40,
+      "4": 10,
+      "3": 2,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": false,
+    "is_bestseller": false,
+    "is_flash_sale": false,
+    "is_recommended": false,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000107",
+    "name": "Solar Flare Sky Rockets (10 Pcs Pack)",
+    "description": "Professional grade display sky rockets soaring 200 feet high with loud screaming ascent and golden willow burst.",
+    "price": 799.0,
+    "discount_price": 699.0,
+    "category_id": "660000000000000000000004",
+    "stock": 40,
+    "images": [
+      "rockets_fireworks.png"
+    ],
+    "rating": 4.9,
+    "reviews_count": 128,
+    "average_rating": 4.9,
+    "total_reviews": 128,
+    "rating_breakdown": {
+      "5": 115,
+      "4": 13,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": true,
+    "is_bestseller": true,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000108",
+    "name": "Supernova Altitude Rocket Box (5 Pcs)",
+    "description": "Heavy payload high altitude rockets bursting into huge multi-color peony shells with crackling centers.",
+    "price": 650.0,
+    "discount_price": null,
+    "category_id": "660000000000000000000004",
+    "stock": 35,
+    "images": [
+      "rockets_fireworks.png"
+    ],
+    "rating": 4.8,
+    "reviews_count": 98,
+    "average_rating": 4.8,
+    "total_reviews": 98,
+    "rating_breakdown": {
+      "5": 82,
+      "4": 14,
+      "3": 2,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": false,
+    "is_bestseller": false,
+    "is_flash_sale": true,
+    "is_recommended": false,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000109",
+    "name": "Hydro Green Atom Bomb (10 Pcs Box)",
+    "description": "Authentic Sivakasi loud sound cracker tightly bound with green jute cord delivering powerful bass concussion.",
+    "price": 350.0,
+    "discount_price": 299.0,
+    "category_id": "660000000000000000000005",
+    "stock": 75,
+    "images": [
+      "atom_bomb_cracker.png"
+    ],
+    "rating": 4.9,
+    "reviews_count": 160,
+    "average_rating": 4.9,
+    "total_reviews": 160,
+    "rating_breakdown": {
+      "5": 145,
+      "4": 15,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": false,
+    "is_bestseller": true,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000110",
+    "name": "Midnight Fury Aerial Shells Box",
+    "description": "6-inch professional canister display shells with thunderous acoustic sound and deep midnight star bursts.",
+    "price": 1650.0,
+    "discount_price": 1250.0,
+    "category_id": "660000000000000000000005",
+    "stock": 25,
+    "images": [
+      "atom_bomb_cracker.png"
+    ],
+    "rating": 5.0,
+    "reviews_count": 128,
+    "average_rating": 5.0,
+    "total_reviews": 128,
+    "rating_breakdown": {
+      "5": 128,
+      "4": 0,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": true,
+    "is_bestseller": false,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000111",
+    "name": "Twinkling Star Pencil Crackers (20 Pcs)",
+    "description": "Slender sparkling pencil tubes releasing continuous twinkling starlight flashes and gentle crackles.",
+    "price": 190.0,
+    "discount_price": 150.0,
+    "category_id": "660000000000000000000006",
+    "stock": 110,
+    "images": [
+      "pencil_crackers_roman_candles.png"
+    ],
+    "rating": 4.7,
+    "reviews_count": 72,
+    "average_rating": 4.7,
+    "total_reviews": 72,
+    "rating_breakdown": {
+      "5": 55,
+      "4": 15,
+      "3": 2,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": false,
+    "is_bestseller": false,
+    "is_flash_sale": false,
+    "is_recommended": false,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000112",
+    "name": "Celestial 10-Shot Roman Candle (4 Pcs)",
+    "description": "10-shot multi-color repeating candles firing radiant ruby red, cobalt blue, and golden stars into the night.",
+    "price": 420.0,
+    "discount_price": 350.0,
+    "category_id": "660000000000000000000006",
+    "stock": 50,
+    "images": [
+      "pencil_crackers_roman_candles.png"
+    ],
+    "rating": 4.8,
+    "reviews_count": 76,
+    "average_rating": 4.8,
+    "total_reviews": 76,
+    "rating_breakdown": {
+      "5": 64,
+      "4": 10,
+      "3": 2,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": false,
+    "is_bestseller": false,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000113",
+    "name": "30-Shots Grand Finale Sky Barrage Cake",
+    "description": "Spectacular 30-shot rapid fire aerial cake display with gold brocade willows, color peony stars, and crackling finale.",
+    "price": 1850.0,
+    "discount_price": 1499.0,
+    "category_id": "660000000000000000000007",
+    "stock": 30,
+    "images": [
+      "30_shots_multi_shot_fireworks.png"
+    ],
+    "rating": 5.0,
+    "reviews_count": 210,
+    "average_rating": 5.0,
+    "total_reviews": 210,
+    "rating_breakdown": {
+      "5": 205,
+      "4": 5,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": true,
+    "is_bestseller": true,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000114",
+    "name": "Crimson Sovereign 120-Shots Display Finale Box",
+    "description": "Large-scale 120-shot celebration cake engineered for grand weddings and festival celebrations with synchronized sky choreography.",
+    "price": 3499.0,
+    "discount_price": 2999.0,
+    "category_id": "660000000000000000000007",
+    "stock": 15,
+    "images": [
+      "30_shots_multi_shot_fireworks.png"
+    ],
+    "rating": 5.0,
+    "reviews_count": 310,
+    "average_rating": 5.0,
+    "total_reviews": 310,
+    "rating_breakdown": {
+      "5": 310,
+      "4": 0,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": true,
+    "is_bestseller": false,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000115",
+    "name": "Grand Festival Celebration Gift Box (32 Items)",
+    "description": "All-in-one family assortment gift hamper packed with electric sparklers, giant aanars, deluxe chakkars, rockets, and pencil candles.",
+    "price": 2499.0,
+    "discount_price": 1999.0,
+    "category_id": "660000000000000000000008",
+    "stock": 50,
+    "images": [
+      "grand_festival_gift_box.png"
+    ],
+    "rating": 4.9,
+    "reviews_count": 188,
+    "average_rating": 4.9,
+    "total_reviews": 188,
+    "rating_breakdown": {
+      "5": 175,
+      "4": 13,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": true,
+    "is_bestseller": true,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  },
+  {
+    "_id": "660000000000000000000116",
+    "name": "Royal Sivakasi VIP Mega Hamper (55 Items)",
+    "description": "Ultimate luxury Diwali celebration box loaded with high-altitude aerial shots, ground fountains, repeating candles, and giant sound bombs.",
+    "price": 4999.0,
+    "discount_price": 4250.0,
+    "category_id": "660000000000000000000008",
+    "stock": 20,
+    "images": [
+      "grand_festival_gift_box.png"
+    ],
+    "rating": 5.0,
+    "reviews_count": 95,
+    "average_rating": 5.0,
+    "total_reviews": 95,
+    "rating_breakdown": {
+      "5": 95,
+      "4": 0,
+      "3": 0,
+      "2": 0,
+      "1": 0
+    },
+    "is_featured": true,
+    "is_bestseller": false,
+    "is_flash_sale": false,
+    "is_recommended": true,
+    "is_active": true,
+    "created_at": "2026-08-13T09:52:02.320000",
+    "updated_at": "2026-08-13T09:52:02.320000",
+    "status": "active"
+  }
+]

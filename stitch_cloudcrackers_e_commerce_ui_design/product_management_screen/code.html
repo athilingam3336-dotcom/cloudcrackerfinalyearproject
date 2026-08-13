@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudCrackers | Inventory Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e1e3e4;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#bb152c",
+                        "on-primary-fixed-variant": "#92001c",
+                        "surface-container-low": "#f3f4f5",
+                        "surface": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "on-primary-fixed": "#410007",
+                        "on-surface": "#191c1d",
+                        "tertiary-container": "#747479",
+                        "surface-dim": "#d9dadb",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#1a1b1f",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "surface-bright": "#f8f9fa",
+                        "secondary-fixed-dim": "#ffb950",
+                        "primary-container": "#db313f",
+                        "primary-fixed": "#ffdad8",
+                        "surface-container": "#edeeef",
+                        "background": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "outline": "#8f6f6e",
+                        "on-secondary-fixed": "#291800",
+                        "secondary": "#825500",
+                        "on-secondary-container": "#6b4500",
+                        "secondary-fixed": "#ffddb3",
+                        "tertiary-fixed-dim": "#c7c6cb",
+                        "inverse-primary": "#ffb3b1",
+                        "on-secondary-fixed-variant": "#624000",
+                        "error": "#ba1a1a",
+                        "tertiary": "#5b5c60",
+                        "on-surface-variant": "#5b403f",
+                        "primary": "#b7102a",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "inverse-surface": "#2e3132",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary-fixed-variant": "#46464b",
+                        "on-tertiary-container": "#fefcff",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "tertiary-fixed": "#e3e2e7",
+                        "secondary-container": "#ffae1d",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e4bebc",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-highest": "#e1e3e4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "80px",
+                        "gutter": "16px",
+                        "sm": "12px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "margin-desktop": "64px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="flex min-h-screen bg-background text-on-background overflow-x-hidden">
+<!-- Navigation Drawer (Shared Component) -->
+<aside class="h-full w-80 fixed left-0 top-0 z-50 bg-surface dark:bg-surface-dim shadow-xl flex flex-col py-md px-base transition-transform duration-300" id="nav-drawer">
+<div class="flex items-center gap-base mb-lg px-4">
+<span class="text-headline-lg font-headline-lg text-primary">CloudCrackers</span>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high cursor-pointer transition-transform active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-lg text-body-lg">Dashboard</span>
+</a>
+<!-- Inventory (Active) -->
+<a class="flex items-center gap-4 px-6 py-4 bg-primary-container text-on-primary-container font-bold rounded-r-full mr-4 cursor-pointer transition-transform active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-lg text-body-lg">Inventory</span>
+</a>
+<!-- Orders -->
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high cursor-pointer transition-transform active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-body-lg text-body-lg">Orders</span>
+</a>
+<!-- Analytics -->
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high cursor-pointer transition-transform active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-body-lg text-body-lg">Analytics</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high cursor-pointer transition-transform active:scale-98 mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-lg text-body-lg">Settings</span>
+</a>
+<!-- Logout -->
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high cursor-pointer transition-transform active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-lg text-body-lg">Logout</span>
+</a>
+</nav>
+<div class="mt-auto pt-lg px-4 flex items-center gap-4 border-t border-surface-variant">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+                AU
+            </div>
+<div class="flex flex-col">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">Admin User</span>
+<span class="text-xs text-on-surface-variant">Administrator</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-80 min-h-screen">
+<!-- TopAppBar (Shared Component) -->
+<header class="fixed top-0 right-0 left-80 z-40 h-16 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-desktop">
+<h1 class="font-title-lg text-title-lg font-bold text-primary">Inventory Management</h1>
+<div class="flex items-center gap-md">
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="pt-24 px-margin-desktop pb-xl">
+<!-- Page Header Actions -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-md mb-lg">
+<div class="flex-1 max-w-xl">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-secondary-container transition-all text-body-md font-body-md" placeholder="Search products by name, category, or SKU..." type="text"/>
+</div>
+</div>
+<button class="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary-container transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span>Add New Product</span>
+</button>
+</section>
+<!-- Product Data Table Container -->
+<section class="bg-surface shadow-sm rounded-xl overflow-hidden border border-surface-variant">
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-surface-variant">
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant">Product</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant">Category</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant">SKU</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant">Stock Status</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant">Price</th>
+<th class="px-6 py-4 font-label-lg text-label-lg text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high overflow-hidden border border-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A professional studio product shot of a premium fireworks assortment package. The packaging features vibrant red and orange graphics with a dynamic starburst effect. The lighting is high-key and clean, against a minimalist neutral grey background, reflecting a high-end e-commerce aesthetic for CloudCrackers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpGzWLLqFw-YgPMCQYUNOqlc2zlXwO8K_iijjplWEKitop5EcmydE1rfKeMPfrnPFkUe8_YOsO4EvMu-3km_MzQFl58GGs1LkYi9QJ4WyHjd9EWW3pWhZKnNx0OYqE7yDZDj98Qv0U3fUScYDEFXHoRi-3kDFt7xKztXhEQudS0SHTl49_O8RzfD5f1rS8NrCrUTouI8zPBGZ9g0AU2Aecvq7-H2lf2VgLg4Ap7J1TCCxekQBzCKh_"/>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-bold text-on-surface">Thunder Blast Rockets</p>
+<p class="text-xs text-on-surface-variant">Pro Series | 24 Pack</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Aerial Rockets</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">CC-RK-001</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary-container text-on-secondary-container">
+                                        In Stock (420)
+                                    </span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-bold">$49.99</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high overflow-hidden border border-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A macro close-up of a decorative firework fountain called Midnight Sun. The cylindrical container features sleek black matte finish with gold metallic foil accents. The overall mood is luxurious and mysterious, staged on a dark reflective surface with subtle sparks in the background to emphasize the product category." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK9oB_eP_FjUVRMU48ZjntrLSgI6f3PzRZarvIFmHA2DaLuoewNFYhYXdUMFlWKAuzvsNhmquVBhHJBG3NlLNPTSVrA0zu038ZhV_bqwt3Sn-jMgCl1KXyJzMVqQbZQkSMvsXJ5fXp1c5Bba_waqlKFO_nz2pDzU2M1D_Xz5sdXviAWD5Lt2LaIMZsWE9USoUbBYLrvbIjOtICcKvUVfoANNSPaKr2YTZ7RNowLbNh6dBrpPn1QiQ3"/>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-bold text-on-surface">Midnight Sun Fountain</p>
+<p class="text-xs text-on-surface-variant">Silent Series</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Fountains</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">CC-FN-102</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-error-container text-on-error-container">
+                                        Low Stock (12)
+                                    </span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-bold">$24.50</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high overflow-hidden border border-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A high-resolution product shot of the Dragon Fire Multishot Cake firework. The box is large and hexagonal, featuring fierce dragon illustrations in orange and gold. It sits on a clean white gallery pedestal with soft ambient shadows. The professional lighting highlights the quality of the cardboard construction and vibrant print." src="https://lh3.googleusercontent.com/aida-public/AB6AXuALGVTe6MUFApuU8aUxlSjsgb4zwl_8VRdBvCz3A6kex0839483G83iFHHnB03C53_lLUsnrNki-jlzWP6BTc4Wl7B0CiL3ZXDJ6IQsXzYdDNuib436rJP76tHfQuuy7Lv3A8dbpNbfSpIVlyPei19hwZZ6yspczoEzrAGLgiDkWslLlCxbm5YUR8F-OC0V0g9X1u3I3PmYFK6uMoHLZyIWK-3LuuHEQKdS71ReqQ3rRbChNuwp6S0-"/>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-bold text-on-surface">Dragon Fire Cake</p>
+<p class="text-xs text-on-surface-variant">50 Shots</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Multishot Cakes</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">CC-MS-505</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-surface-container-highest text-on-surface-variant">
+                                        Out of Stock
+                                    </span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-bold">$89.99</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high overflow-hidden border border-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A clean product flat-lay of neon sparklers pack. The packaging is minimalist with thin elegant typography and fluorescent line art of a sparkler burst. Set against a soft cream background, the lighting is diffused to avoid harsh reflections, emphasizing a modern, safe, and family-friendly pyrotechnic brand image." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbg7kwyOWI4ISn3QsJf-c7L3ggflRK8uz8mEisXP3lu5Vvl1lpgOWFwnF5vxVrGqE0WRhUcH8KWmBn6JOIri8nS_i7HRA8MvomWlj5895FIQ1_jx0rYlQmM1Of_ACg7Zkn-aG3Aphg_59x6HkIlyQlfm6j7kNOPYN5_FPYW1z6Ctd7qsr5XDGVmYzX_wqhsFznl4fbTNNW84EnKzcmKzwimdJI2Hu1z5nOKQIixSacsqjU4EoKKOeg"/>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-bold text-on-surface">Neon Sparkler Pack</p>
+<p class="text-xs text-on-surface-variant">8 Colors | 16 Count</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">Sparklers</td>
+<td class="px-6 py-4 font-body-md text-body-md text-on-surface">CC-SP-202</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary-container text-on-secondary-container">
+                                        In Stock (1,240)
+                                    </span>
+</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-bold">$12.00</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination -->
+<div class="px-6 py-4 bg-surface-container-low flex items-center justify-between border-t border-surface-variant">
+<p class="text-label-lg font-label-lg text-on-surface-variant">Showing 1-4 of 256 products</p>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-surface-variant text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-white font-bold">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-surface-variant text-on-surface-variant hover:bg-surface-container-high transition-colors">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-surface-variant text-on-surface-variant hover:bg-surface-container-high transition-colors">3</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-surface-variant text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Quick Stats Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-md mt-lg">
+<div class="p-6 bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+</div>
+<div>
+<p class="text-label-lg font-label-lg text-on-surface-variant">Top Selling This Month</p>
+<p class="font-title-lg text-title-lg font-bold text-on-surface">Thunder Blast</p>
+</div>
+</div>
+<div class="p-6 bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="inventory">inventory</span>
+</div>
+<div>
+<p class="text-label-lg font-label-lg text-on-surface-variant">Total SKU Count</p>
+<p class="font-title-lg text-title-lg font-bold text-on-surface">1,248</p>
+</div>
+</div>
+<div class="p-6 bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+</div>
+<div>
+<p class="text-label-lg font-label-lg text-on-surface-variant">Low Stock Alerts</p>
+<p class="font-title-lg text-title-lg font-bold text-on-surface">24 Items</p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Simple Hover Interactivity -->
+<script>
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.style.transform = 'translateY(-1px)';
+                row.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+            });
+            row.addEventListener('mouseleave', () => {
+                row.style.transform = 'translateY(0)';
+                row.style.boxShadow = 'none';
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary-container');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary-container');
+        });
+    </script>
+</body></html>

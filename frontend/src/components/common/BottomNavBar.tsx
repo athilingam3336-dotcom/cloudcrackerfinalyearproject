@@ -1,0 +1,94 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Colors } from '@/constants/colors';
+import { Typography } from '@/constants/typography';
+import { Spacing } from '@/constants/spacing';
+
+export type TabRoute = 'Home' | 'Categories' | 'Cart' | 'Wishlist' | 'Profile';
+
+interface BottomNavBarProps {
+  activeTab: TabRoute;
+  onTabPress: (tab: TabRoute) => void;
+}
+
+const TABS: { id: TabRoute; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
+  { id: 'Home', label: 'Home', icon: 'home' },
+  { id: 'Categories', label: 'Categories', icon: 'grid-view' },
+  { id: 'Cart', label: 'Cart', icon: 'shopping-cart' },
+  { id: 'Wishlist', label: 'Wishlist', icon: 'favorite' },
+  { id: 'Profile', label: 'Profile', icon: 'person' },
+];
+
+export const BottomNavBar: React.FC<BottomNavBarProps> = React.memo(
+  ({ activeTab, onTabPress }) => {
+    return (
+      <View style={styles.container}>
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              style={[styles.tabButton, isActive && styles.activeTabButton]}
+              onPress={() => onTabPress(tab.id)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons
+                name={tab.icon}
+                size={24}
+                color={isActive ? Colors.primary : Colors.tertiary}
+              />
+              <Text
+                style={[
+                  styles.tabLabel,
+                  { color: isActive ? Colors.primary : Colors.tertiary },
+                  isActive && styles.activeTabLabel,
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  }
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    height: 64,
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.surfaceContainerHigh,
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: Spacing.xs,
+    elevation: 8,
+    shadowColor: Colors.shadowColor,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+  },
+  tabButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: 8,
+  },
+  activeTabButton: {
+    backgroundColor: Colors.surfaceContainerLow,
+  },
+  tabLabel: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  activeTabLabel: {
+    fontFamily: 'Inter-Bold',
+  },
+});
+
+export default BottomNavBar;
