@@ -4,7 +4,8 @@
  */
 
 export const ENV = {
-  API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/v1',
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'https://cloudcrackerfinalyearproject.onrender.com/api/v1',
+
   TIMEOUT: 15000, // 15 seconds
   ENABLE_MOCK_API: process.env.EXPO_PUBLIC_ENABLE_MOCK === 'true' ? true : false,
   GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '',

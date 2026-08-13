@@ -51,7 +51,7 @@ register_exception_handlers(app)
 app.include_router(api_v1_router, prefix="/api/v1")
 
 
-@app.get("/", tags=["Root"])
+@app.api_route("/", methods=["GET", "HEAD"], tags=["Root"])
 async def root_endpoint() -> dict:
     """Standard root endpoint greeting message."""
     return {
@@ -59,3 +59,4 @@ async def root_endpoint() -> dict:
         "message": f"Welcome to the {settings.APP_NAME}. Head over to /docs or /redoc for interactive API documentation.",
         "data": {},
     }
+

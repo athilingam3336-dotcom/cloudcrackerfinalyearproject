@@ -65,13 +65,19 @@ async def validation_exception_handler(
 async def http_exception_handler(
     request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
-    logger.error(
-        f"HTTP exception: {exc.detail} on path {request.url.path} (status: {exc.status_code})"
-    )
+    if exc.status_code < 500:
+        logger.warning(
+            f"HTTP exception: {exc.detail} on path {request.url.path} (status: {exc.status_code})"
+        )
+    else:
+        logger.error(
+            f"HTTP exception: {exc.detail} on path {request.url.path} (status: {exc.status_code})"
+        )
     response_body = ApiResponse(success=False, message=exc.detail, data={})
     return JSONResponse(
         status_code=exc.status_code, content=response_body.model_dump()
     )
+
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
