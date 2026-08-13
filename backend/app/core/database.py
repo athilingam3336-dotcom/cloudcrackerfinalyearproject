@@ -1,9 +1,19 @@
 import asyncio
 import logging
+import re
 import subprocess
+import sys
 from pathlib import Path
+from typing import Dict, Any
+from urllib.parse import urlparse
+
+import beanie
 from beanie import init_beanie
+import certifi
+import dns.version
+import motor
 from motor.motor_asyncio import AsyncIOMotorClient
+import pymongo
 
 from app.core.config import settings
 
@@ -18,6 +28,33 @@ if not hasattr(AsyncIOMotorClient, "append_metadata"):
     AsyncIOMotorClient.append_metadata = append_metadata_patch
 
 logger = logging.getLogger("app.database")
+
+
+def safe_mongodb_host(url: str) -> str:
+    """Extract host/domain from MongoDB connection URI without printing credentials."""
+    if not url:
+        return "Not configured"
+    # Mask credentials if present (mongodb://user:pass@host... or mongodb+srv://user:pass@host...)
+    sanitized = re.sub(r"mongodb(\+srv)?://[^@]+@", r"mongodb\1://***:***@", url)
+    try:
+        parsed = urlparse(sanitized)
+        return parsed.hostname or parsed.netloc or sanitized
+    except Exception:
+        return "Parse error"
+
+
+def get_safe_db_diagnostics() -> Dict[str, Any]:
+    """Returns safe diagnostic information about Python runtime and MongoDB dependencies."""
+    return {
+        "python_version": sys.version.split()[0],
+        "pymongo_version": pymongo.__version__,
+        "motor_version": getattr(motor, "version", getattr(motor, "__version__", "unknown")),
+        "beanie_version": getattr(beanie, "__version__", "unknown"),
+        "dnspython_version": getattr(dns.version, "version", getattr(dns, "__version__", "unknown")),
+        "mongodb_uri_configured": bool(settings.MONGODB_URI),
+        "mongodb_host": safe_mongodb_host(settings.MONGODB_URL),
+        "ca_cert_bundle": certifi.where(),
+    }
 
 
 def _try_start_local_mongodb() -> bool:
@@ -64,14 +101,28 @@ class DatabaseManager:
 
     async def connect(self) -> None:
         """Initializes client and sets up Beanie ODM connection with auto-retry."""
-        logger.info(f"Connecting to MongoDB at: {settings.MONGODB_URL}")
+        diagnostics = get_safe_db_diagnostics()
+        logger.info(f"MongoDB Diagnostics: {diagnostics}")
+
         is_local = "localhost" in settings.MONGODB_URL or "127.0.0.1" in settings.MONGODB_URL
 
         for attempt in range(2):
             try:
+                # Motor connection parameters
+                client_kwargs: Dict[str, Any] = {
+                    "serverSelectionTimeoutMS": 3000 if (attempt == 0 and is_local) else 20000,
+                    "connectTimeoutMS": 10000,
+                }
+
+                # For Atlas / remote connections, use certifi CA bundle and reliable retry parameters
+                if not is_local:
+                    client_kwargs["tlsCAFile"] = certifi.where()
+                    client_kwargs["retryWrites"] = True
+                    client_kwargs["w"] = "majority"
+
                 self.client = AsyncIOMotorClient(
                     settings.MONGODB_URL,
-                    serverSelectionTimeoutMS=3000 if (attempt == 0 and is_local) else 20000,
+                    **client_kwargs,
                 )
                 self.db = self.client[settings.DB_NAME]
 
@@ -117,7 +168,7 @@ class DatabaseManager:
                         About,
                     ],
                 )
-                logger.info("Connected to MongoDB & Beanie initialized.")
+                logger.info("Connected to MongoDB & Beanie initialized successfully.")
                 return
             except Exception as e:
                 # Auto-start local MongoDB only in development mode
@@ -140,5 +191,3 @@ class DatabaseManager:
 
 
 db_manager = DatabaseManager()
-
-
