@@ -102,8 +102,13 @@ async def test_order_history_and_details(
     # 3. Get details
     details_res = await client.get(f"/api/v1/orders/{order_id}", headers=customer_headers)
     assert details_res.status_code == 200
-    assert details_res.json()["data"]["order_number"].startswith("ORD-")
-    assert len(details_res.json()["data"]["items"]) == 1
+    detail_data = details_res.json()["data"]
+    assert detail_data["order_number"].startswith("ORD-")
+    assert len(detail_data["items"]) == 1
+    assert detail_data["shipping_address"] == "456 Side St, California"
+    assert detail_data["customer_name"] is not None
+    assert detail_data["customer_email"] is not None
+
 
 
 @pytest.mark.asyncio

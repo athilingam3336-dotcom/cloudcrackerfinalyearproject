@@ -637,4 +637,14 @@ class PaymentService:
 
         order_resp = OrderResponse.convert_id(order)
         order_resp["items"] = items_out
+        try:
+            from app.models.user import User
+            user = await User.get(order.user_id)
+            if user:
+                order_resp["customer_name"] = user.full_name
+                order_resp["customer_email"] = user.email
+                order_resp["customer_phone"] = getattr(user, "phone", None)
+        except Exception:
+            pass
         return OrderResponse(**order_resp)
+

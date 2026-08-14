@@ -258,7 +258,98 @@ export class OrderService {
     }
   }
 
+  private parseShippingAddress(
+    rawAddress: any,
+    customerName?: string,
+    customerPhone?: string
+  ): ShippingAddressDetail | undefined {
+    if (!rawAddress && !customerName) {
+      return undefined;
+    }
+
+    if (typeof rawAddress === 'object' && rawAddress !== null) {
+      return {
+        fullName:
+          rawAddress.full_name ||
+          rawAddress.fullName ||
+          rawAddress.name ||
+          customerName ||
+          'Customer',
+        street: rawAddress.street || rawAddress.address || '',
+        city: rawAddress.city || '',
+        state: rawAddress.state || '',
+        zipCode:
+          rawAddress.zip_code ||
+          rawAddress.zipCode ||
+          rawAddress.pincode ||
+          '',
+        phone: rawAddress.phone || customerPhone || undefined,
+      };
+    }
+
+    if (typeof rawAddress === 'string') {
+      const raw = rawAddress.trim();
+      if (!raw) {
+        if (!customerName) return undefined;
+        return {
+          fullName: customerName,
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          phone: customerPhone || undefined,
+        };
+      }
+
+      let phone = customerPhone || '';
+      let addressPart = raw;
+
+      // 1. Extract phone if formatted as (Phone: ...)
+      const phoneMatch = addressPart.match(/\(Phone:\s*([^)]+)\)/i);
+      if (phoneMatch) {
+        if (!phone) phone = phoneMatch[1].trim();
+        addressPart = addressPart.replace(phoneMatch[0], '').trim();
+      }
+
+      // 2. Extract email if formatted as (email@example.com)
+      const emailMatch = addressPart.match(/\(([^)]+@[^)]+)\)/);
+      if (emailMatch) {
+        addressPart = addressPart.replace(emailMatch[0], '').trim();
+      }
+
+      // 3. Extract name if at the beginning before a comma
+      let name = customerName || '';
+      const parts = addressPart.split(',').map((p) => p.trim()).filter(Boolean);
+
+      if (!name) {
+        if (parts.length > 1) {
+          name = parts[0];
+          addressPart = parts.slice(1).join(', ');
+        } else {
+          name = 'Customer';
+        }
+      } else if (parts.length > 1 && parts[0].toLowerCase() === name.toLowerCase()) {
+        addressPart = parts.slice(1).join(', ');
+      }
+
+      // Clean leading/trailing punctuation
+      addressPart = addressPart.replace(/^,\s*/, '').replace(/,\s*$/, '').trim();
+
+      return {
+        fullName: name,
+        street: addressPart,
+        city: '',
+        state: '',
+        zipCode: '',
+        phone: phone || undefined,
+      };
+    }
+
+    return undefined;
+  }
+
   private mapBackendOrderToUi(bo: any): OrderRecord {
+
     return {
       id: bo.id || bo._id || 'ord_meta',
       orderNumber: bo.order_number || bo.orderNumber || '#CC-99000',
@@ -272,15 +363,12 @@ export class OrderService {
       tax: bo.tax || 0.0,
       paymentMethod: bo.payment_method || 'Card',
       paymentStatus: bo.payment_status || 'Pending',
-      shippingAddress: bo.shipping_address
-        ? {
-            fullName: bo.shipping_address.full_name || 'Customer',
-            street: bo.shipping_address.street || '',
-            city: bo.shipping_address.city || '',
-            state: bo.shipping_address.state || '',
-            zipCode: bo.shipping_address.zip_code || '',
-          }
-        : undefined,
+      shippingAddress: this.parseShippingAddress(
+        bo.shipping_address || bo.shippingAddress,
+        bo.customer_name || bo.customerName,
+        bo.customer_phone || bo.customerPhone
+      ),
+
       items: Array.isArray(bo.items)
         ? bo.items.map((item: any) => ({
             id: item.id || item.product_id || 'item',

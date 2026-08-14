@@ -141,6 +141,7 @@ class OrderService:
         # 6. Format order response
         order_resp = OrderResponse.convert_id(order)
         order_resp["items"] = order_items_out
+        await self._populate_customer_info(order_resp, user_id)
         return OrderResponse(**order_resp)
 
     async def get_user_orders(self, user_id: str) -> List[OrderResponse]:
@@ -159,6 +160,7 @@ class OrderService:
 
             order_resp = OrderResponse.convert_id(order)
             order_resp["items"] = items_out
+            await self._populate_customer_info(order_resp, order.user_id)
             responses.append(OrderResponse(**order_resp))
         return responses
 
@@ -181,6 +183,7 @@ class OrderService:
 
         order_resp = OrderResponse.convert_id(order)
         order_resp["items"] = items_out
+        await self._populate_customer_info(order_resp, order.user_id)
         return OrderResponse(**order_resp)
 
     async def cancel_order(self, user_id: str, order_id: str) -> OrderResponse:
@@ -213,12 +216,25 @@ class OrderService:
 
         order_resp = OrderResponse.convert_id(order)
         order_resp["items"] = items_out
+        await self._populate_customer_info(order_resp, order.user_id)
         return OrderResponse(**order_resp)
 
     async def get_order_summary(self, user_id: str) -> OrderSummaryResponse:
         """Fetches total Spent, orders count, pending counts, and completion metrics."""
         summary = await self.order_repo.get_user_order_summary(user_id)
         return OrderSummaryResponse(**summary)
+
+    async def _populate_customer_info(self, order_dict: dict, user_id: Any) -> None:
+        """Populates customer_name, customer_email, customer_phone from the User model."""
+        try:
+            from app.models.user import User
+            user = await User.get(user_id)
+            if user:
+                order_dict["customer_name"] = user.full_name
+                order_dict["customer_email"] = user.email
+                order_dict["customer_phone"] = getattr(user, "phone", None)
+        except Exception:
+            pass
 
     async def _format_order_response(self, order: Order) -> OrderResponse:
         items = await self.order_repo.get_order_items(str(order.id))
@@ -232,7 +248,9 @@ class OrderService:
 
         order_resp = OrderResponse.convert_id(order)
         order_resp["items"] = items_out
+        await self._populate_customer_info(order_resp, order.user_id)
         return OrderResponse(**order_resp)
+
 
     async def list_admin_orders(
         self,

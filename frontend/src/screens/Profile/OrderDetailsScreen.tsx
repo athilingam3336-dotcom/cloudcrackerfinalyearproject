@@ -239,10 +239,16 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
               <Text style={styles.sectionTitle}>Shipping Address</Text>
             </View>
             <Text style={styles.addressName}>{order.shippingAddress.fullName}</Text>
-            <Text style={styles.addressText}>{order.shippingAddress.street}</Text>
-            <Text style={styles.addressText}>
-              {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
-            </Text>
+            {order.shippingAddress.street ? (
+              <Text style={styles.addressText}>{order.shippingAddress.street}</Text>
+            ) : null}
+            {(order.shippingAddress.city || order.shippingAddress.state || order.shippingAddress.zipCode) ? (
+              <Text style={styles.addressText}>
+                {[order.shippingAddress.city, order.shippingAddress.state, order.shippingAddress.zipCode]
+                  .filter(Boolean)
+                  .join(', ')}
+              </Text>
+            ) : null}
             {order.shippingAddress.phone && (
               <Text style={styles.addressPhone}>{order.shippingAddress.phone}</Text>
             )}

@@ -44,6 +44,9 @@ class OrderResponse(BaseModel):
     id: str
     order_number: str
     user_id: str
+    customer_name: Optional[str] = None
+    customer_email: Optional[str] = None
+    customer_phone: Optional[str] = None
     subtotal: float
     discount: float
     coupon_code: Optional[str] = None
@@ -60,6 +63,7 @@ class OrderResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     items: List[OrderItemResponse] = Field(default_factory=list)
+
 
     @model_validator(mode="before")
     @classmethod
