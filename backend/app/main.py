@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_v1_router
 from app.core.config import settings
@@ -59,4 +60,67 @@ async def root_endpoint() -> dict:
         "message": f"Welcome to the {settings.APP_NAME}. Head over to /docs or /redoc for interactive API documentation.",
         "data": {},
     }
+
+
+@app.get(
+    "/health",
+    tags=["Health"],
+    summary="Production Health Check",
+    responses={
+        200: {
+            "description": "Service is healthy and database is connected",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "ok",
+                        "service": "cloudcrackers-backend",
+                        "database": "connected",
+                    }
+                }
+            },
+        },
+        503: {
+            "description": "Service is unavailable or database is disconnected",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "unhealthy",
+                        "service": "cloudcrackers-backend",
+                        "database": "disconnected",
+                    }
+                }
+            },
+        },
+    },
+)
+async def health_check() -> JSONResponse:
+    """Production-ready health check verifying service status and MongoDB connectivity."""
+    db_connected = False
+    try:
+        if db_manager.client is not None and db_manager.db is not None:
+            await db_manager.db.command("ping")
+            db_connected = True
+    except Exception as exc:
+        logger.warning(f"Health check MongoDB ping failed: {exc}")
+        db_connected = False
+
+    if db_connected:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "status": "ok",
+                "service": "cloudcrackers-backend",
+                "database": "connected",
+            },
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "status": "unhealthy",
+            "service": "cloudcrackers-backend",
+            "database": "disconnected",
+        },
+    )
+
 
