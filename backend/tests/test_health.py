@@ -70,3 +70,34 @@ async def test_api_v1_health_endpoint(client: AsyncClient):
     assert "status" in res_json["data"]
     assert "database" in res_json["data"]
 
+
+def test_production_environment_rejects_localhost_mongodb(monkeypatch: pytest.MonkeyPatch):
+    """Verifies that Settings raises ValueError when production environment is configured with localhost or missing URI."""
+    from app.core.config import Settings
+
+    # Case 1: production with localhost URI must be rejected
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("MONGODB_URI", "mongodb://localhost:27017/cloudcrackers")
+    with pytest.raises(ValueError, match="Localhost MongoDB cannot be used in production"):
+        Settings(_env_file=None)
+
+    # Case 2: production with 127.0.0.1 URI must be rejected
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("MONGODB_URI", "mongodb://127.0.0.1:27017/cloudcrackers")
+    with pytest.raises(ValueError, match="Localhost MongoDB cannot be used in production"):
+        Settings(_env_file=None)
+
+    # Case 3: production without MONGODB_URI must be rejected
+    monkeypatch.delenv("MONGODB_URI", raising=False)
+    with pytest.raises(ValueError, match="MONGODB_URI must be set in production"):
+        Settings(_env_file=None, MONGODB_URI=None)
+
+    # Case 4: production with valid remote Atlas URI succeeds validation
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("MONGODB_URI", "mongodb+srv://admin:secret@cluster0.abcde.mongodb.net/cloudcrackers?retryWrites=true&w=majority")
+    prod_settings = Settings(_env_file=None)
+    assert prod_settings.is_production is True
+    assert prod_settings.MONGODB_URL.startswith("mongodb+srv://")
+
+
+

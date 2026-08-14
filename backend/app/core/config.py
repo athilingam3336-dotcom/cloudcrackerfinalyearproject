@@ -36,6 +36,10 @@ class Settings(BaseSettings):
         if env == "production":
             if not self.MONGODB_URI:
                 raise ValueError("MONGODB_URI must be set in production environment.")
+            if "localhost" in self.MONGODB_URI.lower() or "127.0.0.1" in self.MONGODB_URI:
+                raise ValueError(
+                    "Localhost MongoDB cannot be used in production environment. A valid MongoDB Atlas/remote URI is required."
+                )
             self.MONGODB_URL = self.MONGODB_URI
         elif env == "test":
             if not self.TEST_MONGODB_URI:
