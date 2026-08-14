@@ -57,6 +57,9 @@ jobs:
           MONGODB_URL: mongodb://localhost:27017
           DB_NAME: cloudcrackers_test
           JWT_SECRET_KEY: test_jwt_secret_key_for_ci_pipeline_only
+          RAZORPAY_KEY_ID: rzp_test_ci_mock_key_id
+          RAZORPAY_KEY_SECRET: test_razorpay_secret_key_for_ci_pipeline_only
+          RAZORPAY_WEBHOOK_SECRET: test_razorpay_webhook_secret_for_ci_pipeline_only
         run: |
           pytest tests/ -v
 
