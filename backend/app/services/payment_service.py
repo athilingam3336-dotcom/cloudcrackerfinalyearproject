@@ -319,6 +319,10 @@ class PaymentService:
             }
             await self.payment_repo.create_payment(payment_data)
 
+        logger.info(
+            f"Created Razorpay payment order: rzp_order_id={razorpay_order_id}, order_number={order.order_number}, total={order.total}"
+        )
+
         return RazorpayOrderCreateResponse(
             razorpay_order_id=razorpay_order_id,
             razorpay_key_id=settings.RAZORPAY_KEY_ID or "",
@@ -378,6 +382,9 @@ class PaymentService:
             )
 
         if not is_valid:
+            logger.warning(
+                f"Razorpay verification FAILED: Invalid signature for razorpay_order_id={data.razorpay_order_id}, razorpay_payment_id={data.razorpay_payment_id}"
+            )
             # Mark payment and order as Failed
             if payment:
                 await self.payment_repo.update_status(
@@ -396,6 +403,9 @@ class PaymentService:
 
         # 2. Idempotency check: If already paid, return early safely
         if order.payment_status == "Paid" and payment and payment.payment_status == "Success":
+            logger.info(
+                f"Razorpay payment already processed (idempotent skip) for order {order.order_number}"
+            )
             formatted_order = await self._format_order_response(order)
             return {
                 "order": formatted_order,
@@ -477,6 +487,9 @@ class PaymentService:
                 "razorpay_payment_id": data.razorpay_payment_id,
                 "razorpay_signature": data.razorpay_signature,
             },
+        )
+        logger.info(
+            f"Razorpay payment verification SUCCESS for order {order.order_number}, razorpay_payment_id={data.razorpay_payment_id}"
         )
 
         formatted_order = await self._format_order_response(order)

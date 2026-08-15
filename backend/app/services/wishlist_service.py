@@ -52,6 +52,9 @@ class WishlistService:
         """Deletes a wishlist item."""
         item = await self.wishlist_repo.get_by_id(wishlist_id)
         if not item or str(item.user_id) != user_id:
+            # Fallback check if wishlist_id was passed as product_id
+            item = await self.wishlist_repo.get_user_wishlist_item(user_id, wishlist_id)
+        if not item or str(item.user_id) != user_id:
             raise NotFoundException(message="Wishlist item not found.")
         await self.wishlist_repo.delete(item)
 

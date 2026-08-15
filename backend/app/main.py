@@ -109,8 +109,7 @@ async def health_check() -> JSONResponse:
             status_code=status.HTTP_200_OK,
             content={
                 "status": "ok",
-                "service": "cloudcrackers-backend",
-                "database": "connected",
+                "db_connected": True,
             },
         )
 
@@ -118,8 +117,7 @@ async def health_check() -> JSONResponse:
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={
             "status": "unhealthy",
-            "service": "cloudcrackers-backend",
-            "database": "disconnected",
+            "db_connected": False,
         },
     )
 

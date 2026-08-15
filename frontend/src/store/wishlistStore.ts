@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 import { ProductItem } from '@/constants/mockData';
+import { wishlistService } from '@/services/wishlistService';
 
 export interface WishlistState {
   wishlistItems: ProductItem[];
+  isLoading: boolean;
 
   // Actions
+  fetchWishlist: () => Promise<void>;
   toggleWishlist: (product: ProductItem) => void;
   removeFromWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
@@ -15,27 +18,38 @@ export interface WishlistState {
 export const useWishlistStore = create<WishlistState>((set, get) => ({
   // Initialize with empty array so ONLY user-liked items appear
   wishlistItems: [],
+  isLoading: false,
+
+  fetchWishlist: async () => {
+    set({ isLoading: true });
+    try {
+      const items = await wishlistService.getWishlist();
+      set({ wishlistItems: items || [], isLoading: false });
+    } catch {
+      set({ isLoading: false });
+    }
+  },
 
   toggleWishlist: (product) => {
-    set((state) => {
-      const exists = state.wishlistItems.some((item) => item.id === product.id);
-      if (exists) {
-        return {
-          wishlistItems: state.wishlistItems.filter(
-            (item) => item.id !== product.id
-          ),
-        };
-      }
-      return { wishlistItems: [...state.wishlistItems, product] };
-    });
+    const exists = get().wishlistItems.some((item) => item.id === product.id);
+    if (exists) {
+      set((state) => ({
+        wishlistItems: state.wishlistItems.filter((item) => item.id !== product.id),
+      }));
+      wishlistService.removeFromWishlist(product.id);
+    } else {
+      set((state) => ({
+        wishlistItems: [...state.wishlistItems, product],
+      }));
+      wishlistService.addToWishlist(product.id);
+    }
   },
 
   removeFromWishlist: (productId) => {
     set((state) => ({
-      wishlistItems: state.wishlistItems.filter(
-        (item) => item.id !== productId
-      ),
+      wishlistItems: state.wishlistItems.filter((item) => item.id !== productId),
     }));
+    wishlistService.removeFromWishlist(productId);
   },
 
   isInWishlist: (productId) => {
@@ -44,9 +58,10 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   clearWishlist: () => {
     set({ wishlistItems: [] });
+    wishlistService.clearWishlist();
   },
 
   resetWishlistStore: () => {
-    set({ wishlistItems: [] });
+    set({ wishlistItems: [], isLoading: false });
   },
 }));

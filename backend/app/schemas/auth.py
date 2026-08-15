@@ -81,11 +81,24 @@ class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
     phone: Optional[str] = None
     avatar_base64: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "name" in data and "full_name" not in data:
+                data["full_name"] = data["name"]
+            if "avatarUrl" in data and "avatar_url" not in data and "avatar_base64" not in data:
+                data["avatar_url"] = data["avatarUrl"]
+            if "avatar_url" in data and not data.get("avatar_base64"):
+                data["avatar_base64"] = data["avatar_url"]
+        return data
 
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
+        if v is None or v == "":
             return v
         cleaned = re.sub(r"\D", "", v)
         if len(cleaned) < 10 or len(cleaned) > 15:

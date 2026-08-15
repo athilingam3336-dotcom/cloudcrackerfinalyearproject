@@ -106,20 +106,24 @@ class AuthService:
         # 1. Fetch user by email
         user = await self.user_repo.get_by_email(clean_email)
         if not user:
+            logger.warning(f"Authentication failed: User not found for email '{clean_email}'")
             raise UnauthorizedException(message="Invalid email or password.")
 
         # 2. If user registered via Google without a password, provide clear instruction
         if user.password_hash is None:
+            logger.warning(f"Authentication failed: User '{clean_email}' has Google account without password")
             raise UnauthorizedException(
                 message="This account was registered using Google Sign-In. Please sign in with Google or use 'Forgot Password' to set a password."
             )
 
         # 3. Verify hashed password
         if not verify_password(data.password, user.password_hash):
+            logger.warning(f"Authentication failed: Incorrect password for email '{clean_email}'")
             raise UnauthorizedException(message="Invalid email or password.")
 
         # 4. Verify user is active
         if not user.is_active or user.status != "active":
+            logger.warning(f"Authentication failed: Account deactivated for email '{clean_email}'")
             raise UnauthorizedException(
                 message="Your account has been deactivated. Please contact support."
             )

@@ -17,24 +17,34 @@ export class CartService {
     }
     try {
       const { data: res } = await apiClient.get('/cart');
-      const payload = res.data || res;
+      const payload = res.data !== undefined ? res.data : res;
       if (Array.isArray(payload)) {
-        return payload.map((ci: any) => ({
-          product: {
-            id: ci.product_id || ci.product?.id,
-            title: ci.product?.name || ci.product?.title || 'Product',
-            subtitle: ci.product?.description || '',
-            category: ci.product?.category_id || 'all',
-            price: ci.product?.discount_price || ci.product?.price || ci.price || 0,
-            rating: ci.product?.rating || 5.0,
-            reviewCount: ci.product?.reviews_count || 0,
-            imageUrl: Array.isArray(ci.product?.images) ? ci.product.images[0] : undefined,
-          },
-          quantity: ci.quantity || 1,
-        }));
+        return payload.map((ci: any) => {
+          const prod = ci.product || {};
+          const effectivePrice = prod.discount_price != null ? prod.discount_price : (prod.price ?? ci.unit_price ?? ci.price ?? 0);
+          const originalPrice = prod.discount_price != null ? prod.price : undefined;
+          const mainImage = Array.isArray(prod.images) && prod.images.length > 0 ? prod.images[0] : (prod.image_url || prod.imageUrl);
+
+          return {
+            product: {
+              id: prod.id || prod._id || ci.product_id || String(ci.id),
+              title: prod.name || prod.title || 'Pyrotechnic Item',
+              subtitle: prod.description || prod.subtitle || '',
+              category: prod.category_id || prod.category || 'all',
+              price: effectivePrice,
+              originalPrice: originalPrice,
+              badge: prod.is_bestseller ? 'Bestseller' : prod.is_featured ? 'Featured' : prod.is_flash_sale ? 'Flash Sale' : undefined,
+              rating: prod.rating || prod.average_rating || 5.0,
+              reviewCount: prod.reviews_count || prod.total_reviews || 0,
+              imageUrl: mainImage,
+            },
+            quantity: ci.quantity || 1,
+          };
+        });
       }
       return [];
-    } catch {
+    } catch (err) {
+      console.warn('Backend cart fetch note:', err);
       return [];
     }
   }
@@ -49,8 +59,8 @@ export class CartService {
         quantity,
       });
       return true;
-    } catch (err) {
-      console.warn('Backend cart sync note:', err);
+    } catch (err: any) {
+      console.warn('Backend cart sync note:', err?.response?.data || err?.message);
       return false;
     }
   }
@@ -68,6 +78,34 @@ export class CartService {
       return { success: true };
     } catch {
       return { success: false };
+    }
+  }
+
+  async updateQuantityApi(productId: string, quantity: number): Promise<boolean> {
+    if (ENV.ENABLE_MOCK_API) {
+      return true;
+    }
+    try {
+      await apiClient.put(`/cart/${productId}`, {
+        quantity,
+      });
+      return true;
+    } catch (err) {
+      console.warn('Backend cart quantity update note:', err);
+      return false;
+    }
+  }
+
+  async removeFromCartApi(productId: string): Promise<boolean> {
+    if (ENV.ENABLE_MOCK_API) {
+      return true;
+    }
+    try {
+      await apiClient.delete(`/cart/${productId}`);
+      return true;
+    } catch (err) {
+      console.warn('Backend cart item remove note:', err);
+      return false;
     }
   }
 

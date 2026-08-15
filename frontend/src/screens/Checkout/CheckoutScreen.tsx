@@ -71,8 +71,12 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
   const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>('standard');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('razorpay');
 
-  const { items, clearCart, couponCode, discount: couponDiscount } = useCartStore();
+  const { items, clearCart, couponCode, discount: couponDiscount, fetchCart } = useCartStore();
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
+
+  useEffect(() => {
+    fetchCart();
+  }, [fetchCart]);
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const shippingFee = deliveryMethod === 'express' ? 250 : subtotal > 1000 ? 0 : 99;

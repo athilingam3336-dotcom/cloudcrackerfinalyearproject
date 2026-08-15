@@ -244,6 +244,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const renderFlashSaleItem = useCallback(
     ({ item }: { item: FlashSaleItem }) => {
       const isWishlisted = wishlistItems.some((w) => w.id === item.id);
+      const productObj: ProductItem = {
+        id: item.id,
+        title: item.title,
+        subtitle: item.subtitle,
+        category: item.category,
+        price: item.price,
+        originalPrice: item.originalPrice,
+        rating: item.rating,
+        reviewCount: item.reviewCount,
+        imageUrl: item.imageUrl,
+        badge: item.badge,
+      };
+
       return (
         <View style={styles.flashSaleCardWrapper}>
           <ProductCard
@@ -258,25 +271,43 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             imageUrl={item.imageUrl}
             isWishlisted={isWishlisted}
             onPress={() => handleProductPress(item.id)}
-            onAddToCart={() => addToCart(item, 1)}
-            onWishlistToggle={() =>
-              toggleWishlist({
-                id: item.id,
-                title: item.title,
-                subtitle: 'Flash Sale Item',
-                category: 'Flash Sale',
-                price: item.price,
-                rating: item.rating,
-                reviewCount: item.reviewCount,
-                imageUrl: item.imageUrl,
-              })
-            }
+            onAddToCart={() => addToCart(productObj, 1)}
+            onWishlistToggle={() => toggleWishlist(productObj)}
           />
         </View>
       );
     },
     [wishlistItems, handleProductPress, addToCart, toggleWishlist]
   );
+
+  const flashSaleData: FlashSaleItem[] = useMemo(() => {
+    const discounted = products.filter(
+      (p) =>
+        p.badge?.toLowerCase().includes('sale') ||
+        p.badge?.toLowerCase().includes('off') ||
+        (p.originalPrice && p.originalPrice > p.price)
+    );
+    if (discounted.length > 0) {
+      return discounted.map((p) => ({
+        id: p.id,
+        title: p.title,
+        subtitle: p.subtitle || 'Flash Sale Special',
+        category: p.category || 'Fireworks',
+        price: p.price,
+        originalPrice: p.originalPrice || Math.round(p.price * 1.25),
+        discountPercent: p.originalPrice
+          ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
+          : 20,
+        badge: p.badge || 'FLASH SALE',
+        rating: p.rating,
+        reviewCount: p.reviewCount,
+        endsInSeconds: 7200,
+        stockLeft: 45,
+        imageUrl: p.imageUrl,
+      }));
+    }
+    return MOCK_FLASH_SALE;
+  }, [products]);
 
   // List Header Component
   const renderHeader = useMemo(() => {
@@ -343,7 +374,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </View>
           <FlatList
             horizontal
-            data={MOCK_FLASH_SALE}
+            data={flashSaleData}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.horizontalListContent}

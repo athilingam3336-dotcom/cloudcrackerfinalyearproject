@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -37,10 +37,15 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
     getShippingFee,
     getTax,
     getGrandTotal,
+    fetchCart,
   } = useCartStore();
 
   const setAppliedCoupon = useCartStore((state) => state.setAppliedCoupon);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
+
+  useEffect(() => {
+    fetchCart();
+  }, [fetchCart]);
 
   const [inputCoupon, setInputCoupon] = useState('');
 

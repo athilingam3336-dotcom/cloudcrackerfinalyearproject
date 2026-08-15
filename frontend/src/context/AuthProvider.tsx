@@ -5,6 +5,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuthStore, UserProfile } from '@/store/authStore';
+import { useCartStore } from '@/store/cartStore';
+import { useWishlistStore } from '@/store/wishlistStore';
 import { tokenStorage } from '@/storage/tokenStorage';
 import { profileService } from '@/services/profileService';
 
@@ -28,12 +30,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkTokenOnLaunch = async () => {
       try {
         const storedToken = await tokenStorage.getAccessToken();
-        if (storedToken && !user) {
-          // Rehydrate profile from backend with existing valid token
+        if (storedToken) {
+          // Rehydrate profile from MongoDB Atlas with existing valid token
           const profile = await profileService.getProfile();
           if (profile) {
             updateProfile(profile);
           }
+          // Rehydrate user's persistent Cart & Wishlist from MongoDB Atlas
+          await Promise.allSettled([
+            useCartStore.getState().fetchCart(),
+            useWishlistStore.getState().fetchWishlist(),
+          ]);
         }
       } catch (e) {
         console.warn('Auth token initialization check note:', e);

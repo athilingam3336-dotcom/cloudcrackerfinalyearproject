@@ -1,8 +1,7 @@
 from datetime import datetime
+import logging
 import random
 from typing import List, Optional
-
-
 
 from app.exceptions import NotFoundException, ValidationException
 from app.models.order import Order
@@ -18,6 +17,8 @@ from app.schemas.order import (
     OrderSummaryResponse,
 )
 from app.schemas.product import ProductResponse
+
+logger = logging.getLogger("app.services.order")
 
 
 class OrderService:
@@ -41,11 +42,13 @@ class OrderService:
         for item in cart_items:
             product = await self.product_repo.get_by_id(str(item.product_id))
             if not product or not product.is_active or product.status == "deleted":
+                logger.warning(f"Checkout failed: Product '{item.product_id}' unavailable (user_id={user_id})")
                 raise ValidationException(
                     message=f"Product with ID '{item.product_id}' is no longer available."
                 )
 
             if item.quantity > product.stock:
+                logger.warning(f"Checkout failed: Insufficient stock for product '{product.name}' (requested {item.quantity}, available {product.stock}, user_id={user_id})")
                 raise ValidationException(
                     message=f"Insufficient stock for '{product.name}'. Only {product.stock} available."
                 )
@@ -139,6 +142,7 @@ class OrderService:
 
         # 5. Clear User Cart
         await self.cart_repo.clear_user_cart(user_id)
+        logger.info(f"Order placed successfully: order_number={order.order_number}, total={order.total}, user_id={user_id}")
 
         # 6. Format order response
         order_resp = OrderResponse.convert_id(order)
@@ -371,6 +375,7 @@ class OrderService:
                         await self.product_repo.update(product, {"stock": new_stock})
 
             await self.order_repo.update(order, {"order_status": new_status})
+            logger.info(f"Order {order.order_number} status updated from '{old_status}' to '{new_status}'")
 
         return await self._format_order_response(order)
 
@@ -388,7 +393,9 @@ class OrderService:
         if not order:
             raise NotFoundException(message="Order not found.")
 
+        old_payment_status = order.payment_status
         await self.order_repo.update(order, {"payment_status": new_payment_status})
+        logger.info(f"Order {order.order_number} payment status updated from '{old_payment_status}' to '{new_payment_status}'")
 
         # Sync associated Payment document if exists
         try:

@@ -90,6 +90,13 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
+          // Rehydrate Cart & Wishlist from MongoDB Atlas for this authenticated user
+          try {
+            const { useCartStore } = require('@/store/cartStore');
+            const { useWishlistStore } = require('@/store/wishlistStore');
+            useCartStore.getState().fetchCart();
+            useWishlistStore.getState().fetchWishlist();
+          } catch {}
           return true;
         } catch (err: any) {
           set({
@@ -113,6 +120,13 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
+          // Rehydrate Cart & Wishlist from MongoDB Atlas for this authenticated user
+          try {
+            const { useCartStore } = require('@/store/cartStore');
+            const { useWishlistStore } = require('@/store/wishlistStore');
+            useCartStore.getState().fetchCart();
+            useWishlistStore.getState().fetchWishlist();
+          } catch {}
           return true;
         } catch (err: any) {
           set({
@@ -142,6 +156,13 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
+          // Rehydrate Cart & Wishlist from MongoDB Atlas for this newly registered user
+          try {
+            const { useCartStore } = require('@/store/cartStore');
+            const { useWishlistStore } = require('@/store/wishlistStore');
+            useCartStore.getState().fetchCart();
+            useWishlistStore.getState().fetchWishlist();
+          } catch {}
           return true;
         } catch (err: any) {
           set({
@@ -181,6 +202,12 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         tokenStorage.clearTokens();
+        try {
+          const { useCartStore } = require('@/store/cartStore');
+          const { useWishlistStore } = require('@/store/wishlistStore');
+          useCartStore.getState().resetCartStore();
+          useWishlistStore.getState().resetWishlistStore();
+        } catch {}
         set({
           user: null,
           token: null,

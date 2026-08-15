@@ -20,8 +20,10 @@ export interface CartState {
   items: CartItem[];
   couponCode: string;
   discount: number;
+  isLoading: boolean;
 
   // Actions
+  fetchCart: () => Promise<void>;
   addToCart: (product: ProductItem, quantity?: number, selectedVariant?: ProductVariantOption) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, delta: number) => void;
@@ -38,22 +40,24 @@ export interface CartState {
   getItemCount: () => number;
 }
 
-const initialCartItems: CartItem[] = ENV.ENABLE_MOCK_API
-  ? [
-      { product: MOCK_PRODUCTS[0], quantity: 1 },
-      { product: MOCK_PRODUCTS[1], quantity: 2 },
-    ]
-  : [];
-
 export const useCartStore = create<CartState>((set, get) => ({
-  items: initialCartItems,
+  items: [],
   couponCode: '',
   discount: 0,
+  isLoading: false,
 
-  addToCart: (product, quantity = 1, selectedVariant) => {
-    if (!ENV.ENABLE_MOCK_API && product?.id) {
-      cartService.addToCartApi(product.id, quantity);
+  fetchCart: async () => {
+    set({ isLoading: true });
+    try {
+      const items = await cartService.fetchCart();
+      set({ items: items || [], isLoading: false });
+    } catch {
+      set({ isLoading: false });
     }
+  },
+
+  addToCart: async (product, quantity = 1, selectedVariant) => {
+    // 1. Optimistic local update
     set((state) => {
       const existingIndex = state.items.findIndex(
         (i) =>
@@ -65,7 +69,6 @@ export const useCartStore = create<CartState>((set, get) => ({
         updated[existingIndex].quantity += quantity;
         return { items: updated };
       }
-      // Apply variant price modifier to product copy if variant present
       const effectivePrice = product.price + (selectedVariant?.priceModifier || 0);
       const productWithPrice = {
         ...product,
@@ -74,26 +77,50 @@ export const useCartStore = create<CartState>((set, get) => ({
       };
       return { items: [...state.items, { product: productWithPrice, quantity, selectedVariant }] };
     });
+
+    // 2. Persist to MongoDB Atlas and re-sync
+    if (!ENV.ENABLE_MOCK_API && product?.id) {
+      await cartService.addToCartApi(product.id, quantity);
+      const atlasCart = await cartService.fetchCart();
+      if (atlasCart && atlasCart.length > 0) {
+        set({ items: atlasCart });
+      }
+    }
   },
 
-  removeFromCart: (productId) => {
+  removeFromCart: async (productId) => {
     set((state) => ({
       items: state.items.filter((i) => i.product.id !== productId),
     }));
+    await cartService.removeFromCartApi(productId);
+    const atlasCart = await cartService.fetchCart();
+    set({ items: atlasCart || [] });
   },
 
-  updateQuantity: (productId, delta) => {
-    set((state) => ({
-      items: state.items
-        .map((i) => {
-          if (i.product.id === productId) {
-            const newQty = Math.max(1, i.quantity + delta);
-            return { ...i, quantity: newQty };
-          }
-          return i;
-        })
-        .filter((i) => i.quantity > 0),
-    }));
+  updateQuantity: async (productId, delta) => {
+    const currentItem = get().items.find((i) => i.product.id === productId);
+    if (!currentItem) return;
+
+    const newQty = currentItem.quantity + delta;
+    if (newQty <= 0) {
+      set((state) => ({
+        items: state.items.filter((i) => i.product.id !== productId),
+      }));
+      await cartService.removeFromCartApi(productId);
+      const atlasCart = await cartService.fetchCart();
+      set({ items: atlasCart || [] });
+    } else {
+      set((state) => ({
+        items: state.items.map((i) =>
+          i.product.id === productId ? { ...i, quantity: newQty } : i
+        ),
+      }));
+      await cartService.updateQuantityApi(productId, newQty);
+      const atlasCart = await cartService.fetchCart();
+      if (atlasCart && atlasCart.length > 0) {
+        set({ items: atlasCart });
+      }
+    }
   },
 
   applyCoupon: (code) => {
@@ -109,15 +136,17 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ couponCode: code.trim().toUpperCase(), discount: Math.max(0, discount) });
   },
 
-  clearCart: () => {
+  clearCart: async () => {
     set({ items: [], couponCode: '', discount: 0 });
+    await cartService.clearCartApi();
   },
 
   resetCartStore: () => {
     set({
-      items: initialCartItems,
+      items: [],
       couponCode: '',
       discount: 0,
+      isLoading: false,
     });
   },
 

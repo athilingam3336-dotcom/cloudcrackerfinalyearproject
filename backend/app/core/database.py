@@ -147,7 +147,7 @@ class DatabaseManager:
 
                 await init_beanie(
                     database=self.db,
-                    allow_index_dropping=True,
+                    allow_index_dropping=False,
                     document_models=[
                         User,
                         Category,

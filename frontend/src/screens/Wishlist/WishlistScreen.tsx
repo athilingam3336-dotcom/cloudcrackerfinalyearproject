@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -33,9 +33,13 @@ const getNumColumns = (width: number) => {
 };
 
 export const WishlistScreen: React.FC<WishlistScreenProps> = ({ navigation }) => {
-  const { wishlistItems, removeFromWishlist } = useWishlistStore();
+  const { wishlistItems, removeFromWishlist, fetchWishlist } = useWishlistStore();
   const addToCart = useCartStore((state) => state.addToCart);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
+
+  useEffect(() => {
+    fetchWishlist();
+  }, [fetchWishlist]);
 
   const [screenWidth] = useState(Dimensions.get('window').width);
   const numColumns = useMemo(() => getNumColumns(screenWidth), [screenWidth]);

@@ -26,34 +26,10 @@ def event_loop() -> Generator:
 
 @pytest.fixture(scope="session", autouse=True)
 async def db_lifecycle():
-    """Initializes the database connection before running tests and re-seeds catalog after."""
+    """Initializes the database connection before running tests and cleanly closes it after."""
     await db_manager.connect()
     yield
-    try:
-        from scripts.seed_catalog import seed_database
-        await seed_database()
-        from app.models.user import User
-        from app.core.security import hash_password
-        athi = await User.find_one(User.email == "athi@gmail.com")
-        if not athi:
-            athi = User(
-                full_name="Athi Lingam",
-                email="athi@gmail.com",
-                phone="+91 9876543210",
-                password_hash=hash_password("Password123!"),
-                role="CUSTOMER",
-                is_verified=True,
-                is_active=True,
-                status="active",
-            )
-            await athi.insert()
-        else:
-            athi.password_hash = hash_password("Password123!")
-            athi.is_active = True
-            athi.is_verified = True
-            await athi.save()
-    except Exception as e:
-        print(f"Note: Post-test catalog reseed: {e}")
+    # Safely disconnect without modifying or deleting live Atlas data
     await db_manager.disconnect()
 
 

@@ -23,8 +23,7 @@ async def test_health_endpoint_healthy(client: AsyncClient):
     res_json = response.json()
     assert res_json == {
         "status": "ok",
-        "service": "cloudcrackers-backend",
-        "database": "connected",
+        "db_connected": True,
     }
 
 
@@ -37,8 +36,7 @@ async def test_health_endpoint_db_disconnected(client: AsyncClient, monkeypatch:
     res_json = response.json()
     assert res_json == {
         "status": "unhealthy",
-        "service": "cloudcrackers-backend",
-        "database": "disconnected",
+        "db_connected": False,
     }
 
 
@@ -53,8 +51,7 @@ async def test_health_endpoint_db_ping_failure(client: AsyncClient, monkeypatch:
     res_json = response.json()
     assert res_json == {
         "status": "unhealthy",
-        "service": "cloudcrackers-backend",
-        "database": "disconnected",
+        "db_connected": False,
     }
 
 
@@ -98,6 +95,32 @@ def test_production_environment_rejects_localhost_mongodb(monkeypatch: pytest.Mo
     prod_settings = Settings(_env_file=None)
     assert prod_settings.is_production is True
     assert prod_settings.MONGODB_URL.startswith("mongodb+srv://")
+
+
+@pytest.mark.asyncio
+async def test_cors_allowed_origin(client: AsyncClient):
+    """Verifies that requests with an allowed Origin header receive CORS access headers."""
+    headers = {
+        "Origin": "https://cloudcrackerfinalyearproject.onrender.com",
+        "Access-Control-Request-Method": "GET",
+    }
+    response = await client.options("/health", headers=headers)
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "https://cloudcrackerfinalyearproject.onrender.com"
+    assert response.headers.get("access-control-allow-credentials") == "true"
+
+
+@pytest.mark.asyncio
+async def test_cors_unrelated_origin_rejected(client: AsyncClient):
+    """Verifies that requests with an unallowed Origin header do NOT receive access-control-allow-origin for that origin."""
+    headers = {
+        "Origin": "https://unauthorized-malicious-site.com",
+        "Access-Control-Request-Method": "GET",
+    }
+    response = await client.options("/health", headers=headers)
+    # When an unallowed origin sends preflight, CORS middleware should not reflect that origin
+    assert response.headers.get("access-control-allow-origin") != "https://unauthorized-malicious-site.com"
+
 
 
 
