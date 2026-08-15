@@ -2,6 +2,8 @@ from datetime import datetime
 import random
 from typing import List, Optional
 
+
+
 from app.exceptions import NotFoundException, ValidationException
 from app.models.order import Order
 from app.repositories.cart_repository import CartRepository
@@ -223,7 +225,7 @@ class OrderService:
         """Fetches total Spent, orders count, pending counts, and completion metrics."""
         summary = await self.order_repo.get_user_order_summary(user_id)
         return OrderSummaryResponse(**summary)
-
+    from typing import Any
     async def _populate_customer_info(self, order_dict: dict, user_id: Any) -> None:
         """Populates customer_name, customer_email, customer_phone from the User model."""
         try:
