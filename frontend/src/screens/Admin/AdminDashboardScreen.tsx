@@ -1,10 +1,12 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -27,27 +29,41 @@ type AdminDashboardScreenProps = NativeStackScreenProps<
 export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   navigation,
 }) => {
-  const [metrics, setMetrics] = React.useState<AdminMetrics>({
-    totalRevenue: 128430.0,
-    newOrders: 1240,
-    productsInStock: 84,
-    totalUsers: 3890,
+  const [metrics, setMetrics] = useState<AdminMetrics>({
+    totalRevenue: 0.0,
+    newOrders: 0,
+    productsInStock: 0,
+    totalUsers: 0,
+    revenueGrowth: '+0.0%',
+    ordersGrowth: '+0.0%',
+    usersGrowth: '+0.0%',
+    recentOrders: [],
   });
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
 
-  React.useEffect(() => {
-    let isMounted = true;
-    adminService.getOverviewMetrics().then((data) => {
-      if (isMounted) {
-        setMetrics(data);
-        setIsLoading(false);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
+  const loadMetrics = useCallback(async () => {
+    try {
+      const data = await adminService.getOverviewMetrics();
+      setMetrics(data);
+    } catch (err) {
+      console.warn('Error fetching overview metrics:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadMetrics();
+  }, [loadMetrics]);
+
+  const onRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    loadMetrics();
+  }, [loadMetrics]);
+
   const handleTabPress = useCallback(
     (tab: TabRoute) => {
       if (tab === 'Home') navigation.navigate('Home');
@@ -65,10 +81,21 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
-        notificationCount={5}
+        notificationCount={unreadNotifs}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
+      >
         <View style={styles.titleSection}>
           <Text style={styles.title}>Admin Overview</Text>
           <Text style={styles.subtitle}>
@@ -76,64 +103,71 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           </Text>
         </View>
 
-        {/* Stats Bento Grid */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <View style={styles.statHeader}>
-              <View style={styles.iconCircle}>
-                <MaterialIcons name="currency-rupee" size={20} color={Colors.primary} />
-              </View>
-
-              <View style={styles.trendBadge}>
-                <Text style={styles.trendText}>+12.5%</Text>
-              </View>
-            </View>
-            <Text style={styles.statLabel}>TOTAL REVENUE</Text>
-            <Text style={styles.statValue}>{formatCurrency(metrics.totalRevenue)}</Text>
+        {isLoading && !isRefreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Fetching live metrics from MongoDB Atlas...</Text>
           </View>
+        ) : (
+          /* Stats Bento Grid */
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <View style={styles.statHeader}>
+                <View style={styles.iconCircle}>
+                  <MaterialIcons name="currency-rupee" size={20} color={Colors.primary} />
+                </View>
 
-          <View style={styles.statCard}>
-            <View style={styles.statHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: Colors.secondaryContainer }]}>
-                <MaterialIcons name="shopping-bag" size={20} color={Colors.onSecondaryContainer} />
+                <View style={styles.trendBadge}>
+                  <Text style={styles.trendText}>{metrics.revenueGrowth || '+0.0%'}</Text>
+                </View>
               </View>
-
-              <View style={styles.trendBadge}>
-                <Text style={styles.trendText}>+4.2%</Text>
-              </View>
+              <Text style={styles.statLabel}>TOTAL REVENUE</Text>
+              <Text style={styles.statValue}>{formatCurrency(metrics.totalRevenue)}</Text>
             </View>
-            <Text style={styles.statLabel}>NEW ORDERS</Text>
-            <Text style={styles.statValue}>{metrics.newOrders}</Text>
-          </View>
 
-          <View style={styles.statCard}>
-            <View style={styles.statHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: Colors.primaryFixed }]}>
-                <MaterialIcons name="inventory-2" size={20} color={Colors.primary} />
-              </View>
+            <View style={styles.statCard}>
+              <View style={styles.statHeader}>
+                <View style={[styles.iconCircle, { backgroundColor: Colors.secondaryContainer }]}>
+                  <MaterialIcons name="shopping-bag" size={20} color={Colors.onSecondaryContainer} />
+                </View>
 
-              <View style={[styles.trendBadge, { backgroundColor: Colors.surfaceContainerHigh }]}>
-                <Text style={[styles.trendText, { color: Colors.tertiary }]}>In Stock</Text>
+                <View style={styles.trendBadge}>
+                  <Text style={styles.trendText}>{metrics.ordersGrowth || '+0.0%'}</Text>
+                </View>
               </View>
+              <Text style={styles.statLabel}>TOTAL ORDERS</Text>
+              <Text style={styles.statValue}>{metrics.newOrders}</Text>
             </View>
-            <Text style={styles.statLabel}>PRODUCTS IN STOCK</Text>
-            <Text style={styles.statValue}>{metrics.productsInStock} Items</Text>
-          </View>
 
-          <View style={styles.statCard}>
-            <View style={styles.statHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: Colors.surfaceContainerHigh }]}>
-                <MaterialIcons name="people" size={20} color={Colors.onSurface} />
-              </View>
+            <View style={styles.statCard}>
+              <View style={styles.statHeader}>
+                <View style={[styles.iconCircle, { backgroundColor: Colors.primaryFixed }]}>
+                  <MaterialIcons name="inventory-2" size={20} color={Colors.primary} />
+                </View>
 
-              <View style={styles.trendBadge}>
-                <Text style={styles.trendText}>+18.4%</Text>
+                <View style={[styles.trendBadge, { backgroundColor: Colors.surfaceContainerHigh }]}>
+                  <Text style={[styles.trendText, { color: Colors.tertiary }]}>Catalog</Text>
+                </View>
               </View>
+              <Text style={styles.statLabel}>PRODUCTS IN STOCK</Text>
+              <Text style={styles.statValue}>{metrics.productsInStock} Items</Text>
             </View>
-            <Text style={styles.statLabel}>TOTAL USERS</Text>
-            <Text style={styles.statValue}>{metrics.totalUsers}</Text>
+
+            <View style={styles.statCard}>
+              <View style={styles.statHeader}>
+                <View style={[styles.iconCircle, { backgroundColor: Colors.surfaceContainerHigh }]}>
+                  <MaterialIcons name="people" size={20} color={Colors.onSurface} />
+                </View>
+
+                <View style={styles.trendBadge}>
+                  <Text style={styles.trendText}>{metrics.usersGrowth || '+0.0%'}</Text>
+                </View>
+              </View>
+              <Text style={styles.statLabel}>TOTAL USERS</Text>
+              <Text style={styles.statValue}>{metrics.totalUsers}</Text>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Quick Admin Actions */}
         <View style={styles.sectionContainer}>
@@ -467,6 +501,17 @@ const styles = StyleSheet.create({
     ...Typography.bodyMd,
     fontSize: 13,
     color: Colors.tertiary,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  loadingText: {
+    ...Typography.bodyMd,
+    fontSize: 13,
+    color: Colors.onSurfaceVariant,
   },
 });
 

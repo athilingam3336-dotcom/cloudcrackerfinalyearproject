@@ -25,6 +25,9 @@ export interface AdminMetrics {
   newOrders: number;
   productsInStock: number;
   totalUsers: number;
+  revenueGrowth?: string;
+  ordersGrowth?: string;
+  usersGrowth?: string;
   recentOrders?: DashboardRecentOrder[];
 }
 
@@ -379,45 +382,71 @@ export class AdminService {
   async getOverviewMetrics(): Promise<AdminMetrics> {
     if (ENV.ENABLE_MOCK_API) {
       return {
-        totalRevenue: 128430.0,
-        newOrders: 1240,
-        productsInStock: 84,
-        totalUsers: 3890,
+        totalRevenue: 0.0,
+        newOrders: 0,
+        productsInStock: 0,
+        totalUsers: 0,
+        revenueGrowth: '+0.0%',
+        ordersGrowth: '+0.0%',
+        usersGrowth: '+0.0%',
         recentOrders: [],
       };
     }
-    const { data: response } = await apiClient.get('/admin/dashboard');
-    const payload = response?.data || response;
-    const counters = payload?.counters || {};
-    const revenue = payload?.revenue || {};
-    const recentOrdersRaw = payload?.recent_orders || [];
+    try {
+      const { data: response } = await apiClient.get('/admin/dashboard');
+      const payload = response?.data || response;
+      const counters = payload?.counters || {};
+      const revenue = payload?.revenue || {};
+      const growth = payload?.growth || {};
+      const recentOrdersRaw = payload?.recent_orders || [];
 
-    const recentOrders: DashboardRecentOrder[] = recentOrdersRaw.map((o: any) => {
-      const firstItem = o.items && o.items.length > 0 ? o.items[0] : null;
-      const itemName =
-        firstItem?.product?.name ||
-        (o.items && o.items.length > 1 ? `${o.items.length} items` : 'Pyrotechnic Item');
+      const recentOrders: DashboardRecentOrder[] = recentOrdersRaw.map((o: any) => {
+        const firstItem = o.items && o.items.length > 0 ? o.items[0] : null;
+        const itemName =
+          firstItem?.product?.name ||
+          firstItem?.product_name ||
+          (o.items && o.items.length > 1 ? `${o.items.length} items` : 'Pyrotechnic Item');
+
+        const customerName =
+          o.customer_name ||
+          (o.shipping_address ? o.shipping_address.split(',')[0].split('(')[0].trim() : 'Customer');
+
+        return {
+          id: o.id || o._id || `ord_${Date.now()}`,
+          orderNumber: o.order_number || o.orderNumber || '#ORD-0000',
+          customerName,
+          customerEmail: o.customer_email || o.user_id || 'customer@example.com',
+          itemName,
+          amount: typeof o.total === 'number' ? o.total : (o.totalAmount || 0),
+          status: (o.order_status || o.orderStatus || 'Pending').toUpperCase(),
+          paymentStatus: o.payment_status || o.paymentStatus || 'Pending',
+          createdAt: o.created_at || new Date().toISOString(),
+        };
+      });
 
       return {
-        id: o.id || o._id || `ord_${Date.now()}`,
-        orderNumber: o.order_number || o.orderNumber || '#ORD-0000',
-        customerName: o.customer_name || 'Customer',
-        customerEmail: o.customer_email || o.user_id || 'customer@example.com',
-        itemName,
-        amount: typeof o.total === 'number' ? o.total : (o.totalAmount || 0),
-        status: (o.order_status || o.orderStatus || 'Pending').toUpperCase(),
-        paymentStatus: o.payment_status || o.paymentStatus || 'Pending',
-        createdAt: o.created_at || new Date().toISOString(),
+        totalRevenue: typeof revenue.total_revenue === 'number' ? revenue.total_revenue : 0,
+        newOrders: typeof counters.total_orders === 'number' ? counters.total_orders : (revenue.today_orders || counters.pending_orders || 0),
+        productsInStock: typeof counters.total_products === 'number' ? counters.total_products : 0,
+        totalUsers: typeof counters.total_users === 'number' ? counters.total_users : 0,
+        revenueGrowth: growth.revenue_growth || '+0.0%',
+        ordersGrowth: growth.orders_growth || '+0.0%',
+        usersGrowth: growth.users_growth || '+0.0%',
+        recentOrders,
       };
-    });
-
-    return {
-      totalRevenue: revenue.total_revenue || 0,
-      newOrders: revenue.today_orders || counters.pending_orders || counters.total_orders || 0,
-      productsInStock: counters.total_products || 0,
-      totalUsers: counters.total_users || 0,
-      recentOrders,
-    };
+    } catch (err) {
+      console.warn('Failed to load admin overview metrics from Atlas:', err);
+      return {
+        totalRevenue: 0.0,
+        newOrders: 0,
+        productsInStock: 0,
+        totalUsers: 0,
+        revenueGrowth: '+0.0%',
+        ordersGrowth: '+0.0%',
+        usersGrowth: '+0.0%',
+        recentOrders: [],
+      };
+    }
   }
 
   async getAdminProducts(

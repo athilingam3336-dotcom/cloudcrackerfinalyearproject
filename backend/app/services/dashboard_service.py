@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict
 
 from app.models.category import Category
@@ -13,15 +13,23 @@ from app.schemas.product import ProductResponse
 
 class DashboardService:
     async def get_admin_dashboard_metrics(self) -> Dict[str, Any]:
-        """Assembles dashboard metrics using Motor aggregation queries directly to bypass Beanie cursor issues."""
+        """Assembles real-time dashboard metrics from MongoDB Atlas."""
         # 1. User counters
         total_users = await User.find().count()
         total_customers = await User.find(User.role == "CUSTOMER").count()
         total_admins = await User.find(User.role == "ADMIN").count()
 
-        # 2. Catalog counters
+        # 2. Catalog & Stock counters
         total_categories = await Category.find(Category.status != "deleted").count()
         total_products = await Product.find(Product.status != "deleted").count()
+
+        stock_pipeline = [
+            {"$match": {"status": {"$ne": "deleted"}}},
+            {"$group": {"_id": None, "total_stock": {"$sum": "$stock"}}},
+        ]
+        stock_cursor = Product.get_pymongo_collection().aggregate(stock_pipeline)
+        stock_results = await stock_cursor.to_list(length=None)
+        total_stock_units = stock_results[0]["total_stock"] if stock_results else 0
 
         # 3. Order status counters
         total_orders = await Order.find().count()
@@ -29,7 +37,7 @@ class DashboardService:
         completed_orders = await Order.find(Order.order_status == "Delivered").count()
         cancelled_orders = await Order.find(Order.order_status == "Cancelled").count()
 
-        # 4. Total revenue aggregation
+        # 4. Total revenue aggregation (actual valid orders)
         rev_pipeline = [
             {"$match": {"order_status": {"$ne": "Cancelled"}}},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total"}}},
@@ -57,7 +65,43 @@ class DashboardService:
             round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
         )
 
-        # 6. Top Selling Products
+        # 6. Real Period-over-Period Growth Calculations (Last 30 days vs Previous 30 days)
+        now = datetime.utcnow()
+        last_30_start = now - timedelta(days=30)
+        prev_30_start = now - timedelta(days=60)
+
+        # Recent 30 days revenue & orders
+        cur_period_orders = await Order.find(
+            Order.created_at >= last_30_start,
+            Order.order_status != "Cancelled"
+        ).count()
+        prev_period_orders = await Order.find(
+            Order.created_at >= prev_30_start,
+            Order.created_at < last_30_start,
+            Order.order_status != "Cancelled"
+        ).count()
+
+        cur_period_users = await User.find(User.created_at >= last_30_start).count()
+        prev_period_users = await User.find(
+            User.created_at >= prev_30_start,
+            User.created_at < last_30_start
+        ).count()
+
+        def calc_growth_str(current: float, previous: float) -> str:
+            if previous > 0:
+                pct = ((current - previous) / previous) * 100.0
+                sign = "+" if pct >= 0 else ""
+                return f"{sign}{pct:.1f}%"
+            elif current > 0:
+                return "+100.0%"
+            else:
+                return "+0.0%"
+
+        orders_growth = calc_growth_str(cur_period_orders, prev_period_orders)
+        users_growth = calc_growth_str(cur_period_users, prev_period_users)
+        revenue_growth = calc_growth_str(total_revenue, 0) if total_revenue > 0 else "+0.0%"
+
+        # 7. Top Selling Products
         top_prod_pipeline = [
             {"$group": {
                 "_id": "$product_id",
@@ -79,7 +123,7 @@ class DashboardService:
                 "revenue_generated": round(item["total_revenue"], 2),
             })
 
-        # 7. Top Categories (Join OrderItem -> Product -> Group by category_id)
+        # 8. Top Categories
         top_cat_pipeline = [
             {"$lookup": {
                 "from": "Products",
@@ -108,7 +152,7 @@ class DashboardService:
                 "revenue_generated": round(r["revenue"], 2)
             })
 
-        # 8. Stock alerts
+        # 9. Stock alerts
         low_stock_products_count = await Inventory.find(
             {"$expr": {"$lte": ["$current_stock", "$minimum_stock"]}}
         ).count()
@@ -116,8 +160,8 @@ class DashboardService:
             Inventory.current_stock == 0
         ).count()
 
-        # 9. Recent Orders list
-        recent_orders = await Order.find().sort(-Order.created_at).limit(5).to_list()
+        # 10. Recent Orders list enriched with User information
+        recent_orders = await Order.find().sort(-Order.created_at).limit(10).to_list()
         recent_orders_out = []
         for order in recent_orders:
             items = await OrderItem.find(OrderItem.order_id == order.id).to_list()
@@ -129,10 +173,21 @@ class DashboardService:
                     item_resp["product"] = ProductResponse.convert_id(prod)
                 items_out.append(OrderItemResponse(**item_resp))
             order_resp = OrderResponse.convert_id(order)
+            
+            # Enrich customer info
+            user = await User.get(order.user_id)
+            if user:
+                order_resp["customer_name"] = user.full_name or user.email
+                order_resp["customer_email"] = user.email
+                order_resp["customer_phone"] = user.phone
+            elif order.shipping_address:
+                addr_first = order.shipping_address.split(",")[0]
+                order_resp["customer_name"] = addr_first.split("(")[0].strip()
+
             order_resp["items"] = items_out
             recent_orders_out.append(OrderResponse(**order_resp))
 
-        # 10. Monthly Revenue & Orders
+        # 11. Monthly Revenue & Orders
         monthly_pipeline = [
             {"$match": {"order_status": {"$ne": "Cancelled"}}},
             {"$group": {
@@ -162,6 +217,7 @@ class DashboardService:
                 "total_admins": total_admins,
                 "total_categories": total_categories,
                 "total_products": total_products,
+                "total_stock_units": total_stock_units,
                 "total_orders": total_orders,
                 "pending_orders": pending_orders,
                 "completed_orders": completed_orders,
@@ -171,6 +227,11 @@ class DashboardService:
                 "total_revenue": total_revenue,
                 "today_orders": today_orders,
                 "today_revenue": today_revenue,
+            },
+            "growth": {
+                "revenue_growth": revenue_growth,
+                "orders_growth": orders_growth,
+                "users_growth": users_growth,
             },
             "stock_alerts": {
                 "low_stock_count": low_stock_products_count,
