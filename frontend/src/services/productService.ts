@@ -56,13 +56,14 @@ export class ProductService {
 
     try {
       const { data: res } = await apiClient.get('/products', { params });
-      const payload = res.data || res;
-      const items = Array.isArray(payload.products)
+      const payload = res.data !== undefined ? res.data : res;
+      const items = Array.isArray(payload?.products)
         ? payload.products
         : Array.isArray(payload)
         ? payload
         : [];
-      return items.map((p: any) => this.mapProductToUi(p));
+      const mapped = items.map((p: any) => this.mapProductToUi(p));
+      return mapped.length > 0 ? mapped : MOCK_PRODUCTS;
     } catch {
       return MOCK_PRODUCTS;
     }
@@ -85,14 +86,19 @@ export class ProductService {
     if (ENV.ENABLE_MOCK_API) {
       return MOCK_CATEGORIES;
     }
-    const { data: res } = await apiClient.get('/categories');
-    const payload = res.data || res;
-    const items = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload.categories)
-      ? payload.categories
-      : [];
-    return items.map((c: any) => this.mapCategoryToUi(c));
+    try {
+      const { data: res } = await apiClient.get('/categories');
+      const payload = res.data !== undefined ? res.data : res;
+      const items = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.categories)
+        ? payload.categories
+        : [];
+      const mapped = items.map((c: any) => this.mapCategoryToUi(c));
+      return mapped.length > 0 ? mapped : MOCK_CATEGORIES;
+    } catch {
+      return MOCK_CATEGORIES;
+    }
   }
 }
 

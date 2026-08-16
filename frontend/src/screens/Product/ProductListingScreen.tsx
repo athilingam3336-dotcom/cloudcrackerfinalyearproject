@@ -23,7 +23,7 @@ import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
 import { useWishlistStore, useCartStore, useNotificationStore } from '@/store';
-import { ProductItem, MOCK_CATEGORIES } from '@/constants/mockData';
+import { ProductItem, CategoryItem, MOCK_CATEGORIES } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 
 type ProductListingScreenProps = NativeStackScreenProps<
@@ -53,6 +53,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   const [showSortDropdown, setShowSortDropdown] = useState(false);
 
   const [products, setProducts] = useState<ProductItem[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>(MOCK_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
 
   const { wishlistItems, toggleWishlist } = useWishlistStore();
@@ -62,9 +63,32 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const numColumns = useMemo(() => getNumColumns(screenWidth), [screenWidth]);
 
+  // Load categories from API / cache
   React.useEffect(() => {
     let isMounted = true;
-    productService.getProducts(categoryIdParam, searchQuery).then((data) => {
+    productService.getCategories().then((data) => {
+      if (isMounted && data.length > 0) {
+        setCategories(data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Fetch products
+  React.useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    // If search is a promotional banner tag (like 'Special Edition', 'Grand Finale', 'New Arrival'), pass empty search to API
+    const apiSearch =
+      searchQuery.toLowerCase() === 'special edition' ||
+      searchQuery.toLowerCase() === 'grand finale' ||
+      searchQuery.toLowerCase() === 'new arrival'
+        ? undefined
+        : searchQuery;
+
+    productService.getProducts(categoryIdParam, apiSearch).then((data) => {
       if (isMounted) {
         setProducts(data);
         setIsLoading(false);
@@ -76,24 +100,30 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   }, [categoryIdParam, searchQuery]);
 
   const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 8;
+
+  // Reset page on search or filter change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedFilterChip, sortBy, categoryIdParam]);
 
   // Current category metadata
   const currentCategory = useMemo(() => {
-    if (!categoryIdParam) {
+    if (!categoryIdParam || categoryIdParam === 'all') {
       return {
         name: 'Pro Showstoppers',
         description:
           'Experience professional-grade pyrotechnics with our curated selection of high-altitude display shells and synchronized multi-shot cakes.',
       };
     }
-    const cat = MOCK_CATEGORIES.find((c) => c.id === categoryIdParam);
+    const cat = categories.find((c) => c.id === categoryIdParam) || MOCK_CATEGORIES.find((c) => c.id === categoryIdParam);
     return {
       name: cat ? cat.name : 'Pyrotechnics Catalog',
       description: cat
         ? cat.description || 'Explore top-tier fireworks and spectacular celebration items.'
         : 'Explore top-tier fireworks and spectacular celebration items.',
     };
-  }, [categoryIdParam]);
+  }, [categoryIdParam, categories]);
 
   // Wishlist toggle handler
   const handleToggleWishlist = useCallback(
@@ -108,29 +138,64 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     let result = products.filter((product) => {
       // Search query match
       const q = searchQuery.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        (product.title || '').toLowerCase().includes(q) ||
-        (product.subtitle || '').toLowerCase().includes(q) ||
-        (product.category || '').toLowerCase().includes(q);
+      let matchesSearch = true;
+      if (
+        q &&
+        q !== 'special edition' &&
+        q !== 'grand finale' &&
+        q !== 'new arrival'
+      ) {
+        matchesSearch =
+          (product.title || '').toLowerCase().includes(q) ||
+          (product.subtitle || '').toLowerCase().includes(q) ||
+          (product.category || '').toLowerCase().includes(q);
+      }
 
       // Chip filter match
       let matchesChip = true;
       const titleLower = (product.title || '').toLowerCase();
       const subLower = (product.subtitle || '').toLowerCase();
+      const catLower = (product.category || '').toLowerCase();
 
       if (selectedFilterChip === 'ROCKETS') {
-        matchesChip = titleLower.includes('rocket') || subLower.includes('rocket') || subLower.includes('flare');
+        matchesChip =
+          titleLower.includes('rocket') ||
+          subLower.includes('rocket') ||
+          subLower.includes('flare') ||
+          catLower.includes('rocket');
       } else if (selectedFilterChip === 'SPARKLERS') {
-        matchesChip = titleLower.includes('sparkler') || subLower.includes('sparkler');
+        matchesChip =
+          titleLower.includes('sparkler') ||
+          subLower.includes('sparkler') ||
+          catLower.includes('sparkler');
       } else if (selectedFilterChip === 'POTS & FOUNTAINS') {
-        matchesChip = titleLower.includes('pot') || titleLower.includes('fountain') || subLower.includes('pot') || subLower.includes('fountain');
+        matchesChip =
+          titleLower.includes('pot') ||
+          titleLower.includes('fountain') ||
+          subLower.includes('pot') ||
+          subLower.includes('fountain') ||
+          catLower.includes('pot');
       } else if (selectedFilterChip === 'BOMBS') {
-        matchesChip = titleLower.includes('bomb') || subLower.includes('bomb') || subLower.includes('hydro');
+        matchesChip =
+          titleLower.includes('bomb') ||
+          subLower.includes('bomb') ||
+          subLower.includes('hydro') ||
+          titleLower.includes('sound') ||
+          catLower.includes('bomb') ||
+          catLower.includes('sound');
       } else if (selectedFilterChip === 'MULTI-SHOT') {
-        matchesChip = titleLower.includes('shot') || subLower.includes('shot') || titleLower.includes('cake') || titleLower.includes('barrage');
+        matchesChip =
+          titleLower.includes('shot') ||
+          subLower.includes('shot') ||
+          titleLower.includes('cake') ||
+          titleLower.includes('barrage') ||
+          catLower.includes('aerial') ||
+          catLower.includes('shot');
       } else if (selectedFilterChip === 'ON SALE') {
-        matchesChip = Boolean(product.originalPrice) || product.badge === 'Sale' || Boolean(product.originalPrice && product.originalPrice > product.price);
+        matchesChip =
+          Boolean(product.originalPrice && product.originalPrice > product.price) ||
+          (product.badge || '').toLowerCase().includes('sale') ||
+          (product.badge || '').toLowerCase().includes('off');
       }
 
       return matchesSearch && matchesChip;
@@ -157,11 +222,19 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
         return (b.reviewCount || 0) - (a.reviewCount || 0);
       }
       // Default: Best Selling / Popular
-      return (ratingB * (b.reviewCount || 1)) - (ratingA * (a.reviewCount || 1));
+      return ratingB * (b.reviewCount || 1) - ratingA * (a.reviewCount || 1);
     });
 
     return sorted;
   }, [products, searchQuery, selectedFilterChip, sortBy]);
+
+  // Paginated dataset
+  const totalPages = Math.max(1, Math.ceil(filteredAndSortedProducts.length / PAGE_SIZE));
+  const currentPageSafe = Math.min(currentPage, totalPages);
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPageSafe - 1) * PAGE_SIZE;
+    return filteredAndSortedProducts.slice(start, start + PAGE_SIZE);
+  }, [filteredAndSortedProducts, currentPageSafe, PAGE_SIZE]);
 
   // Navigation handlers
   const handleProductPress = useCallback(
@@ -218,7 +291,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
-          notificationCount={3}
+          notificationCount={unreadNotifs}
         />
 
         {/* Search Bar */}
@@ -250,7 +323,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           </View>
           <View style={styles.productCountBadge}>
             <Text style={styles.productCountText}>
-              {filteredAndSortedProducts.length} PRODUCTS
+              {filteredAndSortedProducts.length} {filteredAndSortedProducts.length === 1 ? 'PRODUCT' : 'PRODUCTS'}
             </Text>
           </View>
         </View>
@@ -324,31 +397,38 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     filteredAndSortedProducts.length,
     selectedFilterChip,
     sortBy,
+    unreadNotifs,
     navigation,
   ]);
 
   // List Footer Component (Pagination Controls)
   const renderFooter = useMemo(() => {
+    if (totalPages <= 1) {
+      return null;
+    }
+
+    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
     return (
       <View style={styles.paginationContainer}>
         <TouchableOpacity
-          style={[styles.pageButton, currentPage === 1 && styles.disabledPageButton]}
+          style={[styles.pageButton, currentPageSafe === 1 && styles.disabledPageButton]}
           onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
+          disabled={currentPageSafe === 1}
         >
           <MaterialIcons name="chevron-left" size={20} color={Colors.onSurface} />
         </TouchableOpacity>
 
-        {[1, 2, 3].map((page) => (
+        {pages.map((page) => (
           <TouchableOpacity
             key={page}
-            style={[styles.pageButton, currentPage === page && styles.activePageButton]}
+            style={[styles.pageButton, currentPageSafe === page && styles.activePageButton]}
             onPress={() => setCurrentPage(page)}
           >
             <Text
               style={[
                 styles.pageText,
-                currentPage === page && styles.activePageText,
+                currentPageSafe === page && styles.activePageText,
               ]}
             >
               {page}
@@ -356,49 +436,72 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           </TouchableOpacity>
         ))}
 
-        <Text style={styles.pageEllipsis}>...</Text>
-
         <TouchableOpacity
-          style={[styles.pageButton, currentPage === 8 && styles.activePageButton]}
-          onPress={() => setCurrentPage(8)}
-        >
-          <Text
-            style={[
-              styles.pageText,
-              currentPage === 8 && styles.activePageText,
-            ]}
-          >
-            8
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.pageButton}
-          onPress={() => setCurrentPage((p) => p + 1)}
+          style={[styles.pageButton, currentPageSafe === totalPages && styles.disabledPageButton]}
+          onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          disabled={currentPageSafe === totalPages}
         >
           <MaterialIcons name="chevron-right" size={20} color={Colors.onSurface} />
         </TouchableOpacity>
       </View>
     );
-  }, [currentPage]);
+  }, [currentPageSafe, totalPages]);
+
+  const renderEmptyState = useMemo(() => {
+    if (isLoading) return null;
+    return (
+      <View style={{ alignItems: 'center', padding: 40 }}>
+        <MaterialIcons name="search-off" size={48} color={Colors.tertiary} />
+        <Text style={{ ...Typography.titleLg, color: Colors.onSurface, marginTop: 12 }}>
+          No Pyrotechnics Found
+        </Text>
+        <Text style={{ ...Typography.bodyMd, color: Colors.onSurfaceVariant, textAlign: 'center', marginTop: 4 }}>
+          Try clearing your search query or selecting a different filter category.
+        </Text>
+        <TouchableOpacity
+          style={{
+            marginTop: 16,
+            backgroundColor: Colors.primary,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: BorderRadius.full,
+          }}
+          onPress={() => {
+            setSearchQuery('');
+            setSelectedFilterChip('ALL');
+          }}
+        >
+          <Text style={{ ...Typography.labelLg, color: '#ffffff' }}>Clear Filters</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }, [isLoading]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <FlatList
-        data={filteredAndSortedProducts}
-        key={numColumns}
-        numColumns={numColumns}
-        keyExtractor={(item) => item.id}
-        renderItem={renderProductItem}
-        ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={6}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-      />
+      {isLoading ? (
+        <View style={{ flex: 1 }}>
+          {renderHeader}
+          <LoadingSpinner message="Loading pyrotechnics collection..." />
+        </View>
+      ) : (
+        <FlatList
+          data={paginatedProducts}
+          key={numColumns}
+          numColumns={numColumns}
+          keyExtractor={(item) => item.id}
+          renderItem={renderProductItem}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
+          ListEmptyComponent={renderEmptyState}
+          columnWrapperStyle={paginatedProducts.length > 0 ? styles.gridRow : undefined}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={6}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+        />
+      )}
 
       {/* Reusable Bottom Navigation */}
       <BottomNavBar activeTab="Categories" onTabPress={handleTabPress} />

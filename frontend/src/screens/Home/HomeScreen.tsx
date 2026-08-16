@@ -109,7 +109,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleBannerPress = useCallback(
     (banner: BannerItem) => {
-      navigation.navigate('ProductListing', { query: banner.tag });
+      if (banner.id === 'banner1') {
+        navigation.navigate('ProductListing', { categoryId: '660000000000000000000007', query: 'Shot' });
+      } else if (banner.id === 'banner2') {
+        navigation.navigate('ProductListing', { categoryId: '660000000000000000000004', query: 'Rocket' });
+      } else if (banner.id === 'banner3') {
+        navigation.navigate('ProductListing', { categoryId: '660000000000000000000001', query: 'Sparkler' });
+      } else {
+        navigation.navigate('ProductListing', { query: banner.tag });
+      }
     },
     [navigation]
   );

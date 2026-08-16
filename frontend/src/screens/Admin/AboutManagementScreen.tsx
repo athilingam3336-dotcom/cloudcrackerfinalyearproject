@@ -117,8 +117,7 @@ export const AboutManagementScreen: React.FC<AboutManagementScreenProps> = ({
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <LoadingSpinner size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Fetching About content...</Text>
+        <LoadingSpinner message="Fetching About content..." />
       </SafeAreaView>
     );
   }
@@ -262,7 +261,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.marginMobile,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing.xl,
   },
   card: {
     backgroundColor: Colors.surfaceContainerLowest,
@@ -273,7 +272,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   cardTitle: {
-    ...Typography.titleMd,
+    ...Typography.titleLg,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
     marginBottom: Spacing.md,
@@ -290,7 +289,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   sectionTitle: {
-    ...Typography.titleMd,
+    ...Typography.titleLg,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },

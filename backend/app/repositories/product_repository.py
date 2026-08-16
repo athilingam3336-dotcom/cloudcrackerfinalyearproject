@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from beanie import PydanticObjectId
-from beanie.operators import RegEx
+from beanie.operators import Or, RegEx
 
 from app.models.product import Product
 
@@ -61,9 +61,14 @@ class ProductRepository:
         # 1. Base criteria: omit soft deleted items
         criteria = [Product.status != "deleted", Product.is_active == True]
 
-        # 2. String search (case-insensitive name regex match)
+        # 2. String search (case-insensitive name or description regex match)
         if search:
-            criteria.append(RegEx(Product.name, search, "i"))
+            criteria.append(
+                Or(
+                    RegEx(Product.name, search, "i"),
+                    RegEx(Product.description, search, "i"),
+                )
+            )
 
         # 3. Category match
         if category_id:

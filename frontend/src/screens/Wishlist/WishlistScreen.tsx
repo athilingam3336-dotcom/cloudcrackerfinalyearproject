@@ -47,18 +47,15 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({ navigation }) =>
   const handleAddToCart = useCallback(
     (product: ProductItem) => {
       addToCart(product, 1);
-      Alert.alert('Added to Cart', `"${product.title}" has been added to your shopping cart.`);
+      navigation.navigate('Cart');
     },
-    [addToCart]
+    [addToCart, navigation]
   );
 
   const handleAddAllToCart = useCallback(() => {
     wishlistItems.forEach((item) => addToCart(item, 1));
-    Alert.alert(
-      'Success!',
-      `All ${wishlistItems.length} items from your wishlist have been added to your cart.`
-    );
-  }, [wishlistItems, addToCart]);
+    navigation.navigate('Cart');
+  }, [wishlistItems, addToCart, navigation]);
 
   const handleTabPress = useCallback(
     (tab: TabRoute) => {
