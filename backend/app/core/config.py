@@ -77,6 +77,7 @@ class Settings(BaseSettings):
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [
         "https://cloudcrackerfinalyearproject.onrender.com",
+        "https://cloudcrackerfinalyearproject-1.onrender.com",
         "http://localhost:3000",
         "http://localhost:8081",
         "http://localhost:19006",

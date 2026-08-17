@@ -6,7 +6,7 @@
 export const ENV = {
   API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'https://cloudcrackerfinalyearproject.onrender.com/api/v1',
 
-  TIMEOUT: 15000, // 15 seconds
+  TIMEOUT: 60000, // 60 seconds (accommodates Render free tier cold starts)
   ENABLE_MOCK_API: process.env.EXPO_PUBLIC_ENABLE_MOCK === 'true' ? true : false,
   GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '',
   APP_VERSION: '2.4.0',

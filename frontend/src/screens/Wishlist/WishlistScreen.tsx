@@ -45,16 +45,26 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({ navigation }) =>
   const numColumns = useMemo(() => getNumColumns(screenWidth), [screenWidth]);
 
   const handleAddToCart = useCallback(
-    (product: ProductItem) => {
-      addToCart(product, 1);
-      navigation.navigate('Cart');
+    async (product: ProductItem) => {
+      try {
+        await addToCart(product, 1);
+        navigation.navigate('Cart');
+      } catch (err: any) {
+        Alert.alert('Cart Error', err?.message || 'Failed to add item to cart.');
+      }
     },
     [addToCart, navigation]
   );
 
-  const handleAddAllToCart = useCallback(() => {
-    wishlistItems.forEach((item) => addToCart(item, 1));
-    navigation.navigate('Cart');
+  const handleAddAllToCart = useCallback(async () => {
+    try {
+      for (const item of wishlistItems) {
+        await addToCart(item, 1);
+      }
+      navigation.navigate('Cart');
+    } catch (err: any) {
+      Alert.alert('Cart Error', err?.message || 'Failed to add items to cart.');
+    }
   }, [wishlistItems, addToCart, navigation]);
 
   const handleTabPress = useCallback(

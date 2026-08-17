@@ -8,15 +8,15 @@ export interface WishlistState {
 
   // Actions
   fetchWishlist: () => Promise<void>;
-  toggleWishlist: (product: ProductItem) => void;
-  removeFromWishlist: (productId: string) => void;
+  toggleWishlist: (product: ProductItem) => Promise<boolean>;
+  addToWishlist: (product: ProductItem) => Promise<boolean>;
+  removeFromWishlist: (productId: string) => Promise<boolean>;
   isInWishlist: (productId: string) => boolean;
-  clearWishlist: () => void;
+  clearWishlist: () => Promise<void>;
   resetWishlistStore: () => void;
 }
 
 export const useWishlistStore = create<WishlistState>((set, get) => ({
-  // Initialize with empty array so ONLY user-liked items appear
   wishlistItems: [],
   isLoading: false,
 
@@ -26,39 +26,73 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
       const items = await wishlistService.getWishlist();
       set({ wishlistItems: items || [], isLoading: false });
     } catch {
-      set({ isLoading: false });
+      set({ wishlistItems: [], isLoading: false });
     }
   },
 
-  toggleWishlist: (product) => {
+  toggleWishlist: async (product) => {
+    if (!product?.id) {
+      throw new Error('Invalid product ID.');
+    }
     const exists = get().wishlistItems.some((item) => item.id === product.id);
-    if (exists) {
-      set((state) => ({
-        wishlistItems: state.wishlistItems.filter((item) => item.id !== product.id),
-      }));
-      wishlistService.removeFromWishlist(product.id);
-    } else {
-      set((state) => ({
-        wishlistItems: [...state.wishlistItems, product],
-      }));
-      wishlistService.addToWishlist(product.id);
+    set({ isLoading: true });
+    try {
+      if (exists) {
+        await wishlistService.removeFromWishlist(product.id);
+      } else {
+        await wishlistService.addToWishlist(product.id);
+      }
+      const updated = await wishlistService.getWishlist();
+      set({ wishlistItems: updated || [], isLoading: false });
+      return !exists;
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
     }
   },
 
-  removeFromWishlist: (productId) => {
-    set((state) => ({
-      wishlistItems: state.wishlistItems.filter((item) => item.id !== productId),
-    }));
-    wishlistService.removeFromWishlist(productId);
+  addToWishlist: async (product) => {
+    if (!product?.id) {
+      throw new Error('Invalid product ID.');
+    }
+    set({ isLoading: true });
+    try {
+      await wishlistService.addToWishlist(product.id);
+      const updated = await wishlistService.getWishlist();
+      set({ wishlistItems: updated || [], isLoading: false });
+      return true;
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  removeFromWishlist: async (productId) => {
+    set({ isLoading: true });
+    try {
+      await wishlistService.removeFromWishlist(productId);
+      const updated = await wishlistService.getWishlist();
+      set({ wishlistItems: updated || [], isLoading: false });
+      return true;
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
   },
 
   isInWishlist: (productId) => {
     return get().wishlistItems.some((item) => item.id === productId);
   },
 
-  clearWishlist: () => {
-    set({ wishlistItems: [] });
-    wishlistService.clearWishlist();
+  clearWishlist: async () => {
+    set({ isLoading: true });
+    try {
+      await wishlistService.clearWishlist();
+      set({ wishlistItems: [], isLoading: false });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
   },
 
   resetWishlistStore: () => {

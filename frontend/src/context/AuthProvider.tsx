@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     checkTokenOnLaunch();
-  }, [user, updateProfile]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated, isLoading }}>

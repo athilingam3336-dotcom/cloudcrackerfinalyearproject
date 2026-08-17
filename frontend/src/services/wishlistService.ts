@@ -30,58 +30,38 @@ export class WishlistService {
     if (ENV.ENABLE_MOCK_API) {
       return [];
     }
-    try {
-      const { data: res } = await apiClient.get('/wishlist');
-      const payload = res.data !== undefined ? res.data : res;
-      if (Array.isArray(payload)) {
-        return payload.map((item: any) => this.mapWishlistItemToProduct(item));
-      }
-      return [];
-    } catch (err) {
-      console.warn('Backend wishlist fetch note:', err);
-      return [];
+    const { data: res } = await apiClient.get('/wishlist');
+    const payload = res.data !== undefined ? res.data : res;
+    if (Array.isArray(payload)) {
+      return payload.map((item: any) => this.mapWishlistItemToProduct(item));
     }
+    return [];
   }
 
   async addToWishlist(productId: string): Promise<boolean> {
     if (ENV.ENABLE_MOCK_API) {
       return true;
     }
-    try {
-      await apiClient.post('/wishlist/add', {
-        product_id: productId,
-      });
-      return true;
-    } catch (err) {
-      console.warn('Backend wishlist add note:', err);
-      return false;
-    }
+    await apiClient.post('/wishlist/add', {
+      product_id: productId,
+    });
+    return true;
   }
 
   async removeFromWishlist(productId: string): Promise<boolean> {
     if (ENV.ENABLE_MOCK_API) {
       return true;
     }
-    try {
-      await apiClient.delete(`/wishlist/${productId}`);
-      return true;
-    } catch (err) {
-      console.warn('Backend wishlist remove note:', err);
-      return false;
-    }
+    await apiClient.delete(`/wishlist/${productId}`);
+    return true;
   }
 
   async clearWishlist(): Promise<boolean> {
     if (ENV.ENABLE_MOCK_API) {
       return true;
     }
-    try {
-      await apiClient.post('/wishlist/clear');
-      return true;
-    } catch (err) {
-      console.warn('Backend wishlist clear note:', err);
-      return false;
-    }
+    await apiClient.post('/wishlist/clear');
+    return true;
   }
 }
 

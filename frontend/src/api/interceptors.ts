@@ -154,11 +154,16 @@ export const setupInterceptors = (axiosInstance: AxiosInstance): void => {
         (typeof serverData === 'string' ? serverData : null) ||
         error.message ||
         'An unexpected API error occurred.';
-
       let finalMessage = typeof customMessage === 'string' ? customMessage : JSON.stringify(customMessage);
-      
-      // If it's a Network Error, append the URL so we can debug APK routing
-      if (finalMessage.includes('Network Error') || !status) {
+
+      const isTimeout =
+        error.code === 'ECONNABORTED' ||
+        (typeof error.message === 'string' && error.message.toLowerCase().includes('timeout'));
+
+      // If it's a timeout or network error, format the message clearly
+      if (isTimeout) {
+        finalMessage = 'Connection timed out. The server was sleeping and is waking up. Please try again now.';
+      } else if (finalMessage.includes('Network Error') || !status) {
         finalMessage = `Network Error (Attempted: ${originalRequest?.baseURL}${originalRequest?.url})`;
       }
 

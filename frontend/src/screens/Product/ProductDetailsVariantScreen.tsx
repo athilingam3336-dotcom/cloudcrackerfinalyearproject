@@ -21,7 +21,7 @@ import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
 import { ProductItem } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
-import { useWishlistStore, useCartStore, useNotificationStore } from '@/store';
+import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } from '@/store';
 import { formatCurrency } from '@/utils/currency';
 
 import { LOCAL_PRODUCT_IMAGES, resolveProductImage } from '@/constants/productImages';
@@ -137,23 +137,55 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
     [wishlistItems, product]
   );
 
-  const handleAddToCart = useCallback(() => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  const handleAddToCart = useCallback(async () => {
     if (!product) return;
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'Please log in to add items to your cart.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+      ]);
+      return;
+    }
     if (selectedEffect.stock <= 0) {
       Alert.alert('Out of Stock', `The selected variant "${selectedEffect.name}" is currently out of stock.`);
       return;
     }
-    addToCart(product, quantity, {
-      size: selectedSize.name,
-      color: selectedEffect.name,
-      priceModifier: selectedSize.priceModifier,
-      imageUrl: selectedEffect.imageUrl,
-    });
-    Alert.alert(
-      'Added to Cart',
-      `${quantity}x ${product.title} (${selectedSize.name}, ${selectedEffect.name}) added to your cart.`
-    );
-  }, [product, quantity, selectedSize, selectedEffect, addToCart]);
+    try {
+      await addToCart(product, quantity, {
+        size: selectedSize.name,
+        color: selectedEffect.name,
+        priceModifier: selectedSize.priceModifier,
+        imageUrl: selectedEffect.imageUrl,
+      });
+      Alert.alert(
+        'Added to Cart',
+        `${quantity}x ${product.title} (${selectedSize.name}, ${selectedEffect.name}) added to your cart.`
+      );
+    } catch (err: any) {
+      Alert.alert('Cart Error', err?.message || 'Failed to add item to cart.');
+    }
+  }, [isAuthenticated, product, quantity, selectedSize, selectedEffect, addToCart, navigation]);
+
+  const handleToggleWishlist = useCallback(async () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'Please log in to manage your wishlist.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+      ]);
+      return;
+    }
+    try {
+      const isAdded = await toggleWishlist(product);
+      if (isAdded) {
+        Alert.alert('Wishlist Updated', `"${product.title}" added to your wishlist.`);
+      }
+    } catch (err: any) {
+      Alert.alert('Wishlist Error', err?.message || 'Failed to update wishlist.');
+    }
+  }, [isAuthenticated, product, toggleWishlist, navigation]);
 
   const handleTabPress = useCallback(
     (tab: TabRoute) => {
@@ -200,7 +232,7 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
           />
           <TouchableOpacity
             style={styles.wishlistBtn}
-            onPress={() => toggleWishlist(product)}
+            onPress={handleToggleWishlist}
             activeOpacity={0.8}
           >
             <MaterialIcons

@@ -129,7 +129,13 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                   <View style={styles.itemActions}>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => removeFromCart(product.id)}
+                      onPress={async () => {
+                        try {
+                          await removeFromCart(product.id);
+                        } catch (err: any) {
+                          Alert.alert('Cart Error', err?.message || 'Failed to remove item.');
+                        }
+                      }}
                       activeOpacity={0.7}
                     >
                       <MaterialIcons name="delete-outline" size={20} color={Colors.error} />
@@ -138,7 +144,13 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                     <View style={styles.quantityControl}>
                       <TouchableOpacity
                         style={styles.qtyBtn}
-                        onPress={() => updateQuantity(product.id, -1)}
+                        onPress={async () => {
+                          try {
+                            await updateQuantity(product.id, -1);
+                          } catch (err: any) {
+                            Alert.alert('Cart Error', err?.message || 'Failed to update quantity.');
+                          }
+                        }}
                         activeOpacity={0.7}
                       >
                         <MaterialIcons name="remove" size={16} color={Colors.onSurface} />
@@ -146,7 +158,13 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                       <Text style={styles.qtyText}>{quantity}</Text>
                       <TouchableOpacity
                         style={styles.qtyBtn}
-                        onPress={() => updateQuantity(product.id, 1)}
+                        onPress={async () => {
+                          try {
+                            await updateQuantity(product.id, 1);
+                          } catch (err: any) {
+                            Alert.alert('Cart Error', err?.message || 'Failed to update quantity.');
+                          }
+                        }}
                         activeOpacity={0.7}
                       >
                         <MaterialIcons name="add" size={16} color={Colors.onSurface} />

@@ -21,7 +21,7 @@ import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
-import { useWishlistStore, useCartStore, useNotificationStore } from '@/store';
+import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } from '@/store';
 import { ProductItem } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
@@ -88,17 +88,60 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
     return getProductGalleryImages(product);
   }, [product]);
 
-  const handleAddToCart = useCallback(() => {
-    if (!product) return;
-    addToCart(product, quantity);
-    Alert.alert('Success', `${quantity}x "${product.title}" added to your cart.`);
-  }, [quantity, product, addToCart]);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  const handleBuyNow = useCallback(() => {
+  const handleAddToCart = useCallback(async () => {
     if (!product) return;
-    addToCart(product, quantity);
-    navigation.navigate('Checkout');
-  }, [navigation, product, quantity, addToCart]);
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'Please log in to add items to your cart.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+      ]);
+      return;
+    }
+    try {
+      await addToCart(product, quantity);
+      Alert.alert('Success', `${quantity}x "${product.title}" added to your cart.`);
+    } catch (err: any) {
+      Alert.alert('Cart Error', err?.message || 'Failed to add item to cart.');
+    }
+  }, [isAuthenticated, quantity, product, addToCart, navigation]);
+
+  const handleBuyNow = useCallback(async () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'Please log in to purchase items.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+      ]);
+      return;
+    }
+    try {
+      await addToCart(product, quantity);
+      navigation.navigate('Checkout');
+    } catch (err: any) {
+      Alert.alert('Cart Error', err?.message || 'Failed to proceed to checkout.');
+    }
+  }, [isAuthenticated, navigation, product, quantity, addToCart]);
+
+  const handleToggleWishlist = useCallback(async () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'Please log in to manage your wishlist.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+      ]);
+      return;
+    }
+    try {
+      const isAdded = await toggleWishlist(product);
+      if (isAdded) {
+        Alert.alert('Wishlist Updated', `"${product.title}" added to your wishlist.`);
+      }
+    } catch (err: any) {
+      Alert.alert('Wishlist Error', err?.message || 'Failed to update wishlist.');
+    }
+  }, [isAuthenticated, product, toggleWishlist, navigation]);
 
   const handleTabPress = useCallback(
     (tab: TabRoute) => {
@@ -167,7 +210,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
             )}
             <TouchableOpacity
               style={styles.wishlistButton}
-              onPress={() => toggleWishlist(product)}
+              onPress={handleToggleWishlist}
               activeOpacity={0.8}
             >
               <MaterialIcons

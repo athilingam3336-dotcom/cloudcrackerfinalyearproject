@@ -24,12 +24,12 @@ export interface CartState {
 
   // Actions
   fetchCart: () => Promise<void>;
-  addToCart: (product: ProductItem, quantity?: number, selectedVariant?: ProductVariantOption) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, delta: number) => void;
+  addToCart: (product: ProductItem, quantity?: number, selectedVariant?: ProductVariantOption) => Promise<boolean>;
+  removeFromCart: (productId: string) => Promise<boolean>;
+  updateQuantity: (productId: string, delta: number) => Promise<boolean>;
   applyCoupon: (code: string) => boolean;
   setAppliedCoupon: (code: string, discount: number) => void;
-  clearCart: () => void;
+  clearCart: () => Promise<boolean>;
   resetCartStore: () => void;
 
   // Computed helper getters
@@ -52,74 +52,59 @@ export const useCartStore = create<CartState>((set, get) => ({
       const items = await cartService.fetchCart();
       set({ items: items || [], isLoading: false });
     } catch {
-      set({ isLoading: false });
+      set({ items: [], isLoading: false });
     }
   },
 
   addToCart: async (product, quantity = 1, selectedVariant) => {
-    // 1. Optimistic local update
-    set((state) => {
-      const existingIndex = state.items.findIndex(
-        (i) =>
-          i.product.id === product.id &&
-          JSON.stringify(i.selectedVariant || {}) === JSON.stringify(selectedVariant || {})
-      );
-      if (existingIndex >= 0) {
-        const updated = [...state.items];
-        updated[existingIndex].quantity += quantity;
-        return { items: updated };
-      }
-      const effectivePrice = product.price + (selectedVariant?.priceModifier || 0);
-      const productWithPrice = {
-        ...product,
-        price: effectivePrice,
-        imageUrl: selectedVariant?.imageUrl || product.imageUrl,
-      };
-      return { items: [...state.items, { product: productWithPrice, quantity, selectedVariant }] };
-    });
-
-    // 2. Persist to MongoDB Atlas and re-sync
-    if (!ENV.ENABLE_MOCK_API && product?.id) {
+    if (!product?.id) {
+      throw new Error('Invalid product ID.');
+    }
+    set({ isLoading: true });
+    try {
+      // 1. Persist to MongoDB Atlas
       await cartService.addToCartApi(product.id, quantity);
+      // 2. Fetch updated authoritative cart from MongoDB Atlas
       const atlasCart = await cartService.fetchCart();
-      if (atlasCart && atlasCart.length > 0) {
-        set({ items: atlasCart });
-      }
+      set({ items: atlasCart || [], isLoading: false });
+      return true;
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
     }
   },
 
   removeFromCart: async (productId) => {
-    set((state) => ({
-      items: state.items.filter((i) => i.product.id !== productId),
-    }));
-    await cartService.removeFromCartApi(productId);
-    const atlasCart = await cartService.fetchCart();
-    set({ items: atlasCart || [] });
+    set({ isLoading: true });
+    try {
+      await cartService.removeFromCartApi(productId);
+      const atlasCart = await cartService.fetchCart();
+      set({ items: atlasCart || [], isLoading: false });
+      return true;
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
   },
 
   updateQuantity: async (productId, delta) => {
     const currentItem = get().items.find((i) => i.product.id === productId);
-    if (!currentItem) return;
+    if (!currentItem) return false;
 
     const newQty = currentItem.quantity + delta;
-    if (newQty <= 0) {
-      set((state) => ({
-        items: state.items.filter((i) => i.product.id !== productId),
-      }));
-      await cartService.removeFromCartApi(productId);
-      const atlasCart = await cartService.fetchCart();
-      set({ items: atlasCart || [] });
-    } else {
-      set((state) => ({
-        items: state.items.map((i) =>
-          i.product.id === productId ? { ...i, quantity: newQty } : i
-        ),
-      }));
-      await cartService.updateQuantityApi(productId, newQty);
-      const atlasCart = await cartService.fetchCart();
-      if (atlasCart && atlasCart.length > 0) {
-        set({ items: atlasCart });
+    set({ isLoading: true });
+    try {
+      if (newQty <= 0) {
+        await cartService.removeFromCartApi(productId);
+      } else {
+        await cartService.updateQuantityApi(productId, newQty);
       }
+      const atlasCart = await cartService.fetchCart();
+      set({ items: atlasCart || [], isLoading: false });
+      return true;
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
     }
   },
 
@@ -137,8 +122,15 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   clearCart: async () => {
-    set({ items: [], couponCode: '', discount: 0 });
-    await cartService.clearCartApi();
+    set({ isLoading: true });
+    try {
+      await cartService.clearCartApi();
+      set({ items: [], couponCode: '', discount: 0, isLoading: false });
+      return true;
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
   },
 
   resetCartStore: () => {

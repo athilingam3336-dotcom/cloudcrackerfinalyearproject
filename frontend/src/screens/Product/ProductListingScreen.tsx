@@ -22,7 +22,7 @@ import { ProductCard } from '@/components/cards/ProductCard';
 import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
-import { useWishlistStore, useCartStore, useNotificationStore } from '@/store';
+import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } from '@/store';
 import { ProductItem, CategoryItem, MOCK_CATEGORIES } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 
@@ -125,12 +125,47 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     };
   }, [categoryIdParam, categories]);
 
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   // Wishlist toggle handler
   const handleToggleWishlist = useCallback(
-    (product: ProductItem) => {
-      toggleWishlist(product);
+    async (product: ProductItem) => {
+      if (!isAuthenticated) {
+        Alert.alert('Sign In Required', 'Please log in to manage your wishlist.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+        ]);
+        return;
+      }
+      try {
+        const isAdded = await toggleWishlist(product);
+        if (isAdded) {
+          Alert.alert('Wishlist Updated', `"${product.title}" added to your wishlist.`);
+        }
+      } catch (err: any) {
+        Alert.alert('Wishlist Error', err?.message || 'Failed to update wishlist.');
+      }
     },
-    [toggleWishlist]
+    [isAuthenticated, toggleWishlist, navigation]
+  );
+
+  const handleAddToCart = useCallback(
+    async (product: ProductItem) => {
+      if (!isAuthenticated) {
+        Alert.alert('Sign In Required', 'Please log in to add items to your cart.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+        ]);
+        return;
+      }
+      try {
+        await addToCart(product, 1);
+        Alert.alert('Cart Updated', `"${product.title}" has been added to your cart.`);
+      } catch (err: any) {
+        Alert.alert('Cart Error', err?.message || 'Failed to add item to cart.');
+      }
+    },
+    [isAuthenticated, addToCart, navigation]
   );
 
   // Filtered and Sorted Products dataset
@@ -244,10 +279,6 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     [navigation]
   );
 
-  const handleAddToCart = useCallback((productTitle: string) => {
-    Alert.alert('Cart Updated', `"${productTitle}" added to shopping cart.`);
-  }, []);
-
   const handleTabPress = useCallback(
     (tab: TabRoute) => {
       if (tab === 'Home') navigation.navigate('Home');
@@ -275,12 +306,12 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           imageUrl={item.imageUrl}
           isWishlisted={wishlistItems.some((w) => w.id === item.id)}
           onPress={() => handleProductPress(item.id)}
-          onAddToCart={() => addToCart(item, 1)}
+          onAddToCart={() => handleAddToCart(item)}
           onWishlistToggle={() => handleToggleWishlist(item)}
         />
       </View>
     ),
-    [wishlistItems, handleProductPress, addToCart, handleToggleWishlist]
+    [wishlistItems, handleProductPress, handleAddToCart, handleToggleWishlist]
   );
 
   // List Header Component with Category info and Sorting

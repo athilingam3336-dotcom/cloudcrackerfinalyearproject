@@ -79,10 +79,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     loadProducts();
   }, [loadProducts]);
 
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   // Wishlist handler
-  const handleToggleWishlist = useCallback((product: ProductItem) => {
-    toggleWishlist(product);
-  }, [toggleWishlist]);
+  const handleToggleWishlist = useCallback(
+    async (product: ProductItem) => {
+      if (!isAuthenticated) {
+        Alert.alert('Sign In Required', 'Please log in to manage your wishlist.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+        ]);
+        return;
+      }
+      try {
+        const isAdded = await toggleWishlist(product);
+        if (isAdded) {
+          Alert.alert('Wishlist Updated', `"${product.title}" added to your wishlist.`);
+        }
+      } catch (err: any) {
+        Alert.alert('Wishlist Error', err?.message || 'Failed to update wishlist.');
+      }
+    },
+    [isAuthenticated, toggleWishlist, navigation]
+  );
 
   // Navigation handlers
   const handleProductPress = useCallback(
@@ -93,10 +112,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 
   const handleAddToCart = useCallback(
-    (productTitle: string) => {
-      Alert.alert('Cart Updated', `"${productTitle}" has been added to your cart.`);
+    async (product: ProductItem) => {
+      if (!isAuthenticated) {
+        Alert.alert('Sign In Required', 'Please log in to add items to your cart.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => navigation.navigate('Login') },
+        ]);
+        return;
+      }
+      try {
+        await addToCart(product, 1);
+        Alert.alert('Cart Updated', `"${product.title}" has been added to your cart.`);
+      } catch (err: any) {
+        Alert.alert('Cart Error', err?.message || 'Failed to add item to cart.');
+      }
     },
-    []
+    [isAuthenticated, addToCart, navigation]
   );
 
   const handleCategoryPress = useCallback((categoryId: string) => {
@@ -212,13 +243,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             imageUrl={item.imageUrl}
             isWishlisted={isWishlisted}
             onPress={() => handleProductPress(item.id)}
-            onAddToCart={() => addToCart(item, 1)}
-            onWishlistToggle={() => toggleWishlist(item)}
+            onAddToCart={() => handleAddToCart(item)}
+            onWishlistToggle={() => handleToggleWishlist(item)}
           />
         </View>
       );
     },
-    [wishlistItems, handleProductPress, addToCart, toggleWishlist]
+    [wishlistItems, handleProductPress, handleAddToCart, handleToggleWishlist]
   );
 
   // Render main Grid Product Card
@@ -239,13 +270,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             imageUrl={item.imageUrl}
             isWishlisted={isWishlisted}
             onPress={() => handleProductPress(item.id)}
-            onAddToCart={() => addToCart(item, 1)}
-            onWishlistToggle={() => toggleWishlist(item)}
+            onAddToCart={() => handleAddToCart(item)}
+            onWishlistToggle={() => handleToggleWishlist(item)}
           />
         </View>
       );
     },
-    [wishlistItems, handleProductPress, addToCart, toggleWishlist]
+    [wishlistItems, handleProductPress, handleAddToCart, handleToggleWishlist]
   );
 
   // Render Flash Sale Item
@@ -279,13 +310,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             imageUrl={item.imageUrl}
             isWishlisted={isWishlisted}
             onPress={() => handleProductPress(item.id)}
-            onAddToCart={() => addToCart(productObj, 1)}
-            onWishlistToggle={() => toggleWishlist(productObj)}
+            onAddToCart={() => handleAddToCart(productObj)}
+            onWishlistToggle={() => handleToggleWishlist(productObj)}
           />
         </View>
       );
     },
-    [wishlistItems, handleProductPress, addToCart, toggleWishlist]
+    [wishlistItems, handleProductPress, handleAddToCart, handleToggleWishlist]
   );
 
   const flashSaleData: FlashSaleItem[] = useMemo(() => {
