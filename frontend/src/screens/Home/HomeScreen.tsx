@@ -326,8 +326,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         p.badge?.toLowerCase().includes('off') ||
         (p.originalPrice && p.originalPrice > p.price)
     );
-    if (discounted.length > 0) {
-      return discounted.map((p) => ({
+    const sourceProducts = discounted.length > 0 ? discounted : products.slice(0, 4);
+
+    if (sourceProducts.length > 0) {
+      return sourceProducts.map((p) => ({
         id: p.id,
         title: p.title,
         subtitle: p.subtitle || 'Flash Sale Special',
@@ -345,7 +347,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         imageUrl: p.imageUrl,
       }));
     }
-    return MOCK_FLASH_SALE;
+    return [];
   }, [products]);
 
   // List Header Component
