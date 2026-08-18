@@ -5,6 +5,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
+import { sanitizeRemoteImageUrl } from '@/constants/productImages';
 
 interface HomeHeaderProps {
   onNotificationPress: () => void;
@@ -25,7 +26,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
     avatarUrl,
   }) => {
     const user = useAuthStore((state) => state.user);
-    const activeAvatar = avatarUrl || user?.avatarUrl;
+    const activeAvatar = sanitizeRemoteImageUrl(avatarUrl || user?.avatarUrl);
 
     return (
       <View style={styles.header}>

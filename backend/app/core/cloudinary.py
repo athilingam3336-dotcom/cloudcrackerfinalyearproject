@@ -23,7 +23,7 @@ async def upload_image(file_data: Any, folder: str = "cloudcrackers") -> Dict[st
         mock_id = f"mock_{uuid.uuid4().hex}"
         return {
             "public_id": f"{folder}/{mock_id}",
-            "url": f"http://res.cloudinary.com/mock/image/upload/{folder}/{mock_id}.jpg",
+            "url": f"https://res.cloudinary.com/mock/image/upload/{folder}/{mock_id}.jpg",
             "secure_url": f"https://res.cloudinary.com/mock/image/upload/{folder}/{mock_id}.jpg",
             "resource_type": "image",
             "format": "jpg",

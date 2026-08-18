@@ -22,6 +22,7 @@ import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
+import { sanitizeRemoteImageUrl } from '@/constants/productImages';
 
 type EditProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'EditProfile'>;
 
@@ -163,15 +164,18 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation
             onPress={pickImage}
             activeOpacity={0.8}
           >
-            {displayAvatar ? (
-              <Image source={{ uri: displayAvatar }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarPlaceholderText}>
-                  {name ? name.charAt(0).toUpperCase() : 'U'}
-                </Text>
-              </View>
-            )}
+            {(() => {
+              const safeAvatar = sanitizeRemoteImageUrl(displayAvatar);
+              return safeAvatar ? (
+                <Image source={{ uri: safeAvatar }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarPlaceholderText}>
+                    {name ? name.charAt(0).toUpperCase() : 'U'}
+                  </Text>
+                </View>
+              );
+            })()}
             <View style={styles.editIconBadge}>
               <MaterialIcons name="edit" size={16} color="#ffffff" />
             </View>

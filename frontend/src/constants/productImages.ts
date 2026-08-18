@@ -30,6 +30,59 @@ export const LOCAL_PRODUCT_IMAGES = {
 };
 
 /**
+ * Safely sanitizes remote image URLs to prevent Mixed Content security warnings.
+ * - Upgrades insecure http:// to https://
+ * - Filters out dummy placeholder URLs (example.com, img.jpg, localhost/127.0.0.1 on HTTPS web)
+ * - Returns null for invalid or non-HTTPS remote URLs so they gracefully fall back to bundled Stitch assets.
+ */
+export const sanitizeRemoteImageUrl = (url?: string | null): string | null => {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  const lower = trimmed.toLowerCase();
+
+  // Filter out dummy test placeholders and local asset filenames
+  if (
+    lower.includes('example.com') ||
+    lower.includes('placeholder') ||
+    lower === 'http://img.jpg' ||
+    lower === 'https://img.jpg' ||
+    lower === 'http://img.png' ||
+    lower === 'https://img.png' ||
+    (lower.endsWith('.png') && !lower.startsWith('http') && !lower.startsWith('data:')) ||
+    (lower.endsWith('.jpg') && !lower.startsWith('http') && !lower.startsWith('data:')) ||
+    (lower.endsWith('.jpeg') && !lower.startsWith('http') && !lower.startsWith('data:')) ||
+    (lower.endsWith('.webp') && !lower.startsWith('http') && !lower.startsWith('data:'))
+  ) {
+    return null;
+  }
+
+  // Data URIs are safe
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+
+  // Upgrade insecure http:// to https://
+  if (trimmed.startsWith('http://')) {
+    // Filter out localhost / 127.0.0.1 when running on HTTPS web
+    if (lower.includes('localhost') || lower.includes('127.0.0.1')) {
+      if (typeof window !== 'undefined' && window.location?.protocol === 'https:') {
+        return null;
+      }
+      return trimmed;
+    }
+    return trimmed.replace(/^http:\/\//i, 'https://');
+  }
+
+  if (trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  return null;
+};
+
+/**
  * Resolves any product, category, or title to its exact local Stitch image source.
  * Handles primary, gallery, and variant images without any external web requests or placeholders.
  */
@@ -53,26 +106,38 @@ export const resolveProductImage = (
 
   // If item is already an object with uri: { uri: '...' }
   if (typeof item === 'object' && item && 'uri' in item && typeof (item as any).uri === 'string' && (item as any).uri.trim().length > 0) {
-    return item;
+    const safeUri = sanitizeRemoteImageUrl((item as any).uri);
+    if (safeUri) {
+      return { uri: safeUri };
+    }
   }
 
   // If passed a remote URL string directly
-  if (typeof item === 'string' && (item.startsWith('http://') || item.startsWith('https://') || item.startsWith('data:image/'))) {
-    return { uri: item };
+  if (typeof item === 'string') {
+    const safeUri = sanitizeRemoteImageUrl(item);
+    if (safeUri) {
+      return { uri: safeUri };
+    }
   }
 
   // If object has imageUrl or images with valid remote URL or direct asset
   if (typeof item === 'object' && item !== null) {
-    if (typeof item.imageUrl === 'string' && (item.imageUrl.startsWith('http://') || item.imageUrl.startsWith('https://') || item.imageUrl.startsWith('data:image/'))) {
-      return { uri: item.imageUrl };
+    if (typeof item.imageUrl === 'string') {
+      const safeUri = sanitizeRemoteImageUrl(item.imageUrl);
+      if (safeUri) {
+        return { uri: safeUri };
+      }
     }
     if (typeof item.imageUrl === 'number') {
       return item.imageUrl;
     }
     if (Array.isArray(item.images) && item.images.length > 0) {
       const firstImg = item.images[0];
-      if (typeof firstImg === 'string' && (firstImg.startsWith('http://') || firstImg.startsWith('https://') || firstImg.startsWith('data:image/'))) {
-        return { uri: firstImg };
+      if (typeof firstImg === 'string') {
+        const safeUri = sanitizeRemoteImageUrl(firstImg);
+        if (safeUri) {
+          return { uri: safeUri };
+        }
       }
       if (typeof firstImg === 'number') {
         return firstImg;

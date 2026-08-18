@@ -23,6 +23,7 @@ import { tokenStorage } from '@/storage/tokenStorage';
 import { useAuthStore } from '@/store/authStore';
 import { profileService } from '@/services/profileService';
 import { aboutService, AboutData } from '@/services/aboutService';
+import { sanitizeRemoteImageUrl } from '@/constants/productImages';
 
 type UserProfileScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -240,17 +241,20 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
             activeOpacity={0.85}
             onPress={() => navigation.navigate('EditProfile')}
           >
-            {user?.avatarUrl ? (
-              <Image
-                source={{ uri: user.avatarUrl }}
-                style={styles.avatarImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitial}>{userInitial}</Text>
-              </View>
-            )}
+            {(() => {
+              const safeAvatar = sanitizeRemoteImageUrl(user?.avatarUrl);
+              return safeAvatar ? (
+                <Image
+                  source={{ uri: safeAvatar }}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarInitial}>{userInitial}</Text>
+                </View>
+              );
+            })()}
             <View style={styles.editAvatarBtn}>
               <MaterialIcons name="edit" size={14} color="#ffffff" />
             </View>
