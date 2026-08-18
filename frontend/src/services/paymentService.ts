@@ -105,18 +105,6 @@ class PaymentService {
    * Opens the Razorpay Test Payment checkout modal.
    */
   async openCheckout(options: RazorpayCheckoutOptions): Promise<void> {
-    if (options.orderId?.startsWith('order_test_')) {
-      // Instantly bypass for sandbox test orders
-      if (options.onSuccess) {
-        options.onSuccess({
-          razorpay_payment_id: `pay_test_${Math.random().toString(36).substring(2, 10)}`,
-          razorpay_order_id: options.orderId,
-          razorpay_signature: 'dummy_signature_for_test_order',
-        });
-      }
-      return;
-    }
-
     if (Platform.OS === 'web') {
       const isLoaded = await this.loadRazorpayWebScript();
       if (!isLoaded || !(window as any).Razorpay) {

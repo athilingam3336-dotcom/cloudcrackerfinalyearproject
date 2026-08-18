@@ -56,48 +56,11 @@ class RazorpayService:
         if notes:
             order_payload["notes"] = notes
 
-        if self.key_id and "placeholder" in self.key_id.lower():
-            import uuid
-            from datetime import datetime
-            mock_order_id = f"order_test_{uuid.uuid4().hex[:14]}"
-            logger.info("Instantly generated sandbox test Razorpay order: %s", mock_order_id)
-            return {
-                "id": mock_order_id,
-                "entity": "order",
-                "amount": amount_paise,
-                "amount_paid": 0,
-                "amount_due": amount_paise,
-                "currency": currency,
-                "receipt": receipt or "",
-                "status": "created",
-                "attempts": 0,
-                "notes": notes or {},
-                "created_at": int(datetime.utcnow().timestamp()),
-            }
-
         try:
             razorpay_order = client.order.create(data=order_payload)
             return razorpay_order
         except Exception as e:
             logger.error("Razorpay order creation failed: %s", str(e))
-            if self.key_id and ("test" in self.key_id.lower() or "placeholder" in self.key_id.lower()):
-                import uuid
-                from datetime import datetime
-                mock_order_id = f"order_test_{uuid.uuid4().hex[:14]}"
-                logger.info("Generated sandbox test Razorpay order: %s", mock_order_id)
-                return {
-                    "id": mock_order_id,
-                    "entity": "order",
-                    "amount": amount_paise,
-                    "amount_paid": 0,
-                    "amount_due": amount_paise,
-                    "currency": currency,
-                    "receipt": receipt or "",
-                    "status": "created",
-                    "attempts": 0,
-                    "notes": notes or {},
-                    "created_at": int(datetime.utcnow().timestamp()),
-                }
             raise BaseAppException(
                 status_code=502,
                 message=f"Failed to create Razorpay payment order: {str(e)}",
@@ -113,10 +76,6 @@ class RazorpayService:
         Verifies the payment signature using HMAC SHA256.
         Formula: HMAC-SHA256(order_id + "|" + payment_id, secret) == signature
         """
-        if razorpay_order_id and razorpay_order_id.startswith("order_test_"):
-            logger.info("Bypassing signature verification for sandbox test order: %s", razorpay_order_id)
-            return True
-
         if not self.key_secret:
             raise BaseAppException(
                 status_code=500,

@@ -8,19 +8,6 @@ import { Colors } from '@/constants/colors';
 export const RazorpayWebViewCheckout: React.FC = () => {
   const { razorpayModalVisible, razorpayOptions, closeRazorpayModal } = useUiStore();
 
-  useEffect(() => {
-    if (razorpayModalVisible && razorpayOptions?.orderId?.startsWith('order_test_')) {
-      if (razorpayOptions.onSuccess) {
-        razorpayOptions.onSuccess({
-          razorpay_payment_id: `pay_test_${Math.random().toString(36).substring(2, 10)}`,
-          razorpay_order_id: razorpayOptions.orderId,
-          razorpay_signature: 'dummy_signature_for_test_order',
-        });
-      }
-      closeRazorpayModal();
-    }
-  }, [razorpayModalVisible, razorpayOptions]);
-
   const htmlContent = useMemo(() => {
     if (!razorpayOptions) return '';
 
@@ -122,10 +109,6 @@ export const RazorpayWebViewCheckout: React.FC = () => {
   };
 
   if (!razorpayModalVisible || !razorpayOptions) {
-    return null;
-  }
-
-  if (razorpayOptions.orderId?.startsWith('order_test_')) {
     return null;
   }
 
