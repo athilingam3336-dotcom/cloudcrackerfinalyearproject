@@ -34,18 +34,20 @@ class Settings(BaseSettings):
         """
         env = self.ENVIRONMENT.lower()
         if env == "production":
-            uri = self.MONGODB_URI or self.MONGODB_URL
-            if not uri or "localhost" in uri.lower() or "127.0.0.1" in uri:
+            if not self.MONGODB_URI:
+                raise ValueError("MONGODB_URI must be set in production environment.")
+            if "localhost" in self.MONGODB_URI.lower() or "127.0.0.1" in self.MONGODB_URI:
                 raise ValueError(
-                    "A valid remote MongoDB Atlas URI (MONGODB_URI) is required in production environment."
+                    "Localhost MongoDB cannot be used in production environment. A valid MongoDB Atlas/remote URI is required."
                 )
-            self.MONGODB_URL = uri
+            self.MONGODB_URL = self.MONGODB_URI
         elif env == "test":
             self.MONGODB_URL = self.TEST_MONGODB_URI or "mongodb://localhost:27017"
             self.DB_NAME = "cloudcrackers_test"
         else:
-            # Development strictly uses local MongoDB
-            self.MONGODB_URL = "mongodb://localhost:27017"
+            # Development strictly uses local MongoDB unless explicitly configured
+            if not self.MONGODB_URL or "cloudcrackers.0fcxwnp.mongodb.net" in self.MONGODB_URL:
+                self.MONGODB_URL = "mongodb://localhost:27017"
         return self
 
     @property
