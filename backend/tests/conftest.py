@@ -26,11 +26,46 @@ def event_loop() -> Generator:
 
 @pytest.fixture(scope="session", autouse=True)
 async def db_lifecycle():
-    """Initializes the database connection before running tests and cleanly closes it after."""
+    """Initializes the database connection using isolated local test database."""
+    from app.core.config import settings
+    settings.DB_NAME = "cloudcrackers_test"
+    settings.ENVIRONMENT = "test"
+    settings.MONGODB_URL = "mongodb://localhost:27017"
     await db_manager.connect()
     yield
     # Safely disconnect without modifying or deleting live Atlas data
     await db_manager.disconnect()
+
+
+@pytest.fixture(autouse=True)
+def mock_cloudinary_for_tests(monkeypatch):
+    """Mocks Cloudinary calls during tests to avoid external network dependencies."""
+    import uuid
+    from app.core import cloudinary as cloud_core
+
+    async def fake_upload(file_data, folder="cloudcrackers"):
+        mock_id = f"test_{uuid.uuid4().hex[:10]}"
+        return {
+            "public_id": f"{folder}/{mock_id}",
+            "url": f"https://res.cloudinary.com/test_cloud/image/upload/{folder}/{mock_id}.jpg",
+            "secure_url": f"https://res.cloudinary.com/test_cloud/image/upload/{folder}/{mock_id}.jpg",
+            "resource_type": "image",
+            "format": "jpg",
+            "bytes": 50000,
+            "width": 800,
+            "height": 600,
+            "folder": folder,
+        }
+
+    async def fake_delete(public_id):
+        return {"result": "ok"}
+
+    async def fake_replace(public_id, file_data, folder="cloudcrackers"):
+        return await fake_upload(file_data, folder=folder)
+
+    monkeypatch.setattr(cloud_core, "upload_image", fake_upload)
+    monkeypatch.setattr(cloud_core, "delete_image", fake_delete)
+    monkeypatch.setattr(cloud_core, "replace_image", fake_replace)
 
 
 @pytest.fixture

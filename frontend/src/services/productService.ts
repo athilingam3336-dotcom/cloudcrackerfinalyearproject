@@ -10,7 +10,10 @@ import { ENV } from '@/config/env';
 
 export class ProductService {
   private mapProductToUi(p: any): ProductItem {
-    const mainImage = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : undefined;
+    const mainImage =
+      p.image_url ||
+      p.imageUrl ||
+      (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : undefined);
     return {
       id: p.id || p._id,
       title: p.name || p.title || 'Pyrotechnic Item',
@@ -18,10 +21,16 @@ export class ProductService {
       category: p.category_id || p.category || 'all',
       price: p.discount_price ? p.discount_price : p.price || 0,
       originalPrice: p.discount_price ? p.price : undefined,
-      badge: p.is_bestseller ? 'Bestseller' : p.is_featured ? 'Featured' : p.is_flash_sale ? 'Flash Sale' : undefined,
+      badge: p.is_bestseller
+        ? 'Bestseller'
+        : p.is_featured
+        ? 'Featured'
+        : p.is_flash_sale
+        ? 'Flash Sale'
+        : undefined,
       rating: p.rating || p.average_rating || 5.0,
       reviewCount: p.reviews_count || p.total_reviews || 0,
-      imageUrl: mainImage || p.imageUrl,
+      imageUrl: mainImage,
     };
   }
 

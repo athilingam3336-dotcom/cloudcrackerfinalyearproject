@@ -11,9 +11,11 @@ import {
   ScrollView,
   Switch,
   ListRenderItem,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -33,6 +35,15 @@ import { useNotificationStore } from '@/store';
 import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
+
+export interface SelectedProductImage {
+  uri: string;
+  name: string;
+  type: string;
+  size?: number;
+  file?: any;
+  base64?: string | null;
+}
 
 type ProductManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -70,6 +81,115 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [formIsBestseller, setFormIsBestseller] = useState(false);
   const [formIsFlashSale, setFormIsFlashSale] = useState(false);
   const [formIsRecommended, setFormIsRecommended] = useState(false);
+
+  // Product Image State
+  const [selectedImage, setSelectedImage] = useState<SelectedProductImage | null>(null);
+  const [formExistingImageUrl, setFormExistingImageUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  // Allowed file extensions & mime types for validation
+  const ALLOWED_EXTENSIONS = useMemo(() => ['jpg', 'jpeg', 'png', 'webp'], []);
+  const ALLOWED_MIME_TYPES = useMemo(
+    () => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+    []
+  );
+
+  // Image Selection Handler (Cross-Platform: Web + Mobile)
+  const pickProductImage = useCallback(async () => {
+    setImageError(null);
+
+    // Web Platform: Standard HTML5 File Input for direct File object & instant preview
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+      input.onchange = (e: any) => {
+        const file: File | undefined = e.target?.files?.[0];
+        if (!file) return;
+
+        const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
+        const isExtValid = ALLOWED_EXTENSIONS.includes(fileExt);
+        const isMimeValid = ALLOWED_MIME_TYPES.includes(file.type.toLowerCase());
+
+        if (!isExtValid && !isMimeValid) {
+          setImageError('Unsupported image format. Please select a JPG, JPEG, PNG, or WebP image.');
+          Alert.alert('Invalid Format', 'Only JPG, JPEG, PNG, and WebP images are allowed.');
+          return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+        setSelectedImage({
+          uri: previewUrl,
+          name: file.name,
+          type: file.type || `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
+          size: file.size,
+          file: file,
+        });
+        setImageError(null);
+      };
+      input.click();
+      return;
+    }
+
+    // Native Mobile (iOS/Android) via Expo ImagePicker
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Permission Required',
+          'Media library permission is required to choose a product image.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const fileName =
+          asset.fileName || asset.uri.split('/').pop() || 'product_image.jpg';
+        const fileExt = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+
+        if (!ALLOWED_EXTENSIONS.includes(fileExt)) {
+          setImageError('Unsupported image format. Please select a JPG, JPEG, PNG, or WebP image.');
+          Alert.alert('Invalid Format', 'Only JPG, JPEG, PNG, and WebP images are allowed.');
+          return;
+        }
+
+        const mimeType =
+          asset.mimeType ||
+          (fileExt === 'png'
+            ? 'image/png'
+            : fileExt === 'webp'
+            ? 'image/webp'
+            : 'image/jpeg');
+
+        setSelectedImage({
+          uri: asset.uri,
+          name: fileName,
+          type: mimeType,
+          size: asset.fileSize,
+          base64: asset.base64,
+        });
+        setImageError(null);
+      }
+    } catch (err: any) {
+      console.error('Image picker error:', err);
+      Alert.alert('Error', 'Unable to pick image from photo library.');
+    }
+  }, [ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES]);
+
+  // Remove Selected Image Handler
+  const handleRemoveImage = useCallback(() => {
+    setSelectedImage(null);
+    setFormExistingImageUrl(null);
+    setImageError('Product image is required.');
+  }, []);
 
   // Inventory Quick Adjust Modal State
   const [isStockModalVisible, setIsStockModalVisible] = useState(false);
@@ -136,6 +256,9 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     setFormIsBestseller(false);
     setFormIsFlashSale(false);
     setFormIsRecommended(false);
+    setSelectedImage(null);
+    setFormExistingImageUrl(null);
+    setImageError(null);
     setIsProductModalVisible(true);
   }, [categories]);
 
@@ -153,6 +276,11 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       setFormIsBestseller(Boolean(product.isBestseller));
       setFormIsFlashSale(Boolean(product.isFlashSale));
       setFormIsRecommended(Boolean(product.isRecommended));
+      setSelectedImage(null);
+      setFormExistingImageUrl(
+        product.imageUrl || (product.images && product.images.length > 0 ? product.images[0] : null)
+      );
+      setImageError(null);
       setIsProductModalVisible(true);
     },
     [categories]
@@ -195,6 +323,13 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       return;
     }
 
+    const hasImage = Boolean(selectedImage || formExistingImageUrl);
+    if (!hasImage) {
+      setImageError('Product image is required. Please upload an image.');
+      Alert.alert('Validation Error', 'Product image is required. Please upload an image.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       if (editingProduct) {
@@ -205,12 +340,14 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           discount_price: discountNum,
           category_id: formCategoryId,
           stock: stockNum,
+          image: selectedImage || undefined,
+          image_url: formExistingImageUrl || undefined,
           is_featured: formIsFeatured,
           is_bestseller: formIsBestseller,
           is_flash_sale: formIsFlashSale,
           is_recommended: formIsRecommended,
         });
-        Alert.alert('Success', `Product "${formName}" updated successfully in MongoDB.`);
+        Alert.alert('Success', `Product "${formName}" updated successfully with Cloudinary asset.`);
       } else {
         await adminService.createProduct({
           name: formName.trim(),
@@ -219,13 +356,14 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           discount_price: discountNum,
           category_id: formCategoryId,
           stock: stockNum,
-          images: [],
+          image: selectedImage,
+          image_url: formExistingImageUrl,
           is_featured: formIsFeatured,
           is_bestseller: formIsBestseller,
           is_flash_sale: formIsFlashSale,
           is_recommended: formIsRecommended,
         });
-        Alert.alert('Success', `Product "${formName}" created and registered in MongoDB.`);
+        Alert.alert('Success', `Product "${formName}" uploaded to Cloudinary and registered in MongoDB.`);
       }
       setIsProductModalVisible(false);
       fetchProducts();
@@ -247,6 +385,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     formIsBestseller,
     formIsFlashSale,
     formIsRecommended,
+    selectedImage,
+    formExistingImageUrl,
     fetchProducts,
   ]);
 
@@ -675,6 +815,131 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               multiline
               numberOfLines={2}
             />
+
+            {/* Product Image Required Section */}
+            <View style={styles.imageUploadSection}>
+              <View style={styles.imageUploadHeader}>
+                <Text style={styles.formInputLabel}>
+                  Product Image <Text style={styles.requiredAsterisk}>*</Text>
+                </Text>
+                {Boolean(selectedImage || formExistingImageUrl) && (
+                  <View style={styles.imageBadge}>
+                    <Text style={styles.imageBadgeText}>
+                      {selectedImage ? 'Image Ready' : 'Existing Image'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {selectedImage || formExistingImageUrl ? (
+                <View
+                  style={[
+                    styles.imagePreviewCard,
+                    !!imageError && styles.imageCardError,
+                  ]}
+                >
+                  <View style={styles.imagePreviewBox}>
+                    <Image
+                      source={{
+                        uri: selectedImage?.uri || formExistingImageUrl || '',
+                      }}
+                      style={styles.imagePreviewImg}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <View style={styles.imageMetaRow}>
+                    <View style={styles.imageMetaInfo}>
+                      <Text style={styles.imageMetaName} numberOfLines={1}>
+                        {selectedImage?.name ||
+                          (formExistingImageUrl
+                            ? 'Current catalog image'
+                            : 'Product Image')}
+                      </Text>
+                      {selectedImage?.size ? (
+                        <Text style={styles.imageMetaDetails}>
+                          {(selectedImage.size / 1024).toFixed(1)} KB •{' '}
+                          {selectedImage.type
+                            .replace('image/', '')
+                            .toUpperCase()}
+                        </Text>
+                      ) : (
+                        <Text style={styles.imageMetaDetails}>
+                          Preview active
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.imageActionButtons}>
+                      <TouchableOpacity
+                        style={styles.imageChangeBtn}
+                        onPress={pickProductImage}
+                        activeOpacity={0.7}
+                      >
+                        <MaterialIcons
+                          name="edit"
+                          size={14}
+                          color={Colors.primary}
+                        />
+                        <Text style={styles.imageChangeBtnText}>Change</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.imageRemoveBtn}
+                        onPress={handleRemoveImage}
+                        activeOpacity={0.7}
+                      >
+                        <MaterialIcons
+                          name="delete-outline"
+                          size={14}
+                          color={Colors.error}
+                        />
+                        <Text style={styles.imageRemoveBtnText}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.imageDropzone,
+                    !!imageError && styles.imageDropzoneError,
+                  ]}
+                  onPress={pickProductImage}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.imageDropzoneIconWrap}>
+                    <MaterialIcons
+                      name="cloud-upload"
+                      size={28}
+                      color={Colors.primary}
+                    />
+                  </View>
+                  <Text style={styles.imageDropzoneTitle}>
+                    Choose Image / Upload Image
+                  </Text>
+                  <Text style={styles.imageDropzoneSubtitle}>
+                    Accepts JPG, JPEG, PNG, or WebP
+                  </Text>
+                  <View style={styles.imageBrowseChip}>
+                    <MaterialIcons
+                      name="add-photo-alternate"
+                      size={14}
+                      color={Colors.onPrimary}
+                    />
+                    <Text style={styles.imageBrowseChipText}>Browse Files</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              {!!imageError && (
+                <View style={styles.imageErrorContainer}>
+                  <MaterialIcons
+                    name="error-outline"
+                    size={14}
+                    color={Colors.error}
+                  />
+                  <Text style={styles.imageErrorText}>{imageError}</Text>
+                </View>
+              )}
+            </View>
 
             {/* Category Selector */}
             <Text style={styles.formSectionLabel}>Category *</Text>
@@ -1261,6 +1526,184 @@ const styles = StyleSheet.create({
   txTypeBtnTextActive: {
     color: Colors.onPrimaryContainer,
     fontFamily: 'Inter-Bold',
+  },
+  formInputLabel: {
+    ...Typography.bodyMd,
+    fontWeight: '500',
+    color: Colors.onBackground,
+    marginBottom: Spacing.xs,
+  },
+  requiredAsterisk: {
+    color: Colors.error,
+    fontWeight: '700',
+  },
+  imageUploadSection: {
+    marginBottom: Spacing.sm,
+    width: '100%',
+  },
+  imageUploadHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  imageBadge: {
+    backgroundColor: Colors.primaryContainer,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  imageBadgeText: {
+    ...Typography.labelLg,
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onPrimaryContainer,
+  },
+  imageDropzone: {
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.surfaceContainerHigh,
+    borderStyle: 'dashed',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageDropzoneError: {
+    borderColor: Colors.error,
+    backgroundColor: '#FFF5F5',
+  },
+  imageDropzoneIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: Colors.primaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
+  },
+  imageDropzoneTitle: {
+    ...Typography.bodyMd,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+    marginBottom: 2,
+  },
+  imageDropzoneSubtitle: {
+    ...Typography.bodyMd,
+    fontSize: 11,
+    color: Colors.tertiary,
+    marginBottom: Spacing.xs,
+  },
+  imageBrowseChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.md,
+    gap: 4,
+    marginTop: 2,
+  },
+  imageBrowseChipText: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onPrimary,
+  },
+  imagePreviewCard: {
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    overflow: 'hidden',
+  },
+  imageCardError: {
+    borderColor: Colors.error,
+  },
+  imagePreviewBox: {
+    width: '100%',
+    height: 150,
+    backgroundColor: '#1E1E1E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imagePreviewImg: {
+    width: '100%',
+    height: '100%',
+  },
+  imageMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    backgroundColor: Colors.surfaceContainerLowest,
+    borderTopWidth: 1,
+    borderTopColor: Colors.surfaceContainerHigh,
+  },
+  imageMetaInfo: {
+    flex: 1,
+    marginRight: Spacing.xs,
+  },
+  imageMetaName: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+  },
+  imageMetaDetails: {
+    ...Typography.bodyMd,
+    fontSize: 10,
+    color: Colors.tertiary,
+    marginTop: 1,
+  },
+  imageActionButtons: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  imageChangeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.surfaceContainerLow,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    gap: 3,
+  },
+  imageChangeBtnText: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    color: Colors.primary,
+    fontFamily: 'Inter-Bold',
+  },
+  imageRemoveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.errorContainer,
+    gap: 3,
+  },
+  imageRemoveBtnText: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    color: Colors.error,
+    fontFamily: 'Inter-Bold',
+  },
+  imageErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  imageErrorText: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    color: Colors.error,
   },
 });
 

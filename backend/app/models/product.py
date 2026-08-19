@@ -13,6 +13,7 @@ class Product(Document):
     discount_price: Optional[float] = None
     category_id: Indexed(PydanticObjectId)
     stock: int
+    image_url: Optional[str] = None
     images: List[str] = Field(default_factory=list)
     rating: float = 0.0
     reviews_count: int = 0

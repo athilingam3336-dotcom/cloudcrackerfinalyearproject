@@ -1,11 +1,11 @@
 [
   {
-    "_id": "6a8017befa0c6694a4b7da70",
+    "_id": "6a859dcb33a1f8af3fe2da47",
     "name": "Super Phone",
     "description": "Powerful phone",
     "price": 500.0,
     "discount_price": 450.0,
-    "category_id": "6a8017bdfa0c6694a4b7da6f",
+    "category_id": "6a859dca33a1f8af3fe2da46",
     "stock": 0,
     "images": [
       "http://example.com/phone.png"
@@ -26,10 +26,10 @@
     "is_flash_sale": false,
     "is_recommended": false,
     "is_active": true,
-    "created_at": "2026-08-15T07:39:42.024000",
-    "updated_at": "2026-08-15T07:39:42.801000",
-    "created_by": "6a801658fa0c6694a4b7d91a",
-    "updated_by": "6a801658fa0c6694a4b7d91a",
+    "created_at": "2026-08-19T12:12:59.892000",
+    "updated_at": "2026-08-19T12:13:01.029000",
+    "created_by": "6a859cb633a1f8af3fe2d8f1",
+    "updated_by": "6a859cb633a1f8af3fe2d8f1",
     "status": "active"
   }
 ]

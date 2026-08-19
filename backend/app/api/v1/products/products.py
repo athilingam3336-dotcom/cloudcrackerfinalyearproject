@@ -1,6 +1,6 @@
 from typing import Optional
 from bson import ObjectId
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, Path, Query, Request, UploadFile, status
 
 from app.core.dependencies import get_current_admin
 from app.exceptions import ValidationException
@@ -32,14 +32,79 @@ def get_validated_product_id(product_id: str = Path(...)) -> str:
     response_model=ApiResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new product (Admin Only)",
-    description="Registers a new product. Requires admin authentication. Asserts parent category is active.",
+    description="Registers a new product with optional image upload to Cloudinary. Requires admin authentication.",
 )
 async def create_product(
-    data: ProductCreate,
+    request: Request,
     current_admin: User = Depends(get_current_admin),
     product_service: ProductService = Depends(),
 ) -> ApiResponse:
-    product = await product_service.create_product(data, str(current_admin.id))
+    content_type = request.headers.get("content-type", "")
+    image_file: Optional[UploadFile] = None
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        name = form.get("name") or form.get("title")
+        description = form.get("description")
+        price_raw = form.get("price") or form.get("original_price")
+        discount_raw = form.get("discount_price")
+        category_id = form.get("category_id") or form.get("category")
+        stock_raw = form.get("stock")
+        image_url = form.get("image_url")
+
+        is_featured = str(form.get("is_featured", "false")).lower() in ("true", "1")
+        is_bestseller = str(form.get("is_bestseller", "false")).lower() in ("true", "1")
+        is_flash_sale = str(form.get("is_flash_sale", "false")).lower() in ("true", "1")
+        is_recommended = str(form.get("is_recommended", "false")).lower() in ("true", "1")
+
+        raw_file = form.get("image") or form.get("file")
+        if raw_file and hasattr(raw_file, "filename") and bool(raw_file.filename):
+            image_file = raw_file
+
+        if not name or not price_raw or not category_id or stock_raw is None:
+            raise ValidationException(
+                message="Missing required product fields (name, price, category_id, stock)."
+            )
+
+        try:
+            price = float(price_raw)
+            discount_price = (
+                float(discount_raw)
+                if discount_raw not in (None, "", "null")
+                else None
+            )
+            stock = int(stock_raw)
+        except (ValueError, TypeError):
+            raise ValidationException(
+                message="Invalid numeric format for price, discount_price, or stock."
+            )
+
+        try:
+            data = ProductCreate(
+                name=str(name),
+                description=str(description or ""),
+                price=price,
+                discount_price=discount_price,
+                category_id=str(category_id),
+                stock=stock,
+                image_url=str(image_url) if image_url else None,
+                is_featured=is_featured,
+                is_bestseller=is_bestseller,
+                is_flash_sale=is_flash_sale,
+                is_recommended=is_recommended,
+            )
+        except Exception as e:
+            raise ValidationException(message=str(e))
+    else:
+        json_body = await request.json()
+        try:
+            data = ProductCreate(**json_body)
+        except Exception as e:
+            raise ValidationException(message=str(e))
+
+    product = await product_service.create_product(
+        data, str(current_admin.id), image_file=image_file
+    )
     return ApiResponse(
         success=True,
         message="Product created successfully",
@@ -52,16 +117,83 @@ async def create_product(
     response_model=ApiResponse,
     status_code=status.HTTP_200_OK,
     summary="Update product details (Admin Only)",
-    description="Updates fields of a product. Requires admin authentication. Validates category links.",
+    description="Updates fields of a product and optional image upload to Cloudinary. Requires admin authentication.",
 )
 async def update_product(
-    data: ProductUpdate,
+    request: Request,
     product_id: str = Depends(get_validated_product_id),
     current_admin: User = Depends(get_current_admin),
     product_service: ProductService = Depends(),
 ) -> ApiResponse:
+    content_type = request.headers.get("content-type", "")
+    image_file: Optional[UploadFile] = None
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        update_kwargs: dict = {}
+        if "name" in form or "title" in form:
+            update_kwargs["name"] = str(form.get("name") or form.get("title"))
+        if "description" in form:
+            update_kwargs["description"] = str(form.get("description"))
+        if "price" in form or "original_price" in form:
+            update_kwargs["price"] = float(
+                form.get("price") or form.get("original_price")  # type: ignore
+            )
+        if "discount_price" in form:
+            val = form.get("discount_price")
+            update_kwargs["discount_price"] = (
+                float(val) if val not in (None, "", "null") else None  # type: ignore
+            )
+        if "category_id" in form or "category" in form:
+            update_kwargs["category_id"] = str(
+                form.get("category_id") or form.get("category")
+            )
+        if "stock" in form:
+            update_kwargs["stock"] = int(form.get("stock"))  # type: ignore
+        if "is_featured" in form:
+            update_kwargs["is_featured"] = str(form.get("is_featured")).lower() in (
+                "true",
+                "1",
+            )
+        if "is_bestseller" in form:
+            update_kwargs["is_bestseller"] = str(form.get("is_bestseller")).lower() in (
+                "true",
+                "1",
+            )
+        if "is_flash_sale" in form:
+            update_kwargs["is_flash_sale"] = str(form.get("is_flash_sale")).lower() in (
+                "true",
+                "1",
+            )
+        if "is_recommended" in form:
+            update_kwargs["is_recommended"] = str(
+                form.get("is_recommended")
+            ).lower() in ("true", "1")
+        if "is_active" in form:
+            update_kwargs["is_active"] = str(form.get("is_active")).lower() in (
+                "true",
+                "1",
+            )
+        if "image_url" in form:
+            update_kwargs["image_url"] = str(form.get("image_url"))
+
+        raw_file = form.get("image") or form.get("file")
+        if raw_file and hasattr(raw_file, "filename") and bool(raw_file.filename):
+            image_file = raw_file
+
+        try:
+            data = ProductUpdate(**update_kwargs)
+        except Exception as e:
+            raise ValidationException(message=str(e))
+    else:
+        json_body = await request.json()
+        try:
+            data = ProductUpdate(**json_body)
+        except Exception as e:
+            raise ValidationException(message=str(e))
+
     product = await product_service.update_product(
-        product_id, data, str(current_admin.id)
+        product_id, data, str(current_admin.id), image_file=image_file
     )
     return ApiResponse(
         success=True,

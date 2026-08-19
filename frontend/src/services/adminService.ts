@@ -121,6 +121,15 @@ export interface AdminCategoryItem {
   isActive?: boolean;
 }
 
+export interface SelectedProductImageInput {
+  uri: string;
+  name: string;
+  type: string;
+  size?: number;
+  file?: any;
+  base64?: string | null;
+}
+
 export interface AdminProductCreateInput {
   name: string;
   description: string;
@@ -128,6 +137,8 @@ export interface AdminProductCreateInput {
   discount_price?: number | null;
   category_id: string;
   stock: number;
+  image?: SelectedProductImageInput | null;
+  image_url?: string | null;
   images?: string[];
   is_featured?: boolean;
   is_bestseller?: boolean;
@@ -142,6 +153,8 @@ export interface AdminProductUpdateInput {
   discount_price?: number | null;
   category_id?: string;
   stock?: number;
+  image?: SelectedProductImageInput | null;
+  image_url?: string | null;
   images?: string[];
   is_featured?: boolean;
   is_bestseller?: boolean;
@@ -537,6 +550,38 @@ export class AdminService {
   async createProduct(
     product: AdminProductCreateInput
   ): Promise<AdminProductItemUI> {
+    if (product.image && (product.image.file || product.image.uri)) {
+      const formData = new FormData();
+      formData.append('name', product.name);
+      formData.append('description', product.description);
+      formData.append('price', String(product.price));
+      if (product.discount_price != null) {
+        formData.append('discount_price', String(product.discount_price));
+      }
+      formData.append('category_id', product.category_id);
+      formData.append('stock', String(product.stock));
+      formData.append('is_featured', String(Boolean(product.is_featured)));
+      formData.append('is_bestseller', String(Boolean(product.is_bestseller)));
+      formData.append('is_flash_sale', String(Boolean(product.is_flash_sale)));
+      formData.append('is_recommended', String(Boolean(product.is_recommended)));
+
+      if (product.image.file) {
+        formData.append('image', product.image.file);
+      } else {
+        formData.append('image', {
+          uri: product.image.uri,
+          name: product.image.name || 'product.jpg',
+          type: product.image.type || 'image/jpeg',
+        } as any);
+      }
+
+      const { data: res } = await apiClient.post('/products', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const payload = res?.data || res;
+      return this.mapBackendProductToUI(payload);
+    }
+
     const { data: res } = await apiClient.post('/products', product);
     const payload = res?.data || res;
     return this.mapBackendProductToUI(payload);
@@ -546,6 +591,52 @@ export class AdminService {
     id: string,
     updates: AdminProductUpdateInput
   ): Promise<AdminProductItemUI> {
+    if (updates.image && (updates.image.file || updates.image.uri)) {
+      const formData = new FormData();
+      if (updates.name !== undefined) formData.append('name', updates.name);
+      if (updates.description !== undefined) formData.append('description', updates.description);
+      if (updates.price !== undefined) formData.append('price', String(updates.price));
+      if (updates.discount_price !== undefined) {
+        formData.append(
+          'discount_price',
+          updates.discount_price != null ? String(updates.discount_price) : ''
+        );
+      }
+      if (updates.category_id !== undefined) formData.append('category_id', updates.category_id);
+      if (updates.stock !== undefined) formData.append('stock', String(updates.stock));
+      if (updates.is_featured !== undefined) {
+        formData.append('is_featured', String(Boolean(updates.is_featured)));
+      }
+      if (updates.is_bestseller !== undefined) {
+        formData.append('is_bestseller', String(Boolean(updates.is_bestseller)));
+      }
+      if (updates.is_flash_sale !== undefined) {
+        formData.append('is_flash_sale', String(Boolean(updates.is_flash_sale)));
+      }
+      if (updates.is_recommended !== undefined) {
+        formData.append('is_recommended', String(Boolean(updates.is_recommended)));
+      }
+      if (updates.is_active !== undefined) {
+        formData.append('is_active', String(Boolean(updates.is_active)));
+      }
+
+      if (updates.image.file) {
+        formData.append('image', updates.image.file);
+      } else {
+        formData.append('image', {
+          uri: updates.image.uri,
+          name: updates.image.name || 'product.jpg',
+          type: updates.image.type || 'image/jpeg',
+        } as any);
+      }
+
+      const { data: res } = await apiClient.put(`/products/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const payload = res?.data || res;
+      return this.mapBackendProductToUI(payload);
+    }
+
     const { data: res } = await apiClient.put(`/products/${id}`, updates);
     const payload = res?.data || res;
     return this.mapBackendProductToUI(payload);

@@ -27,27 +27,25 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def resolve_mongodb_url(self) -> "Settings":
-        """Resolve MongoDB connection based on ENVIRONMENT.
-        - production: requires MONGODB_URI.
-        - test: requires TEST_MONGODB_URI.
-        - development: may use MONGODB_URI or default localhost.
+        """Resolve MongoDB connection based on ENVIRONMENT:
+        - production: STRICTLY requires remote MongoDB Atlas MONGODB_URI.
+        - test: uses isolated local test URI (mongodb://localhost:27017 with cloudcrackers_test).
+        - development: strictly uses local MongoDB (mongodb://localhost:27017).
         """
         env = self.ENVIRONMENT.lower()
         if env == "production":
-            if not self.MONGODB_URI:
-                raise ValueError("MONGODB_URI must be set in production environment.")
-            if "localhost" in self.MONGODB_URI.lower() or "127.0.0.1" in self.MONGODB_URI:
+            uri = self.MONGODB_URI or self.MONGODB_URL
+            if not uri or "localhost" in uri.lower() or "127.0.0.1" in uri:
                 raise ValueError(
-                    "Localhost MongoDB cannot be used in production environment. A valid MongoDB Atlas/remote URI is required."
+                    "A valid remote MongoDB Atlas URI (MONGODB_URI) is required in production environment."
                 )
-            self.MONGODB_URL = self.MONGODB_URI
+            self.MONGODB_URL = uri
         elif env == "test":
-            if not self.TEST_MONGODB_URI:
-                raise ValueError("TEST_MONGODB_URI must be set for test environment.")
-            self.MONGODB_URL = self.TEST_MONGODB_URI
+            self.MONGODB_URL = self.TEST_MONGODB_URI or "mongodb://localhost:27017"
+            self.DB_NAME = "cloudcrackers_test"
         else:
-            if self.MONGODB_URI:
-                self.MONGODB_URL = self.MONGODB_URI
+            # Development strictly uses local MongoDB
+            self.MONGODB_URL = "mongodb://localhost:27017"
         return self
 
     @property

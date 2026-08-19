@@ -333,3 +333,79 @@ async def test_product_category_filtering(
     assert len(res2.json()["data"]["products"]) == 1
     assert res2.json()["data"]["products"][0]["name"] == "Cat2 Prod"
 
+
+@pytest.mark.asyncio
+async def test_create_product_with_image_upload_multipart(
+    client: AsyncClient, admin_headers: dict, sample_category: dict
+):
+    """Tests creating a product with multipart form-data and an uploaded image file."""
+    image_content = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00"
+    files = {"image": ("golden_pot.jpg", image_content, "image/jpeg")}
+    data = {
+        "name": "Golden Flower Pot 500",
+        "description": "High performance glittering fountain pot.",
+        "price": "250.0",
+        "discount_price": "220.0",
+        "category_id": sample_category["id"],
+        "stock": "50",
+        "is_featured": "true",
+        "is_bestseller": "false",
+        "is_flash_sale": "true",
+        "is_recommended": "true",
+    }
+
+    # Post multipart form data (remove Content-Type from headers so httpx sets boundary automatically)
+    headers = {k: v for k, v in admin_headers.items() if k.lower() != "content-type"}
+    response = await client.post(
+        "/api/v1/products",
+        data=data,
+        files=files,
+        headers=headers,
+    )
+    assert response.status_code == 201
+    res_json = response.json()
+    assert res_json["success"] is True
+    assert res_json["data"]["name"] == "Golden Flower Pot 500"
+    assert res_json["data"]["image_url"] is not None
+    assert "res.cloudinary.com" in res_json["data"]["image_url"]
+    assert res_json["data"]["image_url"] in res_json["data"]["images"]
+
+
+@pytest.mark.asyncio
+async def test_update_product_with_new_image_upload_multipart(
+    client: AsyncClient, admin_headers: dict, sample_category: dict
+):
+    """Tests updating a product with a replacement image uploaded via multipart form-data."""
+    # First create product
+    create_payload = {
+        "name": "Rocket Barrage",
+        "description": "Sky rockets",
+        "price": 100.0,
+        "category_id": sample_category["id"],
+        "stock": 20,
+    }
+    create_res = await client.post("/api/v1/products", json=create_payload, headers=admin_headers)
+    prod_id = create_res.json()["data"]["id"]
+
+    # Update with new image
+    image_content = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+    files = {"image": ("replacement_rocket.png", image_content, "image/png")}
+    update_data = {
+        "name": "Updated Rocket Barrage Pro",
+        "price": "120.0",
+    }
+    headers = {k: v for k, v in admin_headers.items() if k.lower() != "content-type"}
+    update_res = await client.put(
+        f"/api/v1/products/{prod_id}",
+        data=update_data,
+        files=files,
+        headers=headers,
+    )
+    assert update_res.status_code == 200
+    res_json = update_res.json()
+    assert res_json["success"] is True
+    assert res_json["data"]["name"] == "Updated Rocket Barrage Pro"
+    assert res_json["data"]["image_url"] is not None
+    assert "res.cloudinary.com" in res_json["data"]["image_url"]
+
+

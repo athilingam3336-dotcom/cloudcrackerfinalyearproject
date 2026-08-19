@@ -1,10 +1,47 @@
+import os
 from typing import Any, Dict, List, Optional, Tuple
+from fastapi import UploadFile
 
+from app.core import cloudinary as cloud_core
 from app.exceptions import NotFoundException, ValidationException
 from app.models.product import Product
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.product_repository import ProductRepository
 from app.schemas.product import ProductCreate, ProductUpdate
+
+ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"]
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+async def process_and_upload_product_image(image_file: UploadFile) -> str:
+    """Validates image file and uploads to Cloudinary in cloudcrackers/products folder, returning secure_url."""
+    file_bytes = await image_file.read()
+    file_size = len(file_bytes)
+    await image_file.seek(0)
+
+    if file_size > MAX_FILE_SIZE:
+        raise ValidationException(
+            message=f"Image size exceeds 5 MB limit. Uploaded size: {file_size / (1024 * 1024):.2f} MB."
+        )
+
+    content_type = (image_file.content_type or "").lower()
+    if content_type and content_type not in ALLOWED_MIME_TYPES:
+        raise ValidationException(
+            message=f"Invalid image type '{content_type}'. Only JPG, JPEG, PNG, and WebP are allowed."
+        )
+
+    ext = os.path.splitext(image_file.filename or "")[1].lower()
+    if ext and ext not in ALLOWED_EXTENSIONS:
+        raise ValidationException(
+            message=f"Invalid image extension '{ext}'. Only JPG, JPEG, PNG, and WebP are allowed."
+        )
+
+    upload_result = await cloud_core.upload_image(file_bytes, folder="cloudcrackers/products")
+    secure_url = upload_result.get("secure_url") or upload_result.get("url")
+    if not secure_url:
+        raise ValidationException(message="Failed to obtain Cloudinary URL for product image.")
+    return secure_url
 
 
 class ProductService:
@@ -12,14 +49,28 @@ class ProductService:
         self.product_repo = ProductRepository()
         self.category_repo = CategoryRepository()
 
-    async def create_product(self, data: ProductCreate, user_id: str) -> Product:
-        """Creates a new product after asserting its parent category exists and is active."""
+    async def create_product(
+        self,
+        data: ProductCreate,
+        user_id: str,
+        image_file: Optional[UploadFile] = None,
+    ) -> Product:
+        """Creates a new product after asserting its parent category exists and is active, uploading image to Cloudinary."""
         # 1. Assert category exists and is active
         category = await self.category_repo.get_by_id(data.category_id)
         if not category or not category.is_active:
             raise ValidationException(
                 message=f"Category with ID '{data.category_id}' does not exist or is inactive."
             )
+
+        # 2. Upload image to Cloudinary if an image file is provided
+        image_url = data.image_url
+        if image_file:
+            image_url = await process_and_upload_product_image(image_file)
+        elif not image_url and data.images and len(data.images) > 0:
+            image_url = data.images[0]
+
+        images_list = [image_url] if image_url else []
 
         product_data = {
             "name": data.name,
@@ -28,7 +79,8 @@ class ProductService:
             "discount_price": data.discount_price,
             "category_id": category.id,
             "stock": data.stock,
-            "images": data.images,
+            "image_url": image_url,
+            "images": images_list,
             "rating": 0.0,
             "reviews_count": 0,
             "is_featured": data.is_featured,
@@ -50,12 +102,25 @@ class ProductService:
         return product
 
     async def update_product(
-        self, product_id: str, data: ProductUpdate, user_id: str
+        self,
+        product_id: str,
+        data: ProductUpdate,
+        user_id: str,
+        image_file: Optional[UploadFile] = None,
     ) -> Product:
-        """Updates product properties, checking parent category links and price thresholds."""
+        """Updates product properties, checking parent category links, price thresholds, and updating Cloudinary image if provided."""
         product = await self.get_product(product_id)
 
         update_dict = data.model_dump(exclude_unset=True)
+
+        if image_file:
+            new_image_url = await process_and_upload_product_image(image_file)
+            update_dict["image_url"] = new_image_url
+            update_dict["images"] = [new_image_url]
+        elif "image_url" in update_dict and update_dict["image_url"]:
+            update_dict["images"] = [update_dict["image_url"]]
+        elif "images" in update_dict and update_dict["images"]:
+            update_dict["image_url"] = update_dict["images"][0]
 
         # 1. Verify category constraint if category_id is updated
         if "category_id" in update_dict:

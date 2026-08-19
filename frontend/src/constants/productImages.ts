@@ -245,6 +245,9 @@ export const resolveProductImage = (
  */
 export const getProductGalleryImages = (product?: any): any[] => {
   const primary = resolveProductImage(product);
+  if (Array.isArray(product?.images) && product.images.length > 1) {
+    return product.images.map((img: any) => resolveProductImage(img));
+  }
   return [
     primary,
     LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30,

@@ -11,6 +11,7 @@ class ProductCreate(BaseModel):
     discount_price: Optional[float] = Field(None, gt=0)
     category_id: str
     stock: int = Field(..., ge=0)
+    image_url: Optional[str] = None
     images: List[str] = Field(default_factory=list)
     is_featured: bool = False
     is_bestseller: bool = False
@@ -38,6 +39,7 @@ class ProductUpdate(BaseModel):
     discount_price: Optional[float] = Field(None, gt=0)
     category_id: Optional[str] = None
     stock: Optional[int] = Field(None, ge=0)
+    image_url: Optional[str] = None
     images: Optional[List[str]] = None
     is_featured: Optional[bool] = None
     is_bestseller: Optional[bool] = None
@@ -63,41 +65,61 @@ class ProductUpdate(BaseModel):
 class ProductResponse(BaseModel):
     id: str
     name: str
+    title: Optional[str] = None
     description: str
     price: float
-    discount_price: Optional[float]
+    original_price: Optional[float] = None
+    discount_price: Optional[float] = None
     category_id: str
+    category: Optional[str] = None
     stock: int
-    images: List[str]
-    rating: float
-    reviews_count: int
-    average_rating: float
-    total_reviews: int
-    rating_breakdown: dict
-    is_featured: bool
-    is_bestseller: bool
-    is_flash_sale: bool
-    is_recommended: bool
-    is_active: bool
+    image_url: Optional[str] = None
+    images: List[str] = Field(default_factory=list)
+    rating: float = 0.0
+    reviews_count: int = 0
+    average_rating: float = 0.0
+    total_reviews: int = 0
+    rating_breakdown: dict = Field(default_factory=dict)
+    is_featured: bool = False
+    is_bestseller: bool = False
+    is_flash_sale: bool = False
+    is_recommended: bool = False
+    is_active: bool = True
     created_at: datetime
     updated_at: datetime
-    status: str
+    status: str = "active"
 
     @model_validator(mode="before")
     @classmethod
     def convert_id(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            if "_id" in data:
-                data["id"] = str(data["_id"])
-            elif "id" in data:
-                data["id"] = str(data["id"])
-            if "category_id" in data:
-                data["category_id"] = str(data["category_id"])
+            dict_data = dict(data)
+            if "_id" in dict_data:
+                dict_data["id"] = str(dict_data["_id"])
+            elif "id" in dict_data:
+                dict_data["id"] = str(dict_data["id"])
+            if "category_id" in dict_data:
+                dict_data["category_id"] = str(dict_data["category_id"])
+            if "name" in dict_data and not dict_data.get("title"):
+                dict_data["title"] = dict_data["name"]
+            if "price" in dict_data and not dict_data.get("original_price"):
+                dict_data["original_price"] = dict_data["price"]
+            if not dict_data.get("image_url") and dict_data.get("images"):
+                dict_data["image_url"] = dict_data["images"][0]
+            elif dict_data.get("image_url") and not dict_data.get("images"):
+                dict_data["images"] = [dict_data["image_url"]]
+            return dict_data
         elif hasattr(data, "id"):
             # Beanie document
             data_dict = data.model_dump()
             data_dict["id"] = str(data.id)
             data_dict["category_id"] = str(data.category_id)
+            data_dict["title"] = data.name
+            data_dict["original_price"] = data.price
+            img_url = getattr(data, "image_url", None) or (data.images[0] if getattr(data, "images", None) else None)
+            data_dict["image_url"] = img_url
+            if img_url and not data_dict.get("images"):
+                data_dict["images"] = [img_url]
             return data_dict
         return data
 
