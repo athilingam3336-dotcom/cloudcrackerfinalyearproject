@@ -40,7 +40,7 @@ app.add_middleware(RequestLoggerMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
-    allow_origin_regex=r"^https?://.*",
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|[\w-]+\.onrender\.com)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
