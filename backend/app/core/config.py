@@ -28,12 +28,15 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def resolve_mongodb_url(self) -> "Settings":
         """Resolve MongoDB connection based on ENVIRONMENT:
+        - Prioritizes remote MONGODB_URI if provided.
         - production: STRICTLY requires remote MongoDB Atlas MONGODB_URI.
         - test: uses isolated local test URI (mongodb://localhost:27017 with cloudcrackers_test).
-        - development: strictly uses local MongoDB (mongodb://localhost:27017).
+        - development: defaults to local MongoDB if MONGODB_URI is not set.
         """
         env = self.ENVIRONMENT.lower()
-        if env == "production":
+        if self.MONGODB_URI and "localhost" not in self.MONGODB_URI and "127.0.0.1" not in self.MONGODB_URI:
+            self.MONGODB_URL = self.MONGODB_URI
+        elif env == "production":
             if not self.MONGODB_URI:
                 raise ValueError("MONGODB_URI must be set in production environment.")
             if "localhost" in self.MONGODB_URI.lower() or "127.0.0.1" in self.MONGODB_URI:
@@ -45,8 +48,7 @@ class Settings(BaseSettings):
             self.MONGODB_URL = self.TEST_MONGODB_URI or "mongodb://localhost:27017"
             self.DB_NAME = "cloudcrackers_test"
         else:
-            # Development strictly uses local MongoDB unless explicitly configured
-            if not self.MONGODB_URL or "cloudcrackers.0fcxwnp.mongodb.net" in self.MONGODB_URL:
+            if not self.MONGODB_URL:
                 self.MONGODB_URL = "mongodb://localhost:27017"
         return self
 
