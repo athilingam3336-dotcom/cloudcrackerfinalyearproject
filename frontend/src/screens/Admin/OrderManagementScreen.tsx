@@ -174,6 +174,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
     return (
       <View style={styles.headerContainer}>
         <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('AdminDashboard'))}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}

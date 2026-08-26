@@ -90,6 +90,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeHeader
+        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => {}}
@@ -98,6 +99,14 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.titleSection}>
+          <TouchableOpacity
+            style={styles.inlineBackRow}
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+            <Text style={styles.inlineBackText}>Back</Text>
+          </TouchableOpacity>
           <Text style={styles.title}>Your Shopping Cart</Text>
           <Text style={styles.subtitle}>
             Review your selection before proceeding to secure checkout.
@@ -276,6 +285,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.marginMobile,
     marginTop: Spacing.sm,
     marginBottom: Spacing.md,
+  },
+  inlineBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+  },
+  inlineBackText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
   },
   title: {
     ...Typography.headlineLg,

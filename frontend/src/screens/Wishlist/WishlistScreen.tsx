@@ -104,6 +104,7 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({ navigation }) =>
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
@@ -112,6 +113,14 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({ navigation }) =>
 
         <View style={styles.titleSection}>
           <View style={styles.titleTextWrapper}>
+            <TouchableOpacity
+              style={styles.inlineBackRow}
+              onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+              <Text style={styles.inlineBackText}>Back</Text>
+            </TouchableOpacity>
             <Text style={styles.title}>Your Wishlist</Text>
             <Text style={styles.subtitle}>
               {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'} saved for your next celebration
@@ -199,6 +208,18 @@ const styles = StyleSheet.create({
   },
   titleTextWrapper: {
     marginBottom: Spacing.xs,
+  },
+  inlineBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+  },
+  inlineBackText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
   },
   title: {
     ...Typography.headlineLg,

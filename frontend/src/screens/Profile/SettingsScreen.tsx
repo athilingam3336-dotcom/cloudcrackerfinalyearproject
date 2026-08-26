@@ -108,6 +108,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeHeader
+        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('UserProfile'))}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
@@ -116,6 +117,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.titleSection}>
+          <TouchableOpacity
+            style={styles.inlineBackRow}
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('UserProfile'))}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+            <Text style={styles.inlineBackText}>Back</Text>
+          </TouchableOpacity>
           <Text style={styles.title}>Settings</Text>
         </View>
 
@@ -264,6 +273,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.marginMobile,
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
+  },
+  inlineBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+  },
+  inlineBackText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
   },
   title: {
     ...Typography.headlineLg,

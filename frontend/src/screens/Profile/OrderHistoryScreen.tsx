@@ -243,6 +243,7 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('UserProfile'))}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
@@ -250,6 +251,14 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
         />
 
         <View style={styles.titleSection}>
+          <TouchableOpacity
+            style={styles.inlineBackRow}
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('UserProfile'))}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+            <Text style={styles.inlineBackText}>Back</Text>
+          </TouchableOpacity>
           <Text style={styles.title}>Order History</Text>
           <Text style={styles.subtitle}>Review and track your previous pyrotechnic purchases.</Text>
 
@@ -412,6 +421,18 @@ const styles = StyleSheet.create({
   titleSection: {
     paddingHorizontal: Spacing.marginMobile,
     marginTop: Spacing.sm,
+  },
+  inlineBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+  },
+  inlineBackText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
   },
   title: {
     ...Typography.headlineLg,

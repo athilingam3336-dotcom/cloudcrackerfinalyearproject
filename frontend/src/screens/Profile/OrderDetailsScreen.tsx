@@ -130,6 +130,7 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('OrderHistory'))}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
@@ -151,6 +152,7 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeHeader
+        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('OrderHistory'))}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}

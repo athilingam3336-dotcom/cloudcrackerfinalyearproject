@@ -292,6 +292,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeHeader
+        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Cart'))}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
@@ -301,6 +302,14 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Step Progress Indicator */}
         <View style={styles.progressContainer}>
+          <TouchableOpacity
+            style={styles.inlineBackRow}
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Cart'))}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+            <Text style={styles.inlineBackText}>Back to Cart</Text>
+          </TouchableOpacity>
           {[
             { step: 1, label: 'Shipping' },
             { step: 2, label: 'Payment' },
@@ -607,12 +616,21 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
     paddingHorizontal: Spacing.marginMobile,
     marginTop: Spacing.sm,
     marginBottom: Spacing.md,
+  },
+  inlineBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+  },
+  inlineBackText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
   },
   stepItem: {
     alignItems: 'center',

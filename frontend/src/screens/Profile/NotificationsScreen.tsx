@@ -151,6 +151,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
           onNotificationPress={() => {}}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
@@ -158,6 +159,14 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
         />
 
         <View style={styles.titleRow}>
+          <TouchableOpacity
+            style={styles.inlineBackRow}
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+            <Text style={styles.inlineBackText}>Back</Text>
+          </TouchableOpacity>
           <View>
             <Text style={styles.title}>Notifications</Text>
             <Text style={styles.subtitle}>
@@ -231,12 +240,21 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     paddingHorizontal: Spacing.marginMobile,
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
+  },
+  inlineBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+  },
+  inlineBackText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
   },
   title: {
     ...Typography.headlineLg,

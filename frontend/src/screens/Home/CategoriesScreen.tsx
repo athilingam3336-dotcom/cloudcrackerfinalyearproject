@@ -122,6 +122,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
       <View style={styles.headerWrapper}>
         {/* Top Header Bar */}
         <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
@@ -138,6 +139,14 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
 
         {/* Hero Background Section matching Stitch design */}
         <View style={styles.heroContainer}>
+          <TouchableOpacity
+            style={styles.inlineBackRow}
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+            <Text style={styles.inlineBackText}>Back</Text>
+          </TouchableOpacity>
           <ImageBackground
             source={LOCAL_PRODUCT_IMAGES.GIFT_BOX}
             style={styles.heroBackground}
@@ -264,9 +273,21 @@ const styles = StyleSheet.create({
   heroContainer: {
     marginHorizontal: Spacing.marginMobile,
     marginVertical: Spacing.sm,
-    height: 180,
     borderRadius: BorderRadius.xl,
     overflow: 'hidden',
+  },
+  inlineBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+    paddingHorizontal: 4,
+  },
+  inlineBackText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
   },
   heroBackground: {
     width: '100%',
