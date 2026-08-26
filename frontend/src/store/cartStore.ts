@@ -60,50 +60,72 @@ export const useCartStore = create<CartState>((set, get) => ({
     if (!product?.id) {
       throw new Error('Invalid product ID.');
     }
-    set({ isLoading: true });
+    const previousItems = get().items;
+    const existingIndex = previousItems.findIndex((i) => i.product.id === product.id);
+
+    let updatedItems: CartItem[];
+    if (existingIndex >= 0) {
+      updatedItems = previousItems.map((item, idx) =>
+        idx === existingIndex ? { ...item, quantity: item.quantity + quantity } : item
+      );
+    } else {
+      updatedItems = [...previousItems, { product, quantity, selectedVariant }];
+    }
+
+    // Optimistic Update: Immediately update cart items in memory (0ms)
+    set({ items: updatedItems });
+
     try {
-      // 1. Persist to MongoDB Atlas
       await cartService.addToCartApi(product.id, quantity);
-      // 2. Fetch updated authoritative cart from MongoDB Atlas
-      const atlasCart = await cartService.fetchCart();
-      set({ items: atlasCart || [], isLoading: false });
       return true;
     } catch (error) {
-      set({ isLoading: false });
+      set({ items: previousItems });
       throw error;
     }
   },
 
   removeFromCart: async (productId) => {
-    set({ isLoading: true });
+    const previousItems = get().items;
+    // Optimistic Update: Immediately remove item from memory (0ms)
+    set({ items: previousItems.filter((i) => i.product.id !== productId) });
+
     try {
       await cartService.removeFromCartApi(productId);
-      const atlasCart = await cartService.fetchCart();
-      set({ items: atlasCart || [], isLoading: false });
       return true;
     } catch (error) {
-      set({ isLoading: false });
+      set({ items: previousItems });
       throw error;
     }
   },
 
   updateQuantity: async (productId, delta) => {
-    const currentItem = get().items.find((i) => i.product.id === productId);
+    const previousItems = get().items;
+    const currentItem = previousItems.find((i) => i.product.id === productId);
     if (!currentItem) return false;
 
     const newQty = currentItem.quantity + delta;
-    set({ isLoading: true });
+
+    // Optimistic Update: Immediately reflect new quantity and totals (0ms)
+    let updatedItems: CartItem[];
+    if (newQty <= 0) {
+      updatedItems = previousItems.filter((i) => i.product.id !== productId);
+    } else {
+      updatedItems = previousItems.map((i) =>
+        i.product.id === productId ? { ...i, quantity: newQty } : i
+      );
+    }
+    set({ items: updatedItems });
+
     try {
       if (newQty <= 0) {
         await cartService.removeFromCartApi(productId);
       } else {
         await cartService.updateQuantityApi(productId, newQty);
       }
-      const atlasCart = await cartService.fetchCart();
-      set({ items: atlasCart || [], isLoading: false });
       return true;
     } catch (error) {
-      set({ isLoading: false });
+      // Revert to previous items if backend call fails
+      set({ items: previousItems });
       throw error;
     }
   },
