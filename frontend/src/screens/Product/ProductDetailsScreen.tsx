@@ -172,8 +172,9 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      {/* Header Bar */}
+      {/* Header Bar with Back Button */}
       <HomeHeader
+        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
@@ -181,13 +182,24 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Breadcrumb Navigation */}
+        {/* Breadcrumb Navigation with Back Button */}
         <View style={styles.breadcrumbContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Home')} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.backButtonRow}
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.breadcrumbDivider}>|</Text>
+
+          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))} activeOpacity={0.7}>
             <Text style={styles.breadcrumbLink}>Shop</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
-          <TouchableOpacity onPress={() => navigation.navigate('Categories')} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Categories'))} activeOpacity={0.7}>
             <Text style={styles.breadcrumbLink}>{product.category}</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
@@ -400,6 +412,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.marginMobile,
     paddingVertical: Spacing.sm,
     gap: 4,
+    flexWrap: 'wrap',
+  },
+  backButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingRight: 4,
+  },
+  backButtonText: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+  },
+  breadcrumbDivider: {
+    fontSize: 12,
+    color: Colors.surfaceContainerHighest,
+    marginHorizontal: 4,
   },
   breadcrumbLink: {
     ...Typography.labelLg,
@@ -412,7 +442,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
-    flex: 1,
+    flexShrink: 1,
   },
   galleryContainer: {
     paddingHorizontal: Spacing.marginMobile,

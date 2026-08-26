@@ -320,6 +320,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
@@ -334,13 +335,24 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           placeholder="Search items in this collection..."
         />
 
-        {/* Breadcrumb Navigation */}
+        {/* Breadcrumb Navigation with Back Button */}
         <View style={styles.breadcrumbContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Home')} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.backButtonRow}
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.breadcrumbDivider}>|</Text>
+
+          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))} activeOpacity={0.7}>
             <Text style={styles.breadcrumbLink}>HOME</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
-          <TouchableOpacity onPress={() => navigation.navigate('Categories')} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Categories'))} activeOpacity={0.7}>
             <Text style={styles.breadcrumbLink}>CATEGORIES</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
@@ -558,6 +570,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.marginMobile,
     paddingTop: Spacing.sm,
     gap: 4,
+    flexWrap: 'wrap',
+  },
+  backButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingRight: 4,
+  },
+  backButtonText: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+  },
+  breadcrumbDivider: {
+    fontSize: 11,
+    color: Colors.surfaceContainerHighest,
+    marginHorizontal: 4,
   },
   breadcrumbLink: {
     ...Typography.labelLg,

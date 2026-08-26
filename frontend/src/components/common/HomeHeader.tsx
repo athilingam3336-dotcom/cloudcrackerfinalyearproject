@@ -11,6 +11,7 @@ interface HomeHeaderProps {
   onNotificationPress: () => void;
   onProfilePress: () => void;
   onCartPress: () => void;
+  onBackPress?: () => void;
   notificationCount?: number;
   userName?: string;
   avatarUrl?: string;
@@ -21,6 +22,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
     onNotificationPress,
     onProfilePress,
     onCartPress,
+    onBackPress,
     notificationCount = 3,
     userName = 'Explorer',
     avatarUrl,
@@ -31,8 +33,21 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
     return (
       <View style={styles.header}>
         <View style={styles.leftSection}>
-          <Text style={styles.brandTitle}>CloudCrackers</Text>
-          <Text style={styles.greetingText}>Welcome back, {userName}</Text>
+          {onBackPress && (
+            <TouchableOpacity
+              style={styles.backCircleButton}
+              onPress={onBackPress}
+              activeOpacity={0.7}
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
+            >
+              <MaterialIcons name="arrow-back" size={22} color={Colors.primary} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.titleContainer}>
+            <Text style={styles.brandTitle}>CloudCrackers</Text>
+            <Text style={styles.greetingText}>Welcome back, {userName}</Text>
+          </View>
         </View>
 
         <View style={styles.rightSection}>
@@ -108,6 +123,21 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.surfaceContainerHigh,
   },
   leftSection: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  backCircleButton: {
+    width: 38,
+    height: 38,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
+  },
+  titleContainer: {
     flex: 1,
   },
   brandTitle: {
