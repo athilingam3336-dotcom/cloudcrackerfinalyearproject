@@ -248,19 +248,117 @@ export const resolveProductImage = (
   return LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30;
 };
 
+export interface ProductGalleryItem {
+  uri: any;
+  itemData: {
+    id: string;
+    title: string;
+    subtitle: string;
+    price: number;
+    originalPrice?: number;
+    badge?: string;
+    stock: number;
+    description: string;
+    imageUrl?: any;
+    rating: number;
+    reviewCount: number;
+  };
+}
+
 /**
- * Returns a complete gallery of real local Stitch images for product detail screens.
+ * Returns a complete gallery of items with image URIs and matching product specifications for detail screens.
+ */
+export const getProductGalleryItems = (product?: any): ProductGalleryItem[] => {
+  const primaryImage = resolveProductImage(product);
+  const primaryItemData = {
+    id: product?.id || 'prod_primary',
+    title: product?.title || product?.name || 'Pyrotechnic Item',
+    subtitle: product?.subtitle || product?.description || 'Premium fireworks selection.',
+    price: typeof product?.price === 'number' ? product.price : 50.0,
+    originalPrice: product?.originalPrice,
+    badge: product?.badge || (product?.is_bestseller ? 'Bestseller' : product?.is_featured ? 'Featured' : undefined),
+    stock: typeof product?.stock === 'number' ? product.stock : 100,
+    description: product?.subtitle || product?.description || 'Bright pyrotechnics suitable for festive celebrations.',
+    imageUrl: primaryImage,
+    rating: product?.rating || 5.0,
+    reviewCount: product?.reviewCount || 128,
+  };
+
+  // If product has explicit multiple images array
+  if (Array.isArray(product?.images) && product.images.length > 1) {
+    return product.images.map((img: any, idx: number) => ({
+      uri: resolveProductImage(img),
+      itemData: {
+        ...primaryItemData,
+        id: `${primaryItemData.id}_var_${idx}`,
+        imageUrl: resolveProductImage(img),
+      },
+    }));
+  }
+
+  // Create variant presets mapped to the actual Stitch photography assets
+  const galleryPresets: { uri: any; title: string; subtitle: string; price: number; originalPrice?: number; badge?: string }[] = [
+    {
+      uri: primaryImage,
+      title: primaryItemData.title,
+      subtitle: primaryItemData.subtitle,
+      price: primaryItemData.price,
+      originalPrice: primaryItemData.originalPrice,
+      badge: primaryItemData.badge,
+    },
+    {
+      uri: LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30,
+      title: '30 Shots Multi-Shot Fireworks Cake',
+      subtitle: 'Grand finale barrage fireworks cake with 30 intense aerial bursts.',
+      price: 450.0,
+      originalPrice: 550.0,
+      badge: 'Bestseller',
+    },
+    {
+      uri: LOCAL_PRODUCT_IMAGES.GIFT_BOX,
+      title: 'Grand Festival Gift Box Assortment',
+      subtitle: 'Family celebration fireworks pack containing 25+ assorted pyrotechnics.',
+      price: 999.0,
+      originalPrice: 1299.0,
+      badge: 'Special Edition',
+    },
+    {
+      uri: LOCAL_PRODUCT_IMAGES.PENCIL_CANDLES,
+      title: 'Twinkling Star Pencil & Roman Candles',
+      subtitle: 'Multi-color repeater tubes for vibrant night aerial displays.',
+      price: 120.0,
+      originalPrice: 150.0,
+      badge: 'Popular',
+    },
+    {
+      uri: LOCAL_PRODUCT_IMAGES.ELECTRIC_SPARKLERS,
+      title: '7 cm Long Electric Gold Sparklers',
+      subtitle: 'Low-smoke long-burning metallic sparklers for Diwali & celebrations.',
+      price: 60.0,
+      originalPrice: 75.0,
+      badge: 'Ready to ship',
+    },
+  ];
+
+  return galleryPresets.map((preset, idx) => ({
+    uri: preset.uri,
+    itemData: {
+      ...primaryItemData,
+      id: idx === 0 ? primaryItemData.id : `${primaryItemData.id}_preset_${idx}`,
+      title: preset.title,
+      subtitle: preset.subtitle,
+      description: preset.subtitle,
+      price: preset.price,
+      originalPrice: preset.originalPrice,
+      badge: preset.badge,
+      imageUrl: preset.uri,
+    },
+  }));
+};
+
+/**
+ * Returns image URIs array for backward compatibility.
  */
 export const getProductGalleryImages = (product?: any): any[] => {
-  const primary = resolveProductImage(product);
-  if (Array.isArray(product?.images) && product.images.length > 1) {
-    return product.images.map((img: any) => resolveProductImage(img));
-  }
-  return [
-    primary,
-    LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30,
-    LOCAL_PRODUCT_IMAGES.GIFT_BOX,
-    LOCAL_PRODUCT_IMAGES.ROCKETS,
-    LOCAL_PRODUCT_IMAGES.ELECTRIC_SPARKLERS,
-  ];
+  return getProductGalleryItems(product).map((item) => item.uri);
 };

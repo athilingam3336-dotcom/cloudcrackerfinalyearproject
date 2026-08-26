@@ -216,6 +216,7 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeHeader
+        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
@@ -247,7 +248,7 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.title}>{product.title}</Text>
+          <Text style={styles.title}>{product.title} ({selectedEffect.name})</Text>
           <Text style={styles.categoryText}>{product.category} • Custom Variants</Text>
 
           {/* Dynamic Pricing */}

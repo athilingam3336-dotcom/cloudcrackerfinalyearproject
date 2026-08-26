@@ -25,7 +25,7 @@ import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } fr
 import { ProductItem } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
-import { getProductGalleryImages } from '@/constants/productImages';
+import { getProductGalleryItems, resolveProductImage } from '@/constants/productImages';
 
 type ProductDetailsScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -47,11 +47,6 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
   const { wishlistItems, toggleWishlist } = useWishlistStore();
   const addToCart = useCartStore((state) => state.addToCart);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
-
-  const isWishlisted = useMemo(
-    () => (product ? wishlistItems.some((w) => w.id === product.id) : false),
-    [wishlistItems, product]
-  );
 
   useEffect(() => {
     let isMounted = true;
@@ -85,14 +80,53 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
     };
   }, [productIdParam]);
 
-  const galleryImages = useMemo(() => {
-    return getProductGalleryImages(product);
+  const galleryItems = useMemo(() => {
+    return getProductGalleryItems(product);
   }, [product]);
+
+  const currentDisplayItem = useMemo(() => {
+    if (galleryItems.length > 0 && activeImageIndex < galleryItems.length) {
+      const item = galleryItems[activeImageIndex].itemData;
+      return {
+        id: item.id,
+        title: item.title,
+        subtitle: item.subtitle,
+        category: product?.category || 'all',
+        price: item.price,
+        originalPrice: item.originalPrice,
+        stock: item.stock,
+        badge: item.badge,
+        rating: item.rating,
+        reviewCount: item.reviewCount,
+        imageUrl: item.imageUrl,
+        description: item.description,
+      };
+    }
+    return (
+      product || {
+        id: 'prod_default',
+        title: 'Pyrotechnic Item',
+        subtitle: 'Festive item',
+        category: 'all',
+        price: 50.0,
+        stock: 100,
+        rating: 5.0,
+        reviewCount: 128,
+        description: 'Quality celebration item',
+        imageUrl: undefined,
+      }
+    );
+  }, [galleryItems, activeImageIndex, product]);
+
+  const isWishlisted = useMemo(
+    () => (currentDisplayItem ? wishlistItems.some((w) => w.id === currentDisplayItem.id || w.id === product?.id) : false),
+    [wishlistItems, currentDisplayItem, product]
+  );
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const handleAddToCart = useCallback(async () => {
-    if (!product) return;
+    if (!currentDisplayItem) return;
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'Please log in to add items to your cart.', [
         { text: 'Cancel', style: 'cancel' },
@@ -101,15 +135,15 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
       return;
     }
     try {
-      await addToCart(product, quantity);
-      Alert.alert('Success', `${quantity}x "${product.title}" added to your cart.`);
+      await addToCart(currentDisplayItem, quantity);
+      Alert.alert('Success', `${quantity}x "${currentDisplayItem.title}" added to your cart.`);
     } catch (err: any) {
       Alert.alert('Cart Error', err?.message || 'Failed to add item to cart.');
     }
-  }, [isAuthenticated, quantity, product, addToCart, navigation]);
+  }, [isAuthenticated, quantity, currentDisplayItem, addToCart, navigation]);
 
   const handleBuyNow = useCallback(async () => {
-    if (!product) return;
+    if (!currentDisplayItem) return;
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'Please log in to purchase items.', [
         { text: 'Cancel', style: 'cancel' },
@@ -118,15 +152,15 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
       return;
     }
     try {
-      await addToCart(product, quantity);
+      await addToCart(currentDisplayItem, quantity);
       navigation.navigate('Checkout');
     } catch (err: any) {
       Alert.alert('Cart Error', err?.message || 'Failed to proceed to checkout.');
     }
-  }, [isAuthenticated, navigation, product, quantity, addToCart]);
+  }, [isAuthenticated, navigation, currentDisplayItem, quantity, addToCart]);
 
   const handleToggleWishlist = useCallback(async () => {
-    if (!product) return;
+    if (!currentDisplayItem) return;
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'Please log in to manage your wishlist.', [
         { text: 'Cancel', style: 'cancel' },
@@ -135,14 +169,14 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
       return;
     }
     try {
-      const isAdded = await toggleWishlist(product);
+      const isAdded = await toggleWishlist(currentDisplayItem);
       if (isAdded) {
-        Alert.alert('Wishlist Updated', `"${product.title}" added to your wishlist.`);
+        Alert.alert('Wishlist Updated', `"${currentDisplayItem.title}" added to your wishlist.`);
       }
     } catch (err: any) {
       Alert.alert('Wishlist Error', err?.message || 'Failed to update wishlist.');
     }
-  }, [isAuthenticated, product, toggleWishlist, navigation]);
+  }, [isAuthenticated, currentDisplayItem, toggleWishlist, navigation]);
 
   const handleTabPress = useCallback(
     (tab: TabRoute) => {
@@ -200,11 +234,11 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
           <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Categories'))} activeOpacity={0.7}>
-            <Text style={styles.breadcrumbLink}>{product.category}</Text>
+            <Text style={styles.breadcrumbLink}>{currentDisplayItem.category || product.category}</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
           <Text style={styles.breadcrumbActive} numberOfLines={1}>
-            {product.title}
+            {currentDisplayItem.title}
           </Text>
         </View>
 
@@ -212,13 +246,13 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
         <View style={styles.galleryContainer}>
           <View style={styles.mainImageWrapper}>
             <Image
-              source={galleryImages[activeImageIndex]}
+              source={galleryItems[activeImageIndex]?.uri || resolveProductImage(product)}
               style={styles.mainImage}
               resizeMode="contain"
             />
-            {product.badge && (
+            {currentDisplayItem.badge && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{product.badge}</Text>
+                <Text style={styles.badgeText}>{currentDisplayItem.badge}</Text>
               </View>
             )}
             <TouchableOpacity
@@ -236,7 +270,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
 
           {/* Thumbnail Gallery Row */}
           <View style={styles.thumbnailRow}>
-            {galleryImages.map((imgUri, index) => (
+            {galleryItems.map((item, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
@@ -246,7 +280,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
                 onPress={() => setActiveImageIndex(index)}
                 activeOpacity={0.8}
               >
-                <Image source={imgUri} style={styles.thumbnailImage} resizeMode="cover" />
+                <Image source={item.uri} style={styles.thumbnailImage} resizeMode="cover" />
               </TouchableOpacity>
             ))}
           </View>
@@ -254,7 +288,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
 
         {/* Product Details Specs Section */}
         <View style={styles.detailsContainer}>
-          <Text style={styles.title}>{product.title}</Text>
+          <Text style={styles.title}>{currentDisplayItem.title}</Text>
 
           {/* Rating Summary */}
           <View style={styles.ratingRow}>
@@ -269,24 +303,24 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
               ))}
             </View>
             <Text style={styles.ratingText}>
-              {product.rating.toFixed(1)} ({product.reviewCount || 128} reviews)
+              {currentDisplayItem.rating.toFixed(1)} ({currentDisplayItem.reviewCount || 128} reviews)
             </Text>
           </View>
 
           {/* Price & Stock */}
           <View style={styles.priceRow}>
-            <Text style={styles.price}>{formatCurrency(product.price)}</Text>
-            {product.originalPrice && (
-              <Text style={styles.originalPrice}>{formatCurrency(product.originalPrice)}</Text>
+            <Text style={styles.price}>{formatCurrency(currentDisplayItem.price)}</Text>
+            {currentDisplayItem.originalPrice && (
+              <Text style={styles.originalPrice}>{formatCurrency(currentDisplayItem.originalPrice)}</Text>
             )}
           </View>
-          {product.stock !== undefined && product.stock <= 0 ? (
+          {currentDisplayItem.stock !== undefined && currentDisplayItem.stock <= 0 ? (
             <Text style={[styles.stockText, { color: '#dc2626', fontWeight: 'bold' }]}>
               Out of Stock • Back in stock soon
             </Text>
           ) : (
             <Text style={styles.stockText}>
-              In Stock ({product.stock ?? 100} available) • Ready to ship
+              In Stock ({currentDisplayItem.stock ?? 100} available) • Ready to ship
             </Text>
           )}
 
@@ -294,7 +328,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionHeader}>DESCRIPTION</Text>
             <Text style={styles.descriptionText}>
-              {product.subtitle || `Experience the pinnacle of Sivakasi pyrotechnics with our authentic ${product.title}. Premium quality, high performance, and safe for all celebrations.`}
+              {(currentDisplayItem as any).description || currentDisplayItem.subtitle}
             </Text>
           </View>
 
