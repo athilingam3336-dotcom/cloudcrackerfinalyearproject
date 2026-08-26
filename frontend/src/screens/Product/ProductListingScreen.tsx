@@ -80,7 +80,6 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   React.useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
-    // If search is a promotional banner tag (like 'Special Edition', 'Grand Finale', 'New Arrival'), pass empty search to API
     const apiSearch =
       searchQuery.toLowerCase() === 'special edition' ||
       searchQuery.toLowerCase() === 'grand finale' ||
@@ -88,16 +87,18 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
         ? undefined
         : searchQuery;
 
-    productService.getProducts(categoryIdParam, apiSearch).then((data) => {
+    productService.getProducts(undefined, apiSearch).then((data) => {
       if (isMounted) {
-        setProducts(data);
+        if (data && data.length > 0) {
+          setProducts(data);
+        }
         setIsLoading(false);
       }
     });
     return () => {
       isMounted = false;
     };
-  }, [categoryIdParam, searchQuery]);
+  }, [searchQuery]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 8;
@@ -113,10 +114,12 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
       return {
         name: 'Pro Showstoppers',
         description:
-          'Experience professional-grade pyrotechnics with our curated selection of high-altitude display shells and synchronized multi-shot cakes.',
+          'Explore top-tier Sivakasi fireworks and spectacular celebration items.',
       };
     }
-    const cat = categories.find((c) => c.id === categoryIdParam) || MOCK_CATEGORIES.find((c) => c.id === categoryIdParam);
+    const cat = categories.find(
+      (c) => c.id === categoryIdParam || c.name.toLowerCase() === categoryIdParam.toLowerCase()
+    );
     return {
       name: cat ? cat.name : 'Pyrotechnics Catalog',
       description: cat
@@ -170,8 +173,21 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
 
   // Filtered and Sorted Products dataset
   const filteredAndSortedProducts = useMemo(() => {
-    let result = products.filter((product) => {
-      // Search query match
+    const allItems = products.length > 0 ? products : MOCK_PRODUCTS;
+
+    // Determine category constraint from URL route param if set
+    let categoryConstraintName = '';
+    if (categoryIdParam && categoryIdParam !== 'all') {
+      const foundCat = categories.find(
+        (c) => c.id === categoryIdParam || c.name.toLowerCase() === categoryIdParam.toLowerCase()
+      );
+      if (foundCat) {
+        categoryConstraintName = foundCat.name.toLowerCase();
+      }
+    }
+
+    let result = allItems.filter((product) => {
+      // 1. Search query match
       const q = searchQuery.trim().toLowerCase();
       let matchesSearch = true;
       if (
@@ -186,7 +202,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           (product.category || '').toLowerCase().includes(q);
       }
 
-      // Chip filter match
+      // 2. Chip / Category Filter match
       let matchesChip = true;
       const titleLower = (product.title || '').toLowerCase();
       const subLower = (product.subtitle || '').toLowerCase();
@@ -231,10 +247,39 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           Boolean(product.originalPrice && product.originalPrice > product.price) ||
           (product.badge || '').toLowerCase().includes('sale') ||
           (product.badge || '').toLowerCase().includes('off');
+      } else if (selectedFilterChip === 'ALL') {
+        if (categoryConstraintName) {
+          if (categoryConstraintName.includes('pot') || categoryConstraintName.includes('fountain')) {
+            matchesChip =
+              titleLower.includes('pot') ||
+              titleLower.includes('fountain') ||
+              subLower.includes('pot') ||
+              catLower.includes('pot');
+          } else if (categoryConstraintName.includes('sparkler')) {
+            matchesChip = titleLower.includes('sparkler') || catLower.includes('sparkler');
+          } else if (categoryConstraintName.includes('rocket')) {
+            matchesChip = titleLower.includes('rocket') || catLower.includes('rocket');
+          } else if (categoryConstraintName.includes('bomb') || categoryConstraintName.includes('sound')) {
+            matchesChip = titleLower.includes('bomb') || titleLower.includes('sound') || catLower.includes('bomb');
+          } else if (categoryConstraintName.includes('shot') || categoryConstraintName.includes('aerial')) {
+            matchesChip = titleLower.includes('shot') || titleLower.includes('cake') || catLower.includes('shot');
+          } else {
+            matchesChip =
+              catLower.includes(categoryConstraintName) ||
+              titleLower.includes(categoryConstraintName);
+          }
+        } else {
+          matchesChip = true;
+        }
       }
 
       return matchesSearch && matchesChip;
     });
+
+    // Fallback if strict category filter produces 0 items (never leave catalog empty)
+    if (result.length === 0 && (selectedFilterChip === 'ALL' || selectedFilterChip !== 'ALL')) {
+      result = allItems;
+    }
 
     // Sort logic
     const sorted = [...result];
@@ -261,7 +306,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     });
 
     return sorted;
-  }, [products, searchQuery, selectedFilterChip, sortBy]);
+  }, [products, searchQuery, selectedFilterChip, sortBy, categoryIdParam, categories]);
 
   // Paginated dataset
   const totalPages = Math.max(1, Math.ceil(filteredAndSortedProducts.length / PAGE_SIZE));
@@ -513,6 +558,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           onPress={() => {
             setSearchQuery('');
             setSelectedFilterChip('ALL');
+            navigation.setParams({ categoryId: undefined, query: undefined });
           }}
         >
           <Text style={{ ...Typography.labelLg, color: '#ffffff' }}>Clear Filters</Text>
