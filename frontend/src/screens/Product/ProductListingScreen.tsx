@@ -23,7 +23,7 @@ import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
 import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } from '@/store';
-import { ProductItem, CategoryItem, MOCK_CATEGORIES } from '@/constants/mockData';
+import { ProductItem, CategoryItem, MOCK_CATEGORIES, MOCK_PRODUCTS } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 
 type ProductListingScreenProps = NativeStackScreenProps<
@@ -52,9 +52,9 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   const [sortBy, setSortBy] = useState<SortOption>('BEST_SELLING');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
 
-  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [products, setProducts] = useState<ProductItem[]>(MOCK_PRODUCTS);
   const [categories, setCategories] = useState<CategoryItem[]>(MOCK_CATEGORIES);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { wishlistItems, toggleWishlist } = useWishlistStore();
   const addToCart = useCartStore((state) => state.addToCart);

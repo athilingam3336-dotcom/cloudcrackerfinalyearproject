@@ -30,6 +30,7 @@ import { productService } from '@/services/productService';
 import { paymentService } from '@/services/paymentService';
 import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } from '@/store';
 import {
+  MOCK_PRODUCTS,
   MOCK_CATEGORIES,
   MOCK_BANNERS,
   MOCK_FLASH_SALE,
@@ -50,9 +51,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [newsletterEmail, setNewsletterEmail] = useState('');
 
-  // API State
-  const [products, setProducts] = useState<ProductItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // API State with Instant Hydration (0ms wait time)
+  const [products, setProducts] = useState<ProductItem[]>(() => MOCK_PRODUCTS);
+  const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
 
   // Store Hooks
@@ -63,11 +64,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
 
   const loadProducts = useCallback(async () => {
-    setIsLoading(true);
+    if (products.length === 0) {
+      setIsLoading(true);
+    }
     setIsError(false);
     try {
       const data = await productService.getProducts(selectedCategory, searchQuery, 20);
-      setProducts(data);
+      if (data && data.length > 0) {
+        setProducts(data);
+      }
       setIsLoading(false);
     } catch (e) {
       setIsError(true);
@@ -517,7 +522,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     );
   }, [newsletterEmail, handleNewsletterSubscribe]);
 
-  if (isLoading) {
+  if (isLoading && products.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <HomeHeader
