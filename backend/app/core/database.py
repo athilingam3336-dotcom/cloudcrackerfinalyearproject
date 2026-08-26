@@ -106,82 +106,92 @@ class DatabaseManager:
 
         is_local = "localhost" in settings.MONGODB_URL or "127.0.0.1" in settings.MONGODB_URL
 
-        for attempt in range(2):
-            try:
-                # Motor connection parameters
-                client_kwargs: Dict[str, Any] = {
-                    "serverSelectionTimeoutMS": 3000 if (attempt == 0 and is_local) else 20000,
-                    "connectTimeoutMS": 10000,
-                }
+        # List of connection candidates: primary URL, then local fallback if primary is remote
+        urls_to_try = [settings.MONGODB_URL]
+        if not is_local:
+            urls_to_try.append("mongodb://localhost:27017")
 
-                # For Atlas / remote connections, use certifi CA bundle and reliable retry parameters
-                if not is_local:
-                    client_kwargs["tlsCAFile"] = certifi.where()
-                    client_kwargs["retryWrites"] = True
-                    client_kwargs["w"] = "majority"
+        for url_idx, target_url in enumerate(urls_to_try):
+            is_curr_local = "localhost" in target_url or "127.0.0.1" in target_url
+            timeout_ms = 4000 if not is_curr_local else 3000
 
-                self.client = AsyncIOMotorClient(
-                    settings.MONGODB_URL,
-                    **client_kwargs,
-                )
-                self.db = self.client[settings.DB_NAME]
+            for attempt in range(2):
+                try:
+                    client_kwargs: Dict[str, Any] = {
+                        "serverSelectionTimeoutMS": timeout_ms,
+                        "connectTimeoutMS": 5000,
+                    }
 
-                # Initialize Beanie with the registered models
-                from app.models.category import Category
-                from app.models.product import Product
-                from app.models.user import User
-                from app.models.cart import Cart
-                from app.models.wishlist import Wishlist
-                from app.models.order import Order
-                from app.models.order_item import OrderItem
-                from app.models.payment import Payment
-                from app.models.address import Address
-                from app.models.coupon import Coupon
-                from app.models.inventory import Inventory
-                from app.models.review import Review
-                from app.models.image import Image
-                from app.models.notification import Notification
-                from app.models.audit_log import AuditLog
-                from app.models.refresh_token import RefreshToken
-                from app.models.about import About
+                    if not is_curr_local:
+                        client_kwargs["tlsCAFile"] = certifi.where()
+                        client_kwargs["retryWrites"] = True
+                        client_kwargs["w"] = "majority"
 
-                await init_beanie(
-                    database=self.db,
-                    allow_index_dropping=False,
-                    document_models=[
-                        User,
-                        Category,
-                        Product,
-                        Cart,
-                        Wishlist,
-                        Order,
-                        OrderItem,
-                        Payment,
-                        Address,
-                        Coupon,
-                        Inventory,
-                        Review,
-                        Image,
-                        Notification,
-                        AuditLog,
-                        RefreshToken,
-                        About,
-                    ],
-                )
-                logger.info("Connected to MongoDB & Beanie initialized successfully.")
-                return
-            except Exception as e:
-                # Auto-start local MongoDB only in development mode
-                if attempt == 0 and is_local and not settings.is_production and not settings.is_test:
-                    logger.warning(f"Initial MongoDB connection failed: {e}. Attempting to auto-start MongoDB in development mode...")
+                    self.client = AsyncIOMotorClient(
+                        target_url,
+                        **client_kwargs,
+                    )
+                    self.db = self.client[settings.DB_NAME]
+
+                    # Initialize Beanie with the registered models
+                    from app.models.category import Category
+                    from app.models.product import Product
+                    from app.models.user import User
+                    from app.models.cart import Cart
+                    from app.models.wishlist import Wishlist
+                    from app.models.order import Order
+                    from app.models.order_item import OrderItem
+                    from app.models.payment import Payment
+                    from app.models.address import Address
+                    from app.models.coupon import Coupon
+                    from app.models.inventory import Inventory
+                    from app.models.review import Review
+                    from app.models.image import Image
+                    from app.models.notification import Notification
+                    from app.models.audit_log import AuditLog
+                    from app.models.refresh_token import RefreshToken
+                    from app.models.about import About
+
+                    await init_beanie(
+                        database=self.db,
+                        allow_index_dropping=False,
+                        document_models=[
+                            User,
+                            Category,
+                            Product,
+                            Cart,
+                            Wishlist,
+                            Order,
+                            OrderItem,
+                            Payment,
+                            Address,
+                            Coupon,
+                            Inventory,
+                            Review,
+                            Image,
+                            Notification,
+                            AuditLog,
+                            RefreshToken,
+                            About,
+                        ],
+                    )
+                    logger.info(f"Connected to MongoDB ({safe_mongodb_host(target_url)}) & Beanie initialized successfully.")
+                    return
+                except Exception as e:
+                    if is_curr_local and attempt == 0 and not settings.is_production and not settings.is_test:
+                        logger.warning(f"Local MongoDB connection failed: {e}. Auto-starting local MongoDB...")
+                        if self.client:
+                            self.client.close()
+                        started = _try_start_local_mongodb()
+                        if started:
+                            await asyncio.sleep(2)
+                            continue
                     if self.client:
                         self.client.close()
-                    started = _try_start_local_mongodb()
-                    if started:
-                        await asyncio.sleep(2)
-                        continue
-                logger.error(f"Failed to connect to MongoDB: {e}")
-                raise e
+                    logger.warning(f"Connection attempt to {safe_mongodb_host(target_url)} failed: {e}")
+                    break
+
+        raise RuntimeError("Failed to connect to any MongoDB server (both remote Atlas and local fallback failed).")
 
     async def disconnect(self) -> None:
         """Closes the MongoDB connection."""

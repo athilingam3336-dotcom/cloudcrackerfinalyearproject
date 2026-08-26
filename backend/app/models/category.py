@@ -19,6 +19,9 @@ class Category(Document):
 
     class Settings:
         name = Collections.CATEGORIES
+        indexes = [
+            [("status", 1), ("is_active", 1)],
+        ]
 
     async def update_timestamp(self) -> None:
         self.updated_at = datetime.utcnow()

@@ -29,6 +29,7 @@ export interface ProductItem {
   category: string;
   price: number;
   originalPrice?: number;
+  stock?: number;
   badge?: string;
   rating: number;
   reviewCount?: number;

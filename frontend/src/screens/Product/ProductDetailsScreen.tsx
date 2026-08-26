@@ -62,15 +62,16 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
         if (isMounted) {
           setProduct(data);
           setIsLoading(false);
-        }
-      });
-      productService.getProducts().then((all) => {
-        if (isMounted) {
-          setRelatedProducts(all.filter((p) => p.id !== productIdParam).slice(0, 4));
+          const cat = data?.category;
+          productService.getProducts(cat, undefined, 5).then((all) => {
+            if (isMounted) {
+              setRelatedProducts(all.filter((p) => p.id !== productIdParam).slice(0, 4));
+            }
+          });
         }
       });
     } else {
-      productService.getProducts().then((all) => {
+      productService.getProducts(undefined, undefined, 5).then((all) => {
         if (isMounted && all.length > 0) {
           setProduct(all[0]);
           setRelatedProducts(all.slice(1, 5));
@@ -267,13 +268,21 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
               <Text style={styles.originalPrice}>{formatCurrency(product.originalPrice)}</Text>
             )}
           </View>
-          <Text style={styles.stockText}>In Stock • Ready to ship</Text>
+          {product.stock !== undefined && product.stock <= 0 ? (
+            <Text style={[styles.stockText, { color: '#dc2626', fontWeight: 'bold' }]}>
+              Out of Stock • Back in stock soon
+            </Text>
+          ) : (
+            <Text style={styles.stockText}>
+              In Stock ({product.stock ?? 100} available) • Ready to ship
+            </Text>
+          )}
 
           {/* Description */}
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionHeader}>DESCRIPTION</Text>
             <Text style={styles.descriptionText}>
-              Experience the pinnacle of pyrotechnic engineering with our {product.title}. Designed for professional enthusiasts, these shells deliver a massive 300ft spread of deep crimson chrysanthemum blooms followed by a secondary crackling dragon-egg effect.
+              {product.subtitle || `Experience the pinnacle of Sivakasi pyrotechnics with our authentic ${product.title}. Premium quality, high performance, and safe for all celebrations.`}
             </Text>
           </View>
 
@@ -285,6 +294,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
                 style={styles.quantityBtn}
                 onPress={() => setQuantity((q) => Math.max(1, q - 1))}
                 activeOpacity={0.7}
+                disabled={product.stock !== undefined && product.stock <= 0}
               >
                 <MaterialIcons name="remove" size={20} color={Colors.onSurface} />
               </TouchableOpacity>
@@ -293,6 +303,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
                 style={styles.quantityBtn}
                 onPress={() => setQuantity((q) => q + 1)}
                 activeOpacity={0.7}
+                disabled={product.stock !== undefined && product.stock <= 0}
               >
                 <MaterialIcons name="add" size={20} color={Colors.onSurface} />
               </TouchableOpacity>
@@ -302,14 +313,16 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
           {/* Action CTA Buttons */}
           <View style={styles.ctaRow}>
             <PrimaryButton
-              title="Add to Cart"
+              title={product.stock !== undefined && product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
               onPress={handleAddToCart}
+              disabled={product.stock !== undefined && product.stock <= 0}
               style={styles.addToCartCta}
             />
             <PrimaryButton
               title="Buy Now"
               variant="secondary"
               onPress={handleBuyNow}
+              disabled={product.stock !== undefined && product.stock <= 0}
               style={styles.buyNowCta}
             />
           </View>

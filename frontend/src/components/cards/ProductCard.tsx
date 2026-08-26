@@ -13,6 +13,7 @@ export interface ProductCardProps {
   category: string;
   price: number;
   originalPrice?: number;
+  stock?: number;
   badge?: string;
   imageUrl?: any;
   rating?: number;
@@ -29,6 +30,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
     category,
     price,
     originalPrice,
+    stock,
     badge,
     imageUrl,
     rating = 4.8,
@@ -38,13 +40,15 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
     onAddToCart,
     onWishlistToggle,
   }) => {
+    const isOutOfStock = (stock !== undefined && stock <= 0) || badge === 'Out of Stock';
+    const effectiveBadge = isOutOfStock ? 'Out of Stock' : badge;
     const imageSource = resolveProductImage({ title, category, imageUrl });
 
     return (
       <View style={styles.cardContainer}>
         {/* Main Card Surface */}
         <Pressable
-          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+          style={({ pressed }) => [styles.card, pressed && styles.cardPressed, isOutOfStock && styles.cardOutOfStock]}
           onPress={onPress}
           accessibilityLabel={`${title}, ${category}, ${formatCurrency(price)}`}
           accessibilityRole="button"
@@ -53,13 +57,13 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
           <View style={styles.imageContainer}>
             <Image
               source={imageSource}
-              style={styles.image}
+              style={[styles.image, isOutOfStock && { opacity: 0.6 }]}
               resizeMode="contain"
               accessibilityLabel={title}
             />
-            {badge && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{badge}</Text>
+            {effectiveBadge && (
+              <View style={[styles.badge, isOutOfStock && styles.badgeOutOfStock]}>
+                <Text style={styles.badgeText}>{effectiveBadge}</Text>
               </View>
             )}
           </View>
@@ -112,12 +116,21 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
         {/* Sibling Add to Cart Button */}
         {onAddToCart && (
           <Pressable
-            style={({ pressed }) => [styles.addButton, pressed && styles.buttonPressed]}
-            onPress={onAddToCart}
-            accessibilityLabel={`Add ${title} to cart`}
+            style={({ pressed }) => [
+              styles.addButton,
+              pressed && !isOutOfStock && styles.buttonPressed,
+              isOutOfStock && styles.disabledAddButton,
+            ]}
+            onPress={isOutOfStock ? undefined : onAddToCart}
+            disabled={isOutOfStock}
+            accessibilityLabel={isOutOfStock ? `${title} is out of stock` : `Add ${title} to cart`}
             accessibilityRole="button"
           >
-            <MaterialIcons name="shopping-cart" size={16} color={Colors.onPrimary} />
+            <MaterialIcons
+              name={isOutOfStock ? 'block' : 'shopping-cart'}
+              size={16}
+              color={isOutOfStock ? Colors.onSurfaceVariant : Colors.onPrimary}
+            />
           </Pressable>
         )}
       </View>
@@ -254,6 +267,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
+  },
+  cardOutOfStock: {
+    opacity: 0.8,
+  },
+  badgeOutOfStock: {
+    backgroundColor: '#dc2626',
+  },
+  disabledAddButton: {
+    backgroundColor: Colors.surfaceContainerHigh,
   },
 });
 

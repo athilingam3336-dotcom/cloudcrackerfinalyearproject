@@ -66,7 +66,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setIsLoading(true);
     setIsError(false);
     try {
-      const data = await productService.getProducts(selectedCategory, searchQuery);
+      const data = await productService.getProducts(selectedCategory, searchQuery, 20);
       setProducts(data);
       setIsLoading(false);
     } catch (e) {
@@ -264,6 +264,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             category={item.subtitle || item.category}
             price={item.price}
             originalPrice={item.originalPrice}
+            stock={item.stock}
             badge={item.badge}
             rating={item.rating}
             reviewCount={item.reviewCount}

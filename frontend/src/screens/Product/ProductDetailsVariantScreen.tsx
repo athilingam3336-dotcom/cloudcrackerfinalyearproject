@@ -110,7 +110,7 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
         }
       });
     } else {
-      productService.getProducts().then((all) => {
+      productService.getProducts(undefined, undefined, 5).then((all) => {
         if (isMounted && all.length > 0) {
           setProduct(all[0]);
           setIsLoading(false);

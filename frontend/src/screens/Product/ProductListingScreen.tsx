@@ -300,6 +300,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           category={item.subtitle || item.category}
           price={item.price}
           originalPrice={item.originalPrice}
+          stock={item.stock}
           badge={item.badge}
           rating={item.rating}
           reviewCount={item.reviewCount}

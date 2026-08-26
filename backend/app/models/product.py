@@ -33,10 +33,13 @@ class Product(Document):
 
     class Settings:
         name = Collections.PRODUCTS
-        # Declare indexes for fields (specifically those that cannot use Indexed wrapper, like bool)
+        # Declare indexes for fields and compound queries (speeding up /products listing & filter endpoints)
         indexes = [
             "is_featured",
             "is_bestseller",
+            [("status", 1), ("is_active", 1)],
+            [("status", 1), ("is_active", 1), ("category_id", 1)],
+            [("status", 1), ("is_active", 1), ("created_at", -1)],
         ]
 
     async def update_timestamp(self) -> None:
