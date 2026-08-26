@@ -34,19 +34,25 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
     if (!product?.id) {
       throw new Error('Invalid product ID.');
     }
-    const exists = get().wishlistItems.some((item) => item.id === product.id);
-    set({ isLoading: true });
+    const previousItems = get().wishlistItems;
+    const exists = previousItems.some((item) => item.id === product.id);
+
+    // Optimistic Update: Instantly reflect in UI (0ms wait time)
+    const updatedItems = exists
+      ? previousItems.filter((item) => item.id !== product.id)
+      : [...previousItems, product];
+    set({ wishlistItems: updatedItems });
+
     try {
       if (exists) {
         await wishlistService.removeFromWishlist(product.id);
       } else {
         await wishlistService.addToWishlist(product.id);
       }
-      const updated = await wishlistService.getWishlist();
-      set({ wishlistItems: updated || [], isLoading: false });
       return !exists;
     } catch (error) {
-      set({ isLoading: false });
+      // Revert to original list if backend call fails
+      set({ wishlistItems: previousItems });
       throw error;
     }
   },
@@ -55,27 +61,31 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
     if (!product?.id) {
       throw new Error('Invalid product ID.');
     }
-    set({ isLoading: true });
+    const previousItems = get().wishlistItems;
+    if (previousItems.some((item) => item.id === product.id)) {
+      return true;
+    }
+
+    // Optimistic Update
+    set({ wishlistItems: [...previousItems, product] });
     try {
       await wishlistService.addToWishlist(product.id);
-      const updated = await wishlistService.getWishlist();
-      set({ wishlistItems: updated || [], isLoading: false });
       return true;
     } catch (error) {
-      set({ isLoading: false });
+      set({ wishlistItems: previousItems });
       throw error;
     }
   },
 
   removeFromWishlist: async (productId) => {
-    set({ isLoading: true });
+    const previousItems = get().wishlistItems;
+    // Optimistic Update
+    set({ wishlistItems: previousItems.filter((item) => item.id !== productId) });
     try {
       await wishlistService.removeFromWishlist(productId);
-      const updated = await wishlistService.getWishlist();
-      set({ wishlistItems: updated || [], isLoading: false });
       return true;
     } catch (error) {
-      set({ isLoading: false });
+      set({ wishlistItems: previousItems });
       throw error;
     }
   },
