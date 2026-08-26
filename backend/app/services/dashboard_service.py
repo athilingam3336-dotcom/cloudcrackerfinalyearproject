@@ -1,3 +1,5 @@
+import asyncio
+import time
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
@@ -10,46 +12,33 @@ from app.models.inventory import Inventory
 from app.schemas.order import OrderResponse, OrderItemResponse
 from app.schemas.product import ProductResponse
 
+# Module-level cache for dashboard metrics (15-second TTL)
+_dashboard_cache: Dict[str, Any] = {}
+_dashboard_cache_time: float = 0.0
+
 
 class DashboardService:
     async def get_admin_dashboard_metrics(self) -> Dict[str, Any]:
-        """Assembles real-time dashboard metrics from MongoDB Atlas."""
-        # 1. User counters
-        total_users = await User.find().count()
-        total_customers = await User.find(User.role == "CUSTOMER").count()
-        total_admins = await User.find(User.role == "ADMIN").count()
+        """Assembles real-time dashboard metrics from MongoDB Atlas with parallel execution & 15s TTL cache."""
+        global _dashboard_cache, _dashboard_cache_time
+        now_ts = time.time()
+        if _dashboard_cache and (now_ts - _dashboard_cache_time < 15.0):
+            return _dashboard_cache
 
-        # 2. Catalog & Stock counters
-        total_categories = await Category.find(Category.status != "deleted").count()
-        total_products = await Product.find(Product.status != "deleted").count()
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        now = datetime.utcnow()
+        last_30_start = now - timedelta(days=30)
+        prev_30_start = now - timedelta(days=60)
 
+        # Pipelines
         stock_pipeline = [
             {"$match": {"status": {"$ne": "deleted"}}},
             {"$group": {"_id": None, "total_stock": {"$sum": "$stock"}}},
         ]
-        stock_cursor = Product.get_pymongo_collection().aggregate(stock_pipeline)
-        stock_results = await stock_cursor.to_list(length=None)
-        total_stock_units = stock_results[0]["total_stock"] if stock_results else 0
-
-        # 3. Order status counters
-        total_orders = await Order.find().count()
-        pending_orders = await Order.find(Order.order_status == "Pending").count()
-        completed_orders = await Order.find(Order.order_status == "Delivered").count()
-        cancelled_orders = await Order.find(Order.order_status == "Cancelled").count()
-
-        # 4. Total revenue aggregation (actual valid orders)
         rev_pipeline = [
             {"$match": {"order_status": {"$ne": "Cancelled"}}},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total"}}},
         ]
-        rev_cursor = Order.get_pymongo_collection().aggregate(rev_pipeline)
-        rev_results = await rev_cursor.to_list(length=None)
-        total_revenue = round(rev_results[0]["total_revenue"], 2) if rev_results else 0.0
-
-        # 5. Today's orders and revenue
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        today_orders = await Order.find(Order.created_at >= today_start).count()
-        
         today_rev_pipeline = [
             {
                 "$match": {
@@ -59,11 +48,49 @@ class DashboardService:
             },
             {"$group": {"_id": None, "revenue": {"$sum": "$total"}}},
         ]
-        today_rev_cursor = Order.get_pymongo_collection().aggregate(today_rev_pipeline)
-        today_rev_results = await today_rev_cursor.to_list(length=None)
-        today_revenue = (
-            round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
+
+        # Execute top independent queries in parallel via asyncio.gather
+        (
+            total_users,
+            total_customers,
+            total_admins,
+            total_categories,
+            total_products,
+            total_orders,
+            pending_orders,
+            completed_orders,
+            cancelled_orders,
+            today_orders,
+            cur_period_orders,
+            prev_period_orders,
+            cur_period_users,
+            prev_period_users,
+            stock_results,
+            rev_results,
+            today_rev_results,
+        ) = await asyncio.gather(
+            User.find().count(),
+            User.find(User.role == "CUSTOMER").count(),
+            User.find(User.role == "ADMIN").count(),
+            Category.find(Category.status != "deleted").count(),
+            Product.find(Product.status != "deleted").count(),
+            Order.find().count(),
+            Order.find(Order.order_status == "Pending").count(),
+            Order.find(Order.order_status == "Delivered").count(),
+            Order.find(Order.order_status == "Cancelled").count(),
+            Order.find(Order.created_at >= today_start).count(),
+            Order.find(Order.created_at >= last_30_start, Order.order_status != "Cancelled").count(),
+            Order.find(Order.created_at >= prev_30_start, Order.created_at < last_30_start, Order.order_status != "Cancelled").count(),
+            User.find(User.created_at >= last_30_start).count(),
+            User.find(User.created_at >= prev_30_start, User.created_at < last_30_start).count(),
+            Product.get_pymongo_collection().aggregate(stock_pipeline).to_list(length=None),
+            Order.get_pymongo_collection().aggregate(rev_pipeline).to_list(length=None),
+            Order.get_pymongo_collection().aggregate(today_rev_pipeline).to_list(length=None),
         )
+
+        total_stock_units = stock_results[0]["total_stock"] if stock_results else 0
+        total_revenue = round(rev_results[0]["total_revenue"], 2) if rev_results else 0.0
+        today_revenue = round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
 
         # 6. Real Period-over-Period Growth Calculations (Last 30 days vs Previous 30 days)
         now = datetime.utcnow()
@@ -210,7 +237,7 @@ class DashboardService:
                 "orders_count": r["orders_count"]
             })
 
-        return {
+        result = {
             "counters": {
                 "total_users": total_users,
                 "total_customers": total_customers,
@@ -242,3 +269,7 @@ class DashboardService:
             "recent_orders": recent_orders_out,
             "monthly_trends": monthly_data,
         }
+
+        _dashboard_cache = result
+        _dashboard_cache_time = time.time()
+        return result

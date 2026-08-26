@@ -1,6 +1,6 @@
 from typing import Optional
 from bson import ObjectId
-from fastapi import APIRouter, Depends, Path, Query, Request, UploadFile, status
+from fastapi import APIRouter, Depends, Path, Query, Request, Response, UploadFile, status
 
 from app.core.dependencies import get_current_admin
 from app.exceptions import ValidationException
@@ -232,7 +232,10 @@ async def delete_product(
 async def get_product(
     product_id: str = Depends(get_validated_product_id),
     product_service: ProductService = Depends(),
+    response: Response = None, # type: ignore
 ) -> ApiResponse:
+    if response:
+        response.headers["Cache-Control"] = "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
     product = await product_service.get_product(product_id)
     return ApiResponse(
         success=True,
@@ -265,7 +268,10 @@ async def list_products(
     page: int = Query(1, ge=1, description="Page index"),
     limit: int = Query(10, ge=1, le=100, description="Items per page limit"),
     product_service: ProductService = Depends(),
+    response: Response = None, # type: ignore
 ) -> ApiResponse:
+    if response:
+        response.headers["Cache-Control"] = "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
     # 1. Validate category_id format if provided in query parameters
     if category_id is not None and not ObjectId.is_valid(category_id):
         raise ValidationException(

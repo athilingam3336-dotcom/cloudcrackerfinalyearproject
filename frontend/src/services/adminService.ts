@@ -392,7 +392,9 @@ export interface UserOrdersResponseUI {
 }
 
 export class AdminService {
-  async getOverviewMetrics(): Promise<AdminMetrics> {
+  private overviewCache: { data: AdminMetrics; timestamp: number } | null = null;
+
+  async getOverviewMetrics(forceRefresh: boolean = false): Promise<AdminMetrics> {
     if (ENV.ENABLE_MOCK_API) {
       return {
         totalRevenue: 0.0,
@@ -405,6 +407,31 @@ export class AdminService {
         recentOrders: [],
       };
     }
+
+    const now = Date.now();
+    // 1. Check in-memory cache (valid for 60s)
+    if (!forceRefresh && this.overviewCache && now - this.overviewCache.timestamp < 60_000) {
+      return this.overviewCache.data;
+    }
+
+    // 2. Check localStorage persistent cache for instant UI display
+    if (!forceRefresh && typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const stored = window.localStorage.getItem('cc_cache_admin_overview');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.data) {
+            this.overviewCache = parsed;
+            // Background revalidate if older than 30s
+            if (now - parsed.timestamp >= 30_000) {
+              this.getOverviewMetrics(true).catch(() => {});
+            }
+            return parsed.data;
+          }
+        }
+      } catch {}
+    }
+
     try {
       const { data: response } = await apiClient.get('/admin/dashboard');
       const payload = response?.data || response;
@@ -437,7 +464,7 @@ export class AdminService {
         };
       });
 
-      return {
+      const metrics: AdminMetrics = {
         totalRevenue: typeof revenue.total_revenue === 'number' ? revenue.total_revenue : 0,
         newOrders: typeof counters.total_orders === 'number' ? counters.total_orders : (revenue.today_orders || counters.pending_orders || 0),
         productsInStock: typeof counters.total_products === 'number' ? counters.total_products : 0,
@@ -447,9 +474,19 @@ export class AdminService {
         usersGrowth: growth.users_growth || '+0.0%',
         recentOrders,
       };
+
+      const cacheEntry = { data: metrics, timestamp: Date.now() };
+      this.overviewCache = cacheEntry;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem('cc_cache_admin_overview', JSON.stringify(cacheEntry));
+        } catch {}
+      }
+
+      return metrics;
     } catch (err) {
       console.warn('Failed to load admin overview metrics from Atlas:', err);
-      return {
+      return this.overviewCache?.data || {
         totalRevenue: 0.0,
         newOrders: 0,
         productsInStock: 0,

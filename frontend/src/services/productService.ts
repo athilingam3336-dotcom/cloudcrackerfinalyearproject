@@ -17,12 +17,39 @@ export class ProductService {
   private pendingProductsRequests = new Map<string, Promise<ProductItem[]>>();
   private productsTtlMs = 180_000; // 3 minutes cache for product query results
 
+  private getLocalStorageItem(key: string): any {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const item = window.localStorage.getItem(`cc_cache_${key}`);
+        return item ? JSON.parse(item) : null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  private setLocalStorageItem(key: string, val: any): void {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(`cc_cache_${key}`, JSON.stringify(val));
+      }
+    } catch {}
+  }
+
   /**
-   * Clears in-memory caches. Call when admin updates products/categories or manual refresh occurs.
+   * Clears in-memory and persistent caches. Call when admin updates products/categories or manual refresh occurs.
    */
   public clearCache(): void {
     this.categoriesCache = null;
     this.productsCache.clear();
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        Object.keys(window.localStorage)
+          .filter((k) => k.startsWith('cc_cache_'))
+          .forEach((k) => window.localStorage.removeItem(k));
+      }
+    } catch {}
   }
 
   private mapProductToUi(p: any): ProductItem {
@@ -90,7 +117,7 @@ export class ProductService {
     const cacheKey = `${category || 'all'}:${query || ''}:${limit}:${page}`;
     const now = Date.now();
 
-    // 1. Return fresh cached product data if available
+    // 1. Check memory cache
     if (!forceRefresh && this.productsCache.has(cacheKey)) {
       const cached = this.productsCache.get(cacheKey)!;
       if (now - cached.timestamp < this.productsTtlMs) {
@@ -98,7 +125,22 @@ export class ProductService {
       }
     }
 
-    // 2. Deduplicate simultaneous identical requests
+    // 2. Check persistent localStorage cache for instant zero-wait startup
+    if (!forceRefresh && !this.productsCache.has(cacheKey)) {
+      const persisted = this.getLocalStorageItem(cacheKey);
+      if (persisted && Array.isArray(persisted.data) && persisted.data.length > 0) {
+        this.productsCache.set(cacheKey, persisted);
+        if (now - persisted.timestamp < this.productsTtlMs * 3) {
+          // Trigger background refresh silently if stale
+          if (now - persisted.timestamp >= this.productsTtlMs) {
+            this.getProducts(category, query, limit, page, true).catch(() => {});
+          }
+          return persisted.data;
+        }
+      }
+    }
+
+    // 3. Deduplicate simultaneous identical requests
     if (this.pendingProductsRequests.has(cacheKey)) {
       return this.pendingProductsRequests.get(cacheKey)!;
     }
@@ -123,11 +165,14 @@ export class ProductService {
         const mapped = items.map((p: any) => this.mapProductToUi(p));
         const finalResult = mapped.length > 0 ? mapped : MOCK_PRODUCTS;
 
-        // Cache successful response
-        this.productsCache.set(cacheKey, { data: finalResult, timestamp: Date.now() });
+        // Cache successful response in memory & local storage
+        const cacheEntry = { data: finalResult, timestamp: Date.now() };
+        this.productsCache.set(cacheKey, cacheEntry);
+        this.setLocalStorageItem(cacheKey, cacheEntry);
         return finalResult;
       } catch {
-        return MOCK_PRODUCTS;
+        const fallback = this.getLocalStorageItem(cacheKey)?.data || MOCK_PRODUCTS;
+        return fallback;
       } finally {
         this.pendingProductsRequests.delete(cacheKey);
       }
@@ -151,7 +196,7 @@ export class ProductService {
   }
 
   /**
-   * Fetches categories with in-memory caching and deduplication.
+   * Fetches categories with in-memory caching, local storage persistence, and deduplication.
    */
   async getCategories(forceRefresh: boolean = false): Promise<CategoryItem[]> {
     if (ENV.ENABLE_MOCK_API) {
@@ -161,6 +206,19 @@ export class ProductService {
     const now = Date.now();
     if (!forceRefresh && this.categoriesCache && now - this.categoriesCache.timestamp < this.categoriesTtlMs) {
       return this.categoriesCache.data;
+    }
+
+    if (!forceRefresh && !this.categoriesCache) {
+      const persisted = this.getLocalStorageItem('categories_catalog');
+      if (persisted && Array.isArray(persisted.data) && persisted.data.length > 0) {
+        this.categoriesCache = persisted;
+        if (now - persisted.timestamp < this.categoriesTtlMs * 3) {
+          if (now - persisted.timestamp >= this.categoriesTtlMs) {
+            this.getCategories(true).catch(() => {});
+          }
+          return persisted.data;
+        }
+      }
     }
 
     if (this.pendingCategoriesRequest) {
@@ -178,10 +236,13 @@ export class ProductService {
           : [];
         const mapped = items.map((c: any) => this.mapCategoryToUi(c));
         const finalCategories = mapped.length > 0 ? mapped : MOCK_CATEGORIES;
-        this.categoriesCache = { data: finalCategories, timestamp: Date.now() };
+        const cacheEntry = { data: finalCategories, timestamp: Date.now() };
+        this.categoriesCache = cacheEntry;
+        this.setLocalStorageItem('categories_catalog', cacheEntry);
         return finalCategories;
       } catch {
-        return MOCK_CATEGORIES;
+        const fallback = this.getLocalStorageItem('categories_catalog')?.data || MOCK_CATEGORIES;
+        return fallback;
       } finally {
         this.pendingCategoriesRequest = null;
       }

@@ -120,6 +120,9 @@ class DatabaseManager:
                     client_kwargs: Dict[str, Any] = {
                         "serverSelectionTimeoutMS": timeout_ms,
                         "connectTimeoutMS": 5000,
+                        "maxPoolSize": 50,
+                        "minPoolSize": 5,
+                        "maxIdleTimeMS": 45000,
                     }
 
                     if not is_curr_local:
