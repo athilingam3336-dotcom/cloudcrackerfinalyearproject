@@ -21,7 +21,6 @@ import { PasswordInput } from '@/components/inputs/PasswordInput';
 import { Checkbox } from '@/components/inputs/Checkbox';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { GoogleAccountChooserModal } from '@/components/auth/GoogleAccountChooserModal';
-import { InstagramLoginModal } from '@/components/auth/InstagramLoginModal';
 import { googleAuthService } from '@/services/googleAuthService';
 import { GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
 import { RootStackParamList } from '@/navigation/types';
@@ -225,20 +224,18 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
   const handleInstagramLoginClick = () => {
     setErrors({});
-    setShowInstagramModal(true);
-  };
+    const clientId = '2262885951230627';
+    const redirectUri = encodeURIComponent(
+      typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : 'https://cloudcrackerfinalyearproject-1.onrender.com'
+    );
+    const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`;
 
-  const handleInstagramLoginSubmit = async (payload: InstagramAuthPayload) => {
-    setIsInstagramLoading(true);
-    const success = await storeLoginWithInstagram(payload);
-    setIsInstagramLoading(false);
-
-    if (success) {
-      setShowInstagramModal(false);
-      navigation.navigate('Home');
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.href = authUrl;
     } else {
-      const storeError = useAuthStore.getState().error;
-      setErrors({ email: storeError || 'Instagram registration failed.' });
+      Linking.openURL(authUrl);
     }
   };
 
@@ -436,14 +433,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         onClose={() => setShowGoogleModal(false)}
         onSelectAccount={handleGoogleAccountSelect}
         isLoading={isGoogleLoading}
-      />
-
-      {/* Instagram Login Modal */}
-      <InstagramLoginModal
-        visible={showInstagramModal}
-        onClose={() => setShowInstagramModal(false)}
-        onLogin={handleInstagramLoginSubmit}
-        isLoading={isInstagramLoading}
       />
     </SafeAreaView>
   );
