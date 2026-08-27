@@ -58,12 +58,14 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
 
   const isCancellable = useMemo(() => {
     if (!order) return false;
-    return order.status === 'Pending' || order.status === 'Processing';
+    const s = (order.status || '').toLowerCase();
+    return ['pending', 'confirmed', 'processing'].includes(s);
   }, [order]);
 
   const isDeletable = useMemo(() => {
     if (!order) return false;
-    return ['Delivered', 'Cancelled'].includes(order.status) || order.paymentStatus === 'Refunded';
+    const s = (order.status || '').toLowerCase();
+    return ['delivered', 'cancelled'].includes(s) || order.paymentStatus === 'Refunded';
   }, [order]);
 
   const handleCancelOrder = useCallback(() => {
@@ -78,15 +80,25 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
           style: 'destructive',
           onPress: async () => {
             setIsCancelling(true);
-            const updated = await orderService.cancelOrder(order.id);
-            setOrder(updated);
-            setIsCancelling(false);
-            Alert.alert('Order Cancelled', 'Your order has been successfully cancelled.');
+            try {
+              const updated = await orderService.cancelOrder(order.id);
+              if (updated) {
+                setOrder(updated);
+              } else {
+                fetchDetails();
+              }
+              Alert.alert('Order Cancelled', 'Your order has been successfully cancelled.');
+            } catch (error: any) {
+              const msg = error.response?.data?.message || error.message || 'Failed to cancel order.';
+              Alert.alert('Error', msg);
+            } finally {
+              setIsCancelling(false);
+            }
           },
         },
       ]
     );
-  }, [order]);
+  }, [order, fetchDetails]);
 
   const handleDeleteOrder = useCallback(() => {
     if (!order) return;

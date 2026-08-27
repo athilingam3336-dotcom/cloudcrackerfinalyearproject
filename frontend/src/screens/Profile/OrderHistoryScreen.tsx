@@ -42,6 +42,7 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
 
   const fetchOrders = useCallback(async (isPullRefresh = false) => {
@@ -97,6 +98,45 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const handleReorder = useCallback((orderNumber: string) => {
     Alert.alert('Re-order', `Items from ${orderNumber} added to cart.`);
   }, []);
+
+  const handleCancelOrder = useCallback(
+    (item: OrderRecord) => {
+      Alert.alert(
+        'Cancel Order',
+        `Are you sure you want to cancel order ${item.orderNumber}? Stock items will be restored.`,
+        [
+          { text: 'Keep Order', style: 'cancel' },
+          {
+            text: 'Yes, Cancel Order',
+            style: 'destructive',
+            onPress: async () => {
+              setCancellingOrderId(item.id);
+              try {
+                const updated = await orderService.cancelOrder(item.id);
+                if (updated) {
+                  setOrders((prev) =>
+                    prev.map((o) => (o.id === item.id ? updated : o))
+                  );
+                } else {
+                  fetchOrders();
+                }
+                Alert.alert('Success', `Order ${item.orderNumber} has been cancelled.`);
+              } catch (error: any) {
+                const msg =
+                  error.response?.data?.message ||
+                  error.message ||
+                  'Failed to cancel order.';
+                Alert.alert('Error', msg);
+              } finally {
+                setCancellingOrderId(null);
+              }
+            },
+          },
+        ]
+      );
+    },
+    [fetchOrders]
+  );
 
   const handleDeleteOrder = useCallback((item: OrderRecord) => {
     Alert.alert(
@@ -161,6 +201,9 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const renderOrderItem: ListRenderItem<OrderRecord> = useCallback(
     ({ item }) => {
       const badgeInfo = getStatusBadgeStyles(item.status, item.paymentStatus);
+      const isCancellable = ['pending', 'confirmed', 'processing'].includes(
+        (item.status || '').toLowerCase()
+      );
       const isDeletable =
         item.status === 'Cancelled' ||
         item.status === 'Delivered' ||
@@ -168,6 +211,7 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
         item.status === 'Refunded';
 
       const isDeletingThis = deletingOrderId === item.id;
+      const isCancellingThis = cancellingOrderId === item.id;
 
       return (
         <TouchableOpacity
@@ -199,6 +243,21 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           </View>
 
           <View style={styles.orderActionsRow}>
+            {/* Cancel Button for Pending/Confirmed/Processing orders */}
+            {isCancellable && (
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => handleCancelOrder(item)}
+                disabled={isCancellingThis}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="cancel" size={16} color="#D32F2F" />
+                <Text style={styles.cancelBtnText}>
+                  {isCancellingThis ? 'Cancelling...' : 'Cancel'}
+                </Text>
+              </TouchableOpacity>
+            )}
+
             {/* Delete Option for Cancelled, Refunded, or Delivered orders */}
             {isDeletable && (
               <TouchableOpacity
@@ -236,7 +295,7 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
         </TouchableOpacity>
       );
     },
-    [navigation, handleReorder, handleDeleteOrder, deletingOrderId]
+    [navigation, handleReorder, handleCancelOrder, handleDeleteOrder, deletingOrderId, cancellingOrderId]
   );
 
   const renderHeader = useMemo(() => {
@@ -631,6 +690,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
+  },
+  cancelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+    backgroundColor: '#FFF5F5',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.lg,
+    gap: 4,
+  },
+  cancelBtnText: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#D32F2F',
   },
   deleteBtn: {
     flexDirection: 'row',

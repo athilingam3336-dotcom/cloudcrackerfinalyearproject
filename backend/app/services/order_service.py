@@ -198,7 +198,8 @@ class OrderService:
         if not order or str(order.user_id) != user_id:
             raise NotFoundException(message="Order not found.")
 
-        if order.order_status != "Pending":
+        cancellable_statuses = {"pending", "confirmed", "processing"}
+        if (order.order_status or "").strip().lower() not in cancellable_statuses:
             raise ValidationException(
                 message=f"Order cannot be cancelled because its status is '{order.order_status}'."
             )

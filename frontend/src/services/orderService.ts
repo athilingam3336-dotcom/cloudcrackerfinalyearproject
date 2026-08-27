@@ -241,11 +241,16 @@ export class OrderService {
   }
 
   async cancelOrder(orderId: string): Promise<OrderRecord | null> {
-    try {
-      const { data } = await apiClient.put(`/orders/${orderId}/cancel`);
-      return this.mapBackendOrderToUi(data.data || data);
-    } catch {
+    if (ENV.ENABLE_MOCK_API) {
       return null;
+    }
+    try {
+      const { data: res } = await apiClient.put(`/orders/${orderId}/cancel`);
+      const payload = res.data || res;
+      return payload ? this.mapBackendOrderToUi(payload) : null;
+    } catch (error: any) {
+      console.error('Failed to cancel order:', error);
+      throw error;
     }
   }
 
