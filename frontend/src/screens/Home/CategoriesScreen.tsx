@@ -98,7 +98,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
 
   const handleEliteProgramPress = useCallback(() => {
     Alert.alert(
-      'CloudCrackers Elite',
+      'Meera Crackers Elite',
       'Unlock wholesale pyrotechnic pricing, seasonal priority access, and zero-fee shipping on bulk orders.'
     );
   }, []);
@@ -218,7 +218,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
       <View style={styles.footerWrapper}>
         <View style={styles.eliteCard}>
           <View style={styles.eliteTextContent}>
-            <Text style={styles.eliteTitle}>CloudCrackers Elite</Text>
+            <Text style={styles.eliteTitle}>Meera Crackers Elite</Text>
             <Text style={styles.eliteSubtitle}>
               Join our loyalty program to unlock exclusive categories, wholesale pricing, and
               early access to new seasonal collections.

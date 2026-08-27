@@ -17,23 +17,23 @@ export class AboutService {
     if (ENV.ENABLE_MOCK_API) {
       return {
         version: 'v2.4.0',
-        description: 'Premier Pyrotechnics & Celebration Platform',
+        description: 'Meera Crackers World — Fireworks Wholesale & Retailer',
         sections: [
           {
             title: "🎆 Who We Are",
-            content: "CloudCrackers is India's leading digital platform for premium, 100% legal, Sivakasi-manufactured green crackers and professional pyrotechnics."
+            content: "Meera Crackers World is your trusted platform for 100% legal, Sivakasi-manufactured green crackers and professional pyrotechnics. Happy & Safety Guarantee for all celebrations."
+          },
+          {
+            title: "📍 Contact & Location",
+            content: "Email: Meeracrackers@gmail.com | Phone: 7339624431, 94421 72314, 96268 24431\nLic No: E/SC/TN/24/685 (E 54389)\nLocation: https://maps.app.goo.gl/6BE5qX4vxyutrkAD6?g_st=aw"
           },
           {
             title: "🛡️ Safe & Compliant",
-            content: "All our products strictly adhere to Supreme Court safety norms and NEERI green cracker formulations with reduced emissions and zero harmful heavy metals."
+            content: "All products strictly adhere to Supreme Court safety norms and NEERI green cracker formulations with reduced emissions."
           },
           {
-            title: "🚚 Hazmat Doorstep Delivery",
-            content: "Specially packaged in shock-resistant and moisture-proof containers to guarantee safe, compliant transport straight to your doorstep."
-          },
-          {
-            title: "💳 Safe Payments",
-            content: "Integrated with Razorpay 256-bit encrypted checkout with instant HMAC verification."
+            title: "🚚 Delivery & Availability",
+            content: "All Days Available! Specially packaged in shock-resistant and moisture-proof containers."
           }
         ]
       };

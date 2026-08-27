@@ -15,14 +15,14 @@ export const RazorpayWebViewCheckout: React.FC = () => {
       key: razorpayOptions.keyId,
       amount: razorpayOptions.amountPaise,
       currency: razorpayOptions.currency || 'INR',
-      name: 'CloudCrackers Pyrotechnics',
+      name: 'Meera Crackers World',
       description: `Order ${razorpayOptions.orderNumber || ''} (Test Mode)`,
       image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDAP7p-rAk38wzI36vF04GyEW_IoEFRlYrMcYFTmA5ux2MYU1BVQxdxbOJEtojj4o0nKvYc0UZFZkngXefUeOSuN9RhbAwIWCHjK1gan-giRebFdGC1wSCgAmXYtUDnh87e2p2PuL0SurRoWnXj0rIUOhP9teve675IlY6GDtMgXS27ZrFmHhm0Wh-XXwfNouPJFtdYuhhOjdO-uWxYHtH6-xsyO-JgBDjYXden6z2L9_viSwAnXmIO',
       order_id: razorpayOptions.orderId || undefined,
       prefill: {
         name: razorpayOptions.customerName || 'Test Customer',
-        email: razorpayOptions.customerEmail || 'customer@cloudcrackers.com',
-        contact: razorpayOptions.customerPhone || '+919876543210',
+        email: razorpayOptions.customerEmail || 'Meeracrackers@gmail.com',
+        contact: razorpayOptions.customerPhone || '7339624431',
       },
       theme: {
         color: '#FF6B00',

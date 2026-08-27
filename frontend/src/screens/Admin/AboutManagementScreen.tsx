@@ -104,7 +104,7 @@ export const AboutManagementScreen: React.FC<AboutManagementScreenProps> = ({
         })),
       };
       await aboutService.updateAbout(payload);
-      Alert.alert('Success', 'About CloudCrackers content saved successfully.');
+      Alert.alert('Success', 'About Meera Crackers content saved successfully.');
       navigation.goBack();
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.message || 'Failed to save changes.';

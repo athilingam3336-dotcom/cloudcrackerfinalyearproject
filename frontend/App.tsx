@@ -24,7 +24,7 @@ export default function App() {
   });
 
   if (!fontsLoaded) {
-    return <LoadingSpinner message="Initializing CloudCrackers..." />;
+    return <LoadingSpinner message="Initializing Meera Crackers..." />;
   }
 
   return (

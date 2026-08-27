@@ -45,7 +45,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             </TouchableOpacity>
           )}
           <View style={styles.titleContainer}>
-            <Text style={styles.brandTitle}>CloudCrackers</Text>
+            <Text style={styles.brandTitle}>Meera Crackers</Text>
             <Text style={styles.greetingText}>Welcome back, {userName}</Text>
           </View>
         </View>

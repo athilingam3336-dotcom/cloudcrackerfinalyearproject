@@ -11,7 +11,7 @@ ENV_FILE_PATH = os.path.join(BASE_DIR, ".env")
 
 class Settings(BaseSettings):
     # App Settings
-    APP_NAME: str = "CloudCrackers API"
+    APP_NAME: str = "Meera Crackers API"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DEBUG: bool = True
 

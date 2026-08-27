@@ -258,14 +258,14 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             {/* Desktop Left Side Branding Banner */}
             {IS_DESKTOP && (
               <View style={styles.leftBranding}>
-                <Text style={styles.heroBrandName}>CloudCrackers</Text>
+                <Text style={styles.heroBrandName}>Meera Crackers</Text>
                 <Text style={styles.heroSubHeading}>
-                  Light up the sky with the most premium pyrotechnics on the market.
+                  Light up the sky with Meera Crackers World.
                 </Text>
                 <View style={styles.heroImageCard}>
                   <MaterialIcons name="local-fire-department" size={80} color={Colors.primary} />
                   <Text style={styles.quoteText}>
-                    "The most trusted name in professional displays."
+                    "Happy & Safety Guarantee for all your celebrations."
                   </Text>
                 </View>
               </View>
@@ -276,7 +276,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
               <View style={styles.headerBox}>
                 <Text style={styles.formTitle}>Join the Celebration</Text>
                 <Text style={styles.formSubtitle}>
-                  Create your CloudCrackers account to start building your show.
+                  Create your Meera Crackers account to start ordering.
                 </Text>
               </View>
 

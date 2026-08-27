@@ -89,7 +89,7 @@ const initialNotifications: NotificationItem[] = [
     id: 'notif4',
     title: 'Security Alert: New Login',
     message:
-      'Your CloudCrackers account was logged into from a new Chrome Web device in New York, USA.',
+      'Your Meera Crackers account was logged into from a new Chrome Web device in New York, USA.',
     time: '2d ago',
     isRead: true,
     type: 'system',

@@ -8,7 +8,7 @@ export class ProfileService {
       return {
         id: 'usr_guest_123',
         name: 'Guest User',
-        email: 'guest@cloudcrackers.com',
+        email: 'guest@meeracrackersworld.com',
         role: 'user',
         membership: 'Standard Member',
         ordersCount: 0,

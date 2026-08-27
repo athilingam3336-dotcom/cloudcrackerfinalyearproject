@@ -118,14 +118,14 @@ class PaymentService {
         key: options.keyId,
         amount: options.amountPaise,
         currency: options.currency || 'INR',
-        name: 'CloudCrackers Pyrotechnics',
+        name: 'Meera Crackers World',
         description: `Order ${options.orderNumber} (Test Mode)`,
         image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDAP7p-rAk38wzI36vF04GyEW_IoEFRlYrMcYFTmA5ux2MYU1BVQxdxbOJEtojj4o0nKvYc0UZFZkngXefUeOSuN9RhbAwIWCHjK1gan-giRebFdGC1wSCgAmXYtUDnh87e2p2PuL0SurRoWnXj0rIUOhP9teve675IlY6GDtMgXS27ZrFmHhm0Wh-XXwfNouPJFtdYuhhOjdO-uWxYHtH6-xsyO-JgBDjYXden6z2L9_viSwAnXmIO',
         order_id: options.orderId || undefined,
         prefill: {
           name: options.customerName || 'Test Customer',
-          email: options.customerEmail || 'customer@cloudcrackers.com',
-          contact: options.customerPhone || '+919876543210',
+          email: options.customerEmail || 'Meeracrackers@gmail.com',
+          contact: options.customerPhone || '7339624431',
         },
         theme: {
           color: '#FF6B00',

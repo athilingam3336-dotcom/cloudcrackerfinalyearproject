@@ -54,7 +54,7 @@ const MOCK_NOTIFICATIONS: BackendNotification[] = [
     id: 'notif4',
     title: 'Security Alert: New Login',
     message:
-      'Your CloudCrackers account was logged into from a new Chrome Web device in New York, USA.',
+      'Your Meera Crackers account was logged into from a new Chrome Web device in New York, USA.',
     type: 'system',
     tag: 'SECURITY',
     is_read: true,

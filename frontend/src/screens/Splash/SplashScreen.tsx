@@ -230,7 +230,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
             },
           ]}
         >
-          CloudCrackers
+          Meera Crackers
         </Animated.Text>
 
         {/* Slogan */}
@@ -243,7 +243,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
             },
           ]}
         >
-          Premium pyrotechnics for moments that matter.
+          Happy & Safety Guarantee • Wholesale & Retailer
         </Animated.Text>
       </View>
 

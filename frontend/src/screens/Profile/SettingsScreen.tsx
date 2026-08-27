@@ -60,24 +60,25 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   );
 
   const showAboutModal = useCallback(() => {
-    setModalTitle('About CloudCrackers');
+    setModalTitle('About Meera Crackers');
     if (aboutData) {
       const sectionsStr = aboutData.sections
         .map((s) => `${s.title}\n${s.content}`)
         .join('\n\n');
       setModalBody(
-        `CloudCrackers ${aboutData.version} — ${aboutData.description || 'Premier Pyrotechnics & Celebration Platform.'}\n\n` +
+        `Meera Crackers World ${aboutData.version} — ${aboutData.description || 'Fireworks Wholesale & Retailer'}\n\n` +
         sectionsStr + '\n\n' +
-        '© 2026 CloudCrackers Inc. All rights reserved.'
+        '© 2026 MEERA CRACKERS WORLD. ALL RIGHTS RESERVED.'
       );
     } else {
       setModalBody(
-        'CloudCrackers v2.4.0 — Premier Pyrotechnics & Celebration Platform.\n\n' +
+        'Meera Crackers World v2.4.0 — Fireworks Wholesale & Retailer.\n\n' +
         '✨ 100% Legal & Sivakasi Certified Green Crackers.\n' +
-        '🚚 Hazmat-compliant fast doorstep delivery across India.\n' +
-        '💳 Secure Razorpay integrated checkout with instant transaction verification.\n' +
-        '🛡️ Direct factory pricing with zero counterfeit guarantees.\n\n' +
-        '© 2026 CloudCrackers Inc. All rights reserved.'
+        '📞 Cell: 7339624431, 94421 72314, 96268 24431\n' +
+        '📧 Email: Meeracrackers@gmail.com\n' +
+        '📜 Lic No: E/SC/TN/24/685 (E 54389)\n' +
+        '📍 Location: https://maps.app.goo.gl/6BE5qX4vxyutrkAD6?g_st=aw\n\n' +
+        '© 2026 MEERA CRACKERS WORLD. ALL RIGHTS RESERVED.'
       );
     }
     setIsModalVisible(true);
@@ -89,7 +90,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       'Your privacy and data security are our top priorities.\n\n' +
       '🔒 256-bit SSL encryption protects all your order, payment, and address data.\n' +
       '🛡️ We strictly never sell or share customer personal information with external advertisers.\n' +
-      '📍 Location data is only used for calculating precise hazmat delivery routes and timings.'
+      '📍 Location data is only used for calculating precise delivery routes and timings.'
     );
     setIsModalVisible(true);
   }, []);
@@ -97,10 +98,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   const showTermsModal = useCallback(() => {
     setModalTitle('Terms of Service');
     setModalBody(
-      'By placing an order on CloudCrackers, you acknowledge and agree that:\n\n' +
+      'By placing an order on Meera Crackers World, you acknowledge and agree that:\n\n' +
       '1. You are 18+ years of age.\n' +
       '2. You comply with all applicable local, municipal, and state pyrotechnic celebration guidelines.\n' +
-      '3. Orders once packed undergo hazmat compliance checks before dispatch.'
+      '3. Orders once packed undergo quality and compliance checks before dispatch.'
     );
     setIsModalVisible(true);
   }, []);
@@ -201,7 +202,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
           <View style={styles.settingCard}>
             <TouchableOpacity style={styles.linkRow} onPress={showAboutModal} activeOpacity={0.8}>
-              <Text style={styles.linkTitle}>About CloudCrackers</Text>
+              <Text style={styles.linkTitle}>About Meera Crackers</Text>
               <View style={styles.linkRight}>
                 <Text style={styles.versionText}>{aboutData?.version || 'v2.4.0'}</Text>
                 <MaterialIcons name="chevron-right" size={20} color={Colors.tertiary} />

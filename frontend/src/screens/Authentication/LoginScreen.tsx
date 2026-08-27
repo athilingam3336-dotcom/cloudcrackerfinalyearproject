@@ -212,9 +212,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <View style={styles.logoBox}>
                 <MaterialIcons name="save-as" size={28} color={Colors.onPrimary} />
               </View>
-              <Text style={styles.brandTitle}>CloudCrackers</Text>
+              <Text style={styles.brandTitle}>Meera Crackers</Text>
               <Text style={styles.brandSubtitle}>
-                Ignite your experience with premium pyrotechnics.
+                Ignite your celebration with Meera Crackers World.
               </Text>
             </View>
 
@@ -324,7 +324,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           {/* Legal Footer */}
           <View style={styles.footer}>
             <Text style={styles.legalText}>
-              © 2026 CLOUDCRACKERS PYROTECHNICS. ALL RIGHTS RESERVED.
+              © 2026 MEERA CRACKERS WORLD. ALL RIGHTS RESERVED.
             </Text>
             <View style={styles.legalLinks}>
               <Text style={styles.legalLink}>Privacy Policy</Text>

@@ -21,8 +21,8 @@ const DEFAULT_INSTAGRAM_ACCOUNTS: SavedInstagramAccount[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
   },
   {
-    username: 'cloudcrackers_app',
-    name: 'CloudCrackers Official',
+    username: 'meeracrackers_official',
+    name: 'Meera Crackers Official',
     avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80',
   },
   {

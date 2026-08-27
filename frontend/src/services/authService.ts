@@ -34,7 +34,7 @@ export interface InstagramAuthPayload {
 const MOCK_ADMIN_USER: UserProfile = {
   id: 'usr_alex_123',
   name: 'Alex Stratos',
-  email: 'alex@cloudcrackers.com',
+  email: 'alex@meeracrackersworld.com',
   role: 'admin',
   membership: 'Gold Member',
   ordersCount: 12,

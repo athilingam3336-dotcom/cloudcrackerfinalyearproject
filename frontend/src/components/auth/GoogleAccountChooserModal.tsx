@@ -110,7 +110,7 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
               <Text style={styles.googleGLetter}>G</Text>
             </View>
             <Text style={styles.title}>Choose an account</Text>
-            <Text style={styles.subtitle}>to continue to <Text style={styles.brandName}>CloudCrackers</Text></Text>
+            <Text style={styles.subtitle}>to continue to <Text style={styles.brandName}>Meera Crackers</Text></Text>
           </View>
 
           {/* Account list or Custom form */}
@@ -267,7 +267,7 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
           {/* Footer note */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              To continue, Google will share your name, email address, and profile picture with CloudCrackers.
+              To continue, Google will share your name, email address, and profile picture with Meera Crackers.
             </Text>
             <TouchableOpacity
               style={styles.cancelButton}

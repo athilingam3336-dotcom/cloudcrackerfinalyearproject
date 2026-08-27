@@ -30,8 +30,8 @@ const DEFAULT_SYSTEM_ACCOUNTS: SavedGoogleAccount[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80',
   },
   {
-    email: 'cloudcrackers.demo@gmail.com',
-    name: 'CloudCrackers User',
+    email: 'Meeracrackers@gmail.com',
+    name: 'Meera Crackers User',
     avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80',
   },
 ];

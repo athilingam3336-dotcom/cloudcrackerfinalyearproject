@@ -40,7 +40,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Top Header Navigation */}
       <View style={styles.header}>
-        <Text style={styles.headerBrand}>CloudCrackers</Text>
+        <Text style={styles.headerBrand}>Meera Crackers</Text>
         <TouchableOpacity style={styles.headerLoginButton} onPress={handleLogin}>
           <Text style={styles.headerLoginText}>Log In</Text>
         </TouchableOpacity>
@@ -53,7 +53,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>PREMIUM PYROTECHNICS</Text>
+            <Text style={styles.heroBadgeText}>FIREWORKS WHOLESALE & RETAILER</Text>
           </View>
 
           <Text style={styles.heroTitle}>
@@ -61,9 +61,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
           </Text>
 
           <Text style={styles.heroDescription}>
-            Experience the pinnacle of celebration. From boutique events to grand
-            spectacles, CloudCrackers delivers unmatched quality and safe
-            excitement right to your door.
+            Experience the pinnacle of celebration. Meera Crackers World delivers unmatched quality, happy & safety guaranteed green crackers right to your door.
           </Text>
 
           {/* Action Buttons */}
@@ -184,13 +182,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerBrand}>CloudCrackers</Text>
+          <Text style={styles.footerBrand}>Meera Crackers World</Text>
           <View style={styles.footerLinks}>
             <Text style={styles.footerLink}>Terms</Text>
             <Text style={styles.footerLink}>Privacy</Text>
             <Text style={styles.footerLink}>Support</Text>
           </View>
-          <Text style={styles.copyright}>© 2026 CloudCrackers Inc. All rights reserved.</Text>
+          <Text style={styles.copyright}>© 2026 MEERA CRACKERS WORLD. ALL RIGHTS RESERVED.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

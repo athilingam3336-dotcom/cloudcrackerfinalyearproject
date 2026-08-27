@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   Modal,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { HomeHeader } from '@/components/common/HomeHeader';
+import { CLIENT_INFO } from '@/constants/clientInfo';
 import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { RootStackParamList } from '@/navigation/types';
 import { tokenStorage } from '@/storage/tokenStorage';
@@ -74,14 +76,14 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
     };
 
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Are you sure you want to sign out of CloudCrackers?');
+      const confirmed = window.confirm('Are you sure you want to sign out of Meera Crackers?');
       if (confirmed) {
         await performSignout();
       }
     } else {
       Alert.alert(
         'Sign Out',
-        'Are you sure you want to sign out of CloudCrackers?',
+        'Are you sure you want to sign out of Meera Crackers?',
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -141,9 +143,17 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
       onPress: () => navigation.navigate('Notifications'),
     },
     {
+      id: 'store_location',
+      title: 'Store Location & Contact',
+      subtitle: `${CLIENT_INFO.primaryPhone} • ${CLIENT_INFO.email}`,
+      icon: 'location-on',
+      badge: 'MAP',
+      onPress: () => Linking.openURL(CLIENT_INFO.locationMapUrl),
+    },
+    {
       id: 'about',
-      title: 'About CloudCrackers',
-      subtitle: 'Certified Sivakasi fireworks, safety & legal compliance',
+      title: 'About Meera Crackers',
+      subtitle: 'Certified Sivakasi fireworks, wholesale & retail',
       icon: 'info',
       badge: aboutData?.version || 'v2.4.0',
       onPress: () => setIsAboutModalVisible(true),
@@ -219,7 +229,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   ];
 
   const displayName = user?.name || 'Explorer';
-  const displayEmail = user?.email || 'user@cloudcrackers.com';
+  const displayEmail = user?.email || 'Meeracrackers@gmail.com';
   const displayMembership = isAdmin ? 'Administrator' : (user?.membership || 'Standard Member');
   const userInitial = displayName.charAt(0).toUpperCase();
 
@@ -337,9 +347,9 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                 <MaterialIcons name="auto-awesome" size={24} color={Colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.modalTitleText}>About CloudCrackers</Text>
+                <Text style={styles.modalTitleText}>About Meera Crackers</Text>
                 <Text style={styles.modalSubtitleText}>
-                  {(aboutData?.version || 'v2.4.0') + ' • ' + (aboutData?.description || 'Sivakasi Certified')}
+                  {(aboutData?.version || 'v2.4.0') + ' • ' + (aboutData?.description || 'Meera Crackers World')}
                 </Text>
               </View>
             </View>
@@ -356,22 +366,19 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                 <>
                   <Text style={styles.modalSectionTitle}>🎆 Who We Are</Text>
                   <Text style={styles.modalBodyText}>
-                    CloudCrackers is India's leading digital platform for premium, 100% legal, Sivakasi-manufactured green crackers and professional pyrotechnics.
+                    Meera Crackers World is your premier platform for 100% legal, Sivakasi-manufactured green crackers and professional pyrotechnics. Happy & Safety Guarantee for all your celebrations.
+                  </Text>
+
+                  <Text style={[styles.modalSectionTitle, { marginTop: 12 }]}>📍 Contact & Store Location</Text>
+                  <Text style={styles.modalBodyText}>
+                    Email: Meeracrackers@gmail.com | Phone: 7339624431, 94421 72314, 96268 24431{"\n"}
+                    Lic No: E/SC/TN/24/685 (E 54389){"\n"}
+                    Location: https://maps.app.goo.gl/6BE5qX4vxyutrkAD6?g_st=aw
                   </Text>
 
                   <Text style={[styles.modalSectionTitle, { marginTop: 12 }]}>🛡️ Safe & Compliant</Text>
                   <Text style={styles.modalBodyText}>
                     All our products strictly adhere to Supreme Court safety norms and NEERI green cracker formulations with reduced emissions and zero harmful heavy metals.
-                  </Text>
-
-                  <Text style={[styles.modalSectionTitle, { marginTop: 12 }]}>🚚 Hazmat Doorstep Delivery</Text>
-                  <Text style={styles.modalBodyText}>
-                    Specially packaged in shock-resistant and moisture-proof containers to guarantee safe, compliant transport straight to your doorstep.
-                  </Text>
-
-                  <Text style={[styles.modalSectionTitle, { marginTop: 12 }]}>💳 Safe Payments</Text>
-                  <Text style={styles.modalBodyText}>
-                    Integrated with Razorpay 256-bit encrypted checkout with instant HMAC verification.
                   </Text>
                 </>
               )}

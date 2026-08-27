@@ -139,7 +139,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
         >
           <MaterialIcons name="arrow-back" size={24} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerBrand}>CloudCrackers</Text>
+        <Text style={styles.headerBrand}>Meera Crackers</Text>
         <View style={styles.headerIconButton} />
       </View>
 
@@ -346,7 +346,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
           {/* Legal Footer */}
           <View style={styles.footer}>
             <Text style={styles.legalText}>
-              © 2026 CLOUDCRACKERS PYROTECHNICS. ALL RIGHTS RESERVED.
+              © 2026 MEERA CRACKERS WORLD. ALL RIGHTS RESERVED.
             </Text>
           </View>
         </ScrollView>

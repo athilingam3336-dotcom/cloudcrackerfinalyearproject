@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { HomeHeader } from '@/components/common/HomeHeader';
+import { CLIENT_INFO } from '@/constants/clientInfo';
 import { SearchBar } from '@/components/inputs/SearchBar';
 import { BannerCarousel } from '@/components/common/BannerCarousel';
 import { ProductCard } from '@/components/cards/ProductCard';
@@ -369,6 +371,43 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           userName={user?.name ? user.name.split(' ')[0] : 'Explorer'}
         />
 
+        {/* Client Banner Card */}
+        <View style={styles.clientBannerContainer}>
+          <Text style={styles.devotionalText}>
+            {CLIENT_INFO.devotionalText.sudalai} • {CLIENT_INFO.devotionalText.uvari}
+          </Text>
+
+          <Text style={styles.clientBannerTitle}>{CLIENT_INFO.name.toUpperCase()}</Text>
+          <Text style={styles.clientBannerTagline}>{CLIENT_INFO.tagline}</Text>
+          <Text style={styles.clientBannerLic}>{CLIENT_INFO.licenseNo} • {CLIENT_INFO.allDaysAvailable}</Text>
+
+          <View style={styles.clientActionsRow}>
+            <TouchableOpacity
+              style={styles.clientActionChip}
+              onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
+            >
+              <MaterialIcons name="call" size={15} color="#FFFFFF" />
+              <Text style={styles.clientActionChipText}>{CLIENT_INFO.primaryPhone}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.clientActionChip}
+              onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
+            >
+              <MaterialIcons name="email" size={15} color="#FFFFFF" />
+              <Text style={styles.clientActionChipText}>Email Us</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.clientActionChip, styles.clientActionChipHighlight]}
+              onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
+            >
+              <MaterialIcons name="location-on" size={15} color="#B30000" />
+              <Text style={styles.clientActionChipTextHighlight}>Map</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Search Bar */}
         <SearchBar
           value={searchQuery}
@@ -684,6 +723,90 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: -20,
     bottom: -20,
+  },
+  clientBannerContainer: {
+    backgroundColor: '#B71C1C',
+    marginHorizontal: Spacing.marginMobile,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  devotionalText: {
+    ...Typography.labelLg,
+    color: '#FFECB3',
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  clientBannerTitle: {
+    ...Typography.headlineLg,
+    color: '#FFD700',
+    fontSize: 22,
+    fontFamily: 'Inter-Bold',
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  clientBannerTagline: {
+    ...Typography.bodyMd,
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  clientBannerLic: {
+    ...Typography.labelLg,
+    color: '#FFF8E1',
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    marginTop: 4,
+    opacity: 0.9,
+  },
+  clientActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+    flexWrap: 'wrap',
+  },
+  clientActionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+  },
+  clientActionChipText: {
+    ...Typography.labelLg,
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+  },
+  clientActionChipHighlight: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
+  },
+  clientActionChipTextHighlight: {
+    ...Typography.labelLg,
+    color: '#B71C1C',
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
   },
 });
 
