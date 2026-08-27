@@ -48,6 +48,42 @@ class InstagramAuthManager {
     return DEFAULT_INSTAGRAM_ACCOUNTS;
   }
 
+  async triggerNativeInstagramPopup(
+    onSuccess: (payload: InstagramAuthPayload) => void,
+    onError: (error: string) => void
+  ): Promise<boolean> {
+    const clientId = '2262885951230627';
+    if (!clientId) return false;
+    if (typeof window === 'undefined') return false;
+
+    try {
+      const redirectUri = encodeURIComponent(
+        window.location.origin || 'https://cloudcrackerfinalyearproject-1.onrender.com'
+      );
+      const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`;
+
+      const width = 600;
+      const height = 700;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+
+      const popup = window.open(
+        authUrl,
+        'InstagramOAuth',
+        `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
+      );
+
+      if (!popup) {
+        return false;
+      }
+
+      return true;
+    } catch (err: any) {
+      console.warn('Instagram popup launch error:', err);
+      return false;
+    }
+  }
+
   saveAccountToRecent(account: SavedInstagramAccount) {
     try {
       const current = this.getSavedAccounts();

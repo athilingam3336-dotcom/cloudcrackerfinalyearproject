@@ -112,6 +112,30 @@ export const InstagramAccountChooserModal: React.FC<InstagramAccountChooserModal
           {/* Account list or Custom form */}
           {!isCustomMode ? (
             <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
+              {/* Native Instagram OAuth Window trigger button */}
+              <TouchableOpacity
+                style={styles.officialInstaBtn}
+                onPress={async () => {
+                  onClose();
+                  await instagramAuthService.triggerNativeInstagramPopup(
+                    async (payload) => {
+                      await onSelectAccount(payload);
+                    },
+                    (errorMsg) => {
+                      console.warn('Instagram error:', errorMsg);
+                    }
+                  );
+                }}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                <View style={styles.officialInstaBadge}>
+                  <MaterialIcons name="camera-alt" size={16} color="#FFFFFF" />
+                </View>
+                <Text style={styles.officialInstaText}>Official Instagram Login Popup</Text>
+                <MaterialIcons name="open-in-new" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+
               {accounts.map((account) => {
                 const isThisSelected = selectedUsername === account.username && isLoading;
                 const initials = (account.name || account.username).charAt(0).toUpperCase();
@@ -486,6 +510,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.onSurfaceVariant,
     fontFamily: 'Inter-Medium',
+  },
+  officialInstaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E1306C',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+    gap: 8,
+    shadowColor: '#E1306C',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  officialInstaBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  officialInstaText: {
+    fontSize: 13,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
   },
 });
 
