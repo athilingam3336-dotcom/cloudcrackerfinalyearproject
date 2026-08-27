@@ -69,7 +69,7 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
     return ['delivered', 'cancelled'].includes(s) || order.paymentStatus === 'Refunded';
   }, [order]);
 
-  const performCancelOrder = useCallback(async () => {
+  const handleCancelOrder = useCallback(async () => {
     if (!order) return;
     setIsCancelling(true);
     try {
@@ -96,30 +96,7 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
     }
   }, [order, fetchDetails]);
 
-  const handleCancelOrder = useCallback(() => {
-    if (!order) return;
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const confirmed = window.confirm(`Are you sure you want to cancel order ${order.orderNumber}? Stock items will be restored.`);
-      if (confirmed) {
-        performCancelOrder();
-      }
-    } else {
-      Alert.alert(
-        'Cancel Order',
-        `Are you sure you want to cancel order ${order.orderNumber}? Stock items will be restored.`,
-        [
-          { text: 'Keep Order', style: 'cancel' },
-          {
-            text: 'Yes, Cancel Order',
-            style: 'destructive',
-            onPress: performCancelOrder,
-          },
-        ]
-      );
-    }
-  }, [order, performCancelOrder]);
-
-  const performDeleteOrder = useCallback(async () => {
+  const handleDeleteOrder = useCallback(async () => {
     if (!order) return;
     setIsDeleting(true);
     try {
@@ -140,29 +117,6 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
       setIsDeleting(false);
     }
   }, [order, navigation]);
-
-  const handleDeleteOrder = useCallback(() => {
-    if (!order) return;
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const confirmed = window.confirm(`Delete Order ${order.orderNumber}?\n\nThis order will be removed from your order list.`);
-      if (confirmed) {
-        performDeleteOrder();
-      }
-    } else {
-      Alert.alert(
-        'Delete this order?',
-        'This order will be removed from your order list.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: performDeleteOrder,
-          },
-        ]
-      );
-    }
-  }, [order, performDeleteOrder]);
 
   const handleTabPress = useCallback(
     (tab: TabRoute) => {

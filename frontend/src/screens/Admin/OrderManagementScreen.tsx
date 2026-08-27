@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   Image,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -65,6 +66,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   const [editType, setEditType] = useState<'order' | 'payment' | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [expandedOrderIds, setExpandedOrderIds] = useState<Record<string, boolean>>({});
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
   const toggleExpand = useCallback((orderId: string) => {
     setExpandedOrderIds((prev) => ({
@@ -146,29 +148,30 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
     [navigation]
   );
 
-  const handleDeleteOrderAdmin = useCallback((order: AdminOrderItem) => {
-    Alert.alert(
-      'Delete this order?',
-      'This order will be removed from your order list.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await adminService.deleteAdminOrder(order.id);
-              Alert.alert('Success', 'Order removed from your order list.');
-              fetchOrders();
-            } catch (error: any) {
-              const msg = error.response?.data?.message || error.message || 'Failed to delete order.';
-              Alert.alert('Error', msg);
-            }
-          },
-        },
-      ]
-    );
-  }, [fetchOrders]);
+  const handleDeleteOrderAdmin = useCallback(
+    async (order: AdminOrderItem) => {
+      setDeletingOrderId(order.id);
+      try {
+        await adminService.deleteAdminOrder(order.id);
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(`Order ${order.orderNumber} removed successfully.`);
+        } else {
+          Alert.alert('Success', `Order ${order.orderNumber} removed successfully.`);
+        }
+        fetchOrders();
+      } catch (error: any) {
+        const msg = error.response?.data?.message || error.message || 'Failed to delete order.';
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(`Error: ${msg}`);
+        } else {
+          Alert.alert('Error', msg);
+        }
+      } finally {
+        setDeletingOrderId(null);
+      }
+    },
+    [fetchOrders]
+  );
 
   const renderHeader = useMemo(() => {
     return (
@@ -354,10 +357,13 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
               <TouchableOpacity
                 style={[styles.actionButton, styles.deleteActionButton]}
                 onPress={() => handleDeleteOrderAdmin(item)}
+                disabled={deletingOrderId === item.id}
                 activeOpacity={0.8}
               >
                 <MaterialIcons name="delete-outline" size={16} color="#D32F2F" />
-                <Text style={styles.deleteActionButtonText}>Delete Order</Text>
+                <Text style={styles.deleteActionButtonText}>
+                  {deletingOrderId === item.id ? 'Deleting...' : 'Delete Order'}
+                </Text>
               </TouchableOpacity>
             )}
 

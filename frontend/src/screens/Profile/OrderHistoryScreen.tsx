@@ -100,7 +100,7 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     Alert.alert('Re-order', `Items from ${orderNumber} added to cart.`);
   }, []);
 
-  const performCancelOrder = useCallback(
+  const handleCancelOrder = useCallback(
     async (item: OrderRecord) => {
       setCancellingOrderId(item.id);
       try {
@@ -134,79 +134,32 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     [fetchOrders]
   );
 
-  const handleCancelOrder = useCallback(
-    (item: OrderRecord) => {
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        const confirmed = window.confirm(`Are you sure you want to cancel order ${item.orderNumber}? Stock items will be restored.`);
-        if (confirmed) {
-          performCancelOrder(item);
-        }
-      } else {
-        Alert.alert(
-          'Cancel Order',
-          `Are you sure you want to cancel order ${item.orderNumber}? Stock items will be restored.`,
-          [
-            { text: 'Keep Order', style: 'cancel' },
-            {
-              text: 'Yes, Cancel Order',
-              style: 'destructive',
-              onPress: () => performCancelOrder(item),
-            },
-          ]
-        );
-      }
-    },
-    [performCancelOrder]
-  );
-
-  const performDeleteOrder = useCallback(async (item: OrderRecord) => {
-    setDeletingOrderId(item.id);
-    try {
-      await orderService.deleteOrder(item.id);
-      setOrders((prev) => prev.filter((o) => o.id !== item.id));
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.alert('Order removed from your order history.');
-      } else {
-        Alert.alert('Success', 'Order removed from your order history.');
-      }
-    } catch (error: any) {
-      const msg =
-        error.response?.data?.message ||
-        error.message ||
-        'Failed to delete order.';
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.alert(`Error: ${msg}`);
-      } else {
-        Alert.alert('Error', msg);
-      }
-    } finally {
-      setDeletingOrderId(null);
-    }
-  }, []);
-
   const handleDeleteOrder = useCallback(
-    (item: OrderRecord) => {
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        const confirmed = window.confirm(`Delete Order ${item.orderNumber}?\n\nThis order will be removed from your order history.`);
-        if (confirmed) {
-          performDeleteOrder(item);
+    async (item: OrderRecord) => {
+      setDeletingOrderId(item.id);
+      try {
+        await orderService.deleteOrder(item.id);
+        setOrders((prev) => prev.filter((o) => o.id !== item.id));
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert('Order removed from your order history.');
+        } else {
+          Alert.alert('Success', 'Order removed from your order history.');
         }
-      } else {
-        Alert.alert(
-          'Delete Order',
-          `Are you sure you want to remove order ${item.orderNumber} from your order history? This cannot be undone.`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Delete',
-              style: 'destructive',
-              onPress: () => performDeleteOrder(item),
-            },
-          ]
-        );
+      } catch (error: any) {
+        const msg =
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to delete order.';
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(`Error: ${msg}`);
+        } else {
+          Alert.alert('Error', msg);
+        }
+      } finally {
+        setDeletingOrderId(null);
       }
     },
-    [performDeleteOrder]
+    []
   );
 
   const handleTabPress = useCallback(
@@ -255,33 +208,35 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
       const isCancellingThis = cancellingOrderId === item.id;
 
       return (
-        <TouchableOpacity
-          style={styles.orderCard}
-          onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
-          activeOpacity={0.85}
-        >
-          <View style={styles.orderCardHeader}>
-            <View style={styles.orderTitleBox}>
-              <Text style={styles.orderNumberText}>{item.orderNumber}</Text>
-              <View style={[styles.statusBadge, badgeInfo.badge]}>
-                <Text style={[styles.statusBadgeText, badgeInfo.text]}>{badgeInfo.label}</Text>
+        <View style={styles.orderCard}>
+          <TouchableOpacity
+            style={styles.orderCardContent}
+            onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
+            activeOpacity={0.85}
+          >
+            <View style={styles.orderCardHeader}>
+              <View style={styles.orderTitleBox}>
+                <Text style={styles.orderNumberText}>{item.orderNumber}</Text>
+                <View style={[styles.statusBadge, badgeInfo.badge]}>
+                  <Text style={[styles.statusBadgeText, badgeInfo.text]}>{badgeInfo.label}</Text>
+                </View>
               </View>
+              <Text style={styles.orderPrice}>{formatCurrency(item.totalPrice)}</Text>
             </View>
-            <Text style={styles.orderPrice}>{formatCurrency(item.totalPrice)}</Text>
-          </View>
 
-          <Text style={styles.orderDateText}>Placed on {item.date} • {item.itemCount} Items</Text>
+            <Text style={styles.orderDateText}>Placed on {item.date} • {item.itemCount} Items</Text>
 
-          <View style={styles.orderItemsRow}>
-            {(item.items || []).map((prod, idx) => (
-              <Image
-                key={idx}
-                source={resolveProductImage(prod)}
-                style={styles.orderThumb}
-                resizeMode="cover"
-              />
-            ))}
-          </View>
+            <View style={styles.orderItemsRow}>
+              {(item.items || []).map((prod, idx) => (
+                <Image
+                  key={idx}
+                  source={resolveProductImage(prod)}
+                  style={styles.orderThumb}
+                  resizeMode="cover"
+                />
+              ))}
+            </View>
+          </TouchableOpacity>
 
           <View style={styles.orderActionsRow}>
             {/* Cancel Button for Pending/Confirmed/Processing orders */}
@@ -333,7 +288,7 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
               </TouchableOpacity>
             )}
           </View>
-        </TouchableOpacity>
+        </View>
       );
     },
     [navigation, handleReorder, handleCancelOrder, handleDeleteOrder, deletingOrderId, cancellingOrderId]
@@ -619,6 +574,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 3,
+  },
+  orderCardContent: {
+    width: '100%',
   },
   orderCardHeader: {
     flexDirection: 'row',
