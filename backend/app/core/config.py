@@ -76,6 +76,10 @@ class Settings(BaseSettings):
     RAZORPAY_KEY_SECRET: Optional[str] = None
     RAZORPAY_WEBHOOK_SECRET: Optional[str] = None
 
+    # Instagram Auth Settings
+    INSTAGRAM_CLIENT_ID: Optional[str] = "2262885951230627"
+    INSTAGRAM_CLIENT_SECRET: Optional[str] = None
+
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [
         "https://cloudcrackerfinalyearproject.onrender.com",
