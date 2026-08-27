@@ -116,6 +116,30 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
           {/* Account list or Custom form */}
           {!isCustomMode ? (
             <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
+              {/* Native Google GIS OAuth Popup trigger button */}
+              <TouchableOpacity
+                style={styles.officialGisBtn}
+                onPress={async () => {
+                  onClose();
+                  await googleAuthService.triggerNativeGooglePopup(
+                    async (payload) => {
+                      await onSelectAccount(payload);
+                    },
+                    (errorMsg) => {
+                      console.warn('Google GIS OAuth error:', errorMsg);
+                    }
+                  );
+                }}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                <View style={styles.officialGisBadge}>
+                  <Text style={styles.officialGisG}>G</Text>
+                </View>
+                <Text style={styles.officialGisText}>Official Google OAuth Sign-In</Text>
+                <MaterialIcons name="open-in-new" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+
               {accounts.map((account) => {
                 const isThisSelected = selectedEmail === account.email && isLoading;
                 const initials = (account.name || account.email).charAt(0).toUpperCase();
@@ -489,5 +513,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.onSurfaceVariant,
     fontFamily: 'Inter-Medium',
+  },
+  officialGisBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4285F4',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+    gap: 8,
+    shadowColor: '#4285F4',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  officialGisBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  officialGisG: {
+    fontSize: 14,
+    fontFamily: 'Inter-Bold',
+    color: '#4285F4',
+  },
+  officialGisText: {
+    fontSize: 13,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
   },
 });

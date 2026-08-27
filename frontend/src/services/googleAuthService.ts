@@ -85,7 +85,8 @@ class GoogleAuthManager {
     onSuccess: (payload: GoogleAuthPayload) => void,
     onError: (error: string) => void
   ): Promise<boolean> {
-    if (!ENV.GOOGLE_CLIENT_ID) {
+    const clientId = ENV.GOOGLE_CLIENT_ID || '440996806558-b3bfcqr7j19rkiefsaqk2lffshuoh0cm.apps.googleusercontent.com';
+    if (!clientId) {
       return false;
     }
 
@@ -96,7 +97,7 @@ class GoogleAuthManager {
       }
 
       const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
-        client_id: ENV.GOOGLE_CLIENT_ID,
+        client_id: clientId,
         scope: 'email profile openid',
         prompt: 'select_account',
         callback: async (tokenResponse: any) => {
