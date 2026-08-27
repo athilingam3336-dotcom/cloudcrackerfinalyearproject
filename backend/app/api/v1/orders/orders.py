@@ -149,8 +149,46 @@ async def cancel_order(
     )
 
 
+@router.delete(
+    "/cancelled/all",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Delete all cancelled orders for customer",
+    description="Soft deletes all cancelled or refunded orders from customer history.",
+)
+async def delete_all_cancelled_orders_customer(
+    current_user: User = Depends(get_current_user),
+    order_service: OrderService = Depends(),
+) -> ApiResponse:
+    count = await order_service.delete_all_cancelled_orders_customer(str(current_user.id))
+    return ApiResponse(
+        success=True,
+        message=f"Successfully deleted {count} cancelled order(s) from history",
+        data={"deleted_count": count},
+    )
+
+
 # --- Admin Orders Router ---
 admin_router = APIRouter(prefix="/admin/orders", tags=["Admin Orders"])
+
+
+@admin_router.delete(
+    "/cancelled/all",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Delete all cancelled orders (Admin Only)",
+    description="Soft deletes all cancelled or refunded orders across the system from Admin view.",
+)
+async def delete_all_cancelled_orders_admin(
+    current_admin: User = Depends(get_current_admin),
+    order_service: OrderService = Depends(),
+) -> ApiResponse:
+    count = await order_service.delete_all_cancelled_orders_admin()
+    return ApiResponse(
+        success=True,
+        message=f"Successfully deleted {count} cancelled order(s) from admin history",
+        data={"deleted_count": count},
+    )
 
 
 @admin_router.get(

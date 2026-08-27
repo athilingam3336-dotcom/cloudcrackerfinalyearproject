@@ -441,3 +441,44 @@ class OrderService:
             
         await order.save()
 
+    async def delete_all_cancelled_orders_customer(self, user_id: str) -> int:
+        """Soft deletes all cancelled/refunded orders for a customer."""
+        from beanie import PydanticObjectId
+        try:
+            uid = PydanticObjectId(user_id)
+        except Exception:
+            return 0
+
+        now = datetime.utcnow()
+        orders = await Order.find(
+            Order.user_id == uid,
+            Order.customer_deleted_at == None,
+            {"$or": [
+                {"order_status": {"$regex": "^cancelled$", "$options": "i"}},
+                {"payment_status": {"$regex": "^refunded$", "$options": "i"}}
+            ]}
+        ).to_list()
+
+        count = len(orders)
+        for order in orders:
+            order.customer_deleted_at = now
+            await order.save()
+        return count
+
+    async def delete_all_cancelled_orders_admin(self) -> int:
+        """Soft deletes all cancelled/refunded orders across the system for Admin."""
+        now = datetime.utcnow()
+        orders = await Order.find(
+            Order.admin_deleted_at == None,
+            {"$or": [
+                {"order_status": {"$regex": "^cancelled$", "$options": "i"}},
+                {"payment_status": {"$regex": "^refunded$", "$options": "i"}}
+            ]}
+        ).to_list()
+
+        count = len(orders)
+        for order in orders:
+            order.admin_deleted_at = now
+            await order.save()
+        return count
+

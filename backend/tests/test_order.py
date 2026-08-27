@@ -660,3 +660,28 @@ async def test_customer_cannot_delete_other_customer_order(
     assert del_res.status_code == 403
     assert "own orders" in del_res.json()["message"].lower()
 
+
+@pytest.mark.asyncio
+async def test_delete_all_cancelled_orders(
+    client: AsyncClient,
+    customer_headers: dict,
+    admin_headers: dict,
+    sample_product: dict,
+):
+    """Verifies bulk deletion of all cancelled orders for Customer and Admin."""
+    # 1. Create order 1 and cancel it
+    await client.post("/api/v1/cart/add", json={"product_id": sample_product["id"], "quantity": 1}, headers=customer_headers)
+    res1 = await client.post("/api/v1/orders/checkout", json={"payment_method": "COD", "shipping_address": "Addr 1"}, headers=customer_headers)
+    ord1_id = res1.json()["data"]["id"]
+    await client.put(f"/api/v1/orders/{ord1_id}/cancel", headers=customer_headers)
+
+    # 2. Customer calls DELETE /api/v1/orders/cancelled/all
+    del_cust_res = await client.delete("/api/v1/orders/cancelled/all", headers=customer_headers)
+    assert del_cust_res.status_code == 200
+    assert del_cust_res.json()["data"]["deleted_count"] >= 1
+
+    # 3. Admin calls DELETE /api/v1/admin/orders/cancelled/all
+    del_admin_res = await client.delete("/api/v1/admin/orders/cancelled/all", headers=admin_headers)
+    assert del_admin_res.status_code == 200
+    assert del_admin_res.json()["data"]["deleted_count"] >= 1
+

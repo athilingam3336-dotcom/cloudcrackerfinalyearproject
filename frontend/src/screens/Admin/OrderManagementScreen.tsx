@@ -148,6 +148,31 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
     [navigation]
   );
 
+  const [isClearingAllCancelled, setIsClearingAllCancelled] = useState(false);
+
+  const handleDeleteAllCancelledAdmin = useCallback(async () => {
+    setIsClearingAllCancelled(true);
+    try {
+      const res = await adminService.deleteAllCancelledAdminOrders();
+      const msg = `Successfully deleted ${res.deletedCount} cancelled order(s) from admin history.`;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(msg);
+      } else {
+        Alert.alert('Success', msg);
+      }
+      fetchOrders();
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Failed to clear cancelled orders.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(`Error: ${msg}`);
+      } else {
+        Alert.alert('Error', msg);
+      }
+    } finally {
+      setIsClearingAllCancelled(false);
+    }
+  }, [fetchOrders]);
+
   const handleDeleteOrderAdmin = useCallback(
     async (order: AdminOrderItem) => {
       setDeletingOrderId(order.id);
@@ -265,10 +290,27 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
               </TouchableOpacity>
             ))}
           </ScrollView>
+
+          {/* Bulk Delete All Cancelled Orders Button */}
+          {(orderStatusFilter === 'Cancelled' || orders.some(o => (o.orderStatus || '').toLowerCase() === 'cancelled')) && (
+            <View style={styles.clearAllRow}>
+              <TouchableOpacity
+                style={styles.clearAllBtn}
+                onPress={handleDeleteAllCancelledAdmin}
+                disabled={isClearingAllCancelled}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="delete-forever" size={18} color="#FFFFFF" />
+                <Text style={styles.clearAllBtnText}>
+                  {isClearingAllCancelled ? 'Deleting All Cancelled...' : 'Delete All Cancelled Orders'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
     );
-  }, [navigation, unreadNotifs, totalOrders, searchQuery, orderStatusFilter, paymentStatusFilter]);
+  }, [navigation, unreadNotifs, totalOrders, searchQuery, orderStatusFilter, paymentStatusFilter, orders, isClearingAllCancelled, handleDeleteAllCancelledAdmin]);
 
   const renderOrderItem = useCallback(
     ({ item }: { item: AdminOrderItem }) => {
@@ -1145,6 +1187,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Bold',
     color: '#D32F2F',
+  },
+  clearAllRow: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+    width: '100%',
+    alignItems: 'flex-start',
+  },
+  clearAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D32F2F',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.lg,
+    gap: 6,
+    shadowColor: '#D32F2F',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  clearAllBtnText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
   },
 });
 

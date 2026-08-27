@@ -953,6 +953,17 @@ export class AdminService {
     }
   }
 
+  async deleteAllCancelledAdminOrders(): Promise<{ deletedCount: number }> {
+    try {
+      const { data: res } = await apiClient.delete('/admin/orders/cancelled/all');
+      const payload = res.data || res;
+      return { deletedCount: payload.deleted_count || 0 };
+    } catch (error: any) {
+      console.error('Failed to clear admin cancelled orders:', error);
+      throw error;
+    }
+  }
+
   // ==========================================
   // USER MANAGEMENT APIS
   // ==========================================

@@ -263,6 +263,20 @@ export class OrderService {
     }
   }
 
+  async deleteAllCancelledOrders(): Promise<{ deletedCount: number }> {
+    if (ENV.ENABLE_MOCK_API) {
+      return { deletedCount: 0 };
+    }
+    try {
+      const { data: res } = await apiClient.delete('/orders/cancelled/all');
+      const payload = res.data || res;
+      return { deletedCount: payload.deleted_count || 0 };
+    } catch (error: any) {
+      console.error('Failed to clear cancelled orders:', error);
+      throw error;
+    }
+  }
+
   private parseShippingAddress(
     rawAddress: any,
     customerName?: string,
