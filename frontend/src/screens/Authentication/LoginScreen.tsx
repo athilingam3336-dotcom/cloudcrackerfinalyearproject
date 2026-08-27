@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -42,6 +42,37 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
+  const storeLogin = useAuthStore((state) => state.login);
+  const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
+  const storeLoginWithInstagram = useAuthStore((state) => state.loginWithInstagram);
+
+  useEffect(() => {
+    const handleMetaInstagramCallback = async () => {
+      if (typeof window !== 'undefined' && window.location?.search) {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        if (code) {
+          setIsLoading(true);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          const redirectUri = window.location.origin;
+          const success = await storeLoginWithInstagram({ code, redirectUri });
+          setIsLoading(false);
+          if (success) {
+            const user = useAuthStore.getState().user;
+            if (user?.role === 'admin') {
+              navigation.navigate('AdminDashboard');
+            } else {
+              navigation.navigate('Home');
+            }
+          } else {
+            setErrors({ email: 'Instagram authentication failed. Please try again.' });
+          }
+        }
+      }
+    };
+    handleMetaInstagramCallback();
+  }, []);
+
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
 
@@ -65,10 +96,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const storeLogin = useAuthStore((state) => state.login);
-  const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
-  const storeLoginWithInstagram = useAuthStore((state) => state.loginWithInstagram);
 
   const handleLogin = async () => {
     if (!validateForm()) return;

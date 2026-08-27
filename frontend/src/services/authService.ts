@@ -23,10 +23,12 @@ export interface GoogleAuthPayload {
 }
 
 export interface InstagramAuthPayload {
-  username: string;
+  code?: string;
+  username?: string;
   fullName?: string;
   avatarUrl?: string;
   instagramId?: string;
+  redirectUri?: string;
 }
 
 const MOCK_ADMIN_USER: UserProfile = {
@@ -92,8 +94,8 @@ export class AuthService {
       return {
         user: {
           id: `usr_insta_${Date.now()}`,
-          name: payload.fullName || payload.username,
-          email: `${payload.username.toLowerCase()}@instagram.com`,
+          name: payload.fullName || payload.username || 'Instagram User',
+          email: `${(payload.username || 'user').toLowerCase()}@instagram.com`,
           role: 'user',
           membership: 'Instagram Member',
           ordersCount: 0,
@@ -104,10 +106,12 @@ export class AuthService {
       };
     }
     const { data: res } = await apiClient.post('/auth/instagram', {
+      code: payload.code,
       username: payload.username,
       full_name: payload.fullName,
       avatar_url: payload.avatarUrl,
       instagram_id: payload.instagramId,
+      redirect_uri: payload.redirectUri,
     });
     const data = res.data || res;
     return {

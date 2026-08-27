@@ -119,10 +119,12 @@ class GoogleAuthRequest(BaseModel):
 
 
 class InstagramAuthRequest(BaseModel):
-    username: str
+    code: Optional[str] = None
+    username: Optional[str] = None
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
     instagram_id: Optional[str] = None
+    redirect_uri: Optional[str] = None
 
 
 class UserResponse(BaseModel):

@@ -1,7 +1,9 @@
 import logging
 from typing import Tuple
+import httpx
 from jose import JWTError
 
+from app.core.config import settings
 from app.exceptions import (
     BadRequestException,
     ForbiddenException,
@@ -191,8 +193,48 @@ class AuthService:
         return user, access_token, refresh_token
 
     async def instagram_login(self, data: InstagramAuthRequest) -> Tuple[User, str, str]:
-        """Authenticates or auto-registers a user via Instagram login, issuing JWT tokens."""
-        clean_user = data.username.strip().lstrip("@").lower()
+        """Authenticates or auto-registers a user via Meta Instagram OAuth code exchange, issuing JWT tokens."""
+        clean_user = None
+        avatar_url = data.avatar_url
+        instagram_id = data.instagram_id
+
+        if data.code:
+            try:
+                client_id = settings.INSTAGRAM_CLIENT_ID or "2262885951230627"
+                client_secret = settings.INSTAGRAM_CLIENT_SECRET or ""
+                redirect_uri = data.redirect_uri or "https://cloudcrackerfinalyearproject-1.onrender.com"
+
+                async with httpx.AsyncClient() as http_client:
+                    token_res = await http_client.post(
+                        "https://api.instagram.com/oauth/access_token",
+                        data={
+                            "client_id": client_id,
+                            "client_secret": client_secret,
+                            "grant_type": "authorization_code",
+                            "redirect_uri": redirect_uri,
+                            "code": data.code,
+                        },
+                    )
+                    token_data = token_res.json()
+                    user_id = token_data.get("user_id")
+                    meta_access_token = token_data.get("access_token")
+
+                    if meta_access_token and user_id:
+                        profile_res = await http_client.get(
+                            f"https://graph.instagram.com/me?fields=id,username&access_token={meta_access_token}"
+                        )
+                        profile_data = profile_res.json()
+                        clean_user = profile_data.get("username")
+                        instagram_id = str(profile_data.get("id", user_id))
+            except Exception as e:
+                logger.warning(f"Meta Instagram OAuth code exchange failed/fallback: {e}")
+
+        if not clean_user and data.username:
+            clean_user = data.username.strip().lstrip("@").lower()
+
+        if not clean_user:
+            clean_user = "instagram_user"
+
         fake_email = f"{clean_user}@instagram.com"
         user = await self.user_repo.get_by_email(fake_email)
 
@@ -203,12 +245,12 @@ class AuthService:
                 )
 
             update_data = {}
-            if not user.avatar_url and data.avatar_url:
-                update_data["avatar_url"] = data.avatar_url
+            if not user.avatar_url and avatar_url:
+                update_data["avatar_url"] = avatar_url
             if update_data:
                 user = await self.user_repo.update(user, update_data)
 
-            logger.info(f"Existing user logged in via Instagram: {user.email}")
+            logger.info(f"Existing user logged in via Meta Instagram OAuth: {user.email}")
         else:
             full_name = (
                 data.full_name.strip()
@@ -225,10 +267,10 @@ class AuthService:
                 "is_active": True,
                 "auth_provider": "instagram",
                 "status": "active",
-                "avatar_url": data.avatar_url or f"https://ui-avatars.com/api/?name={clean_user}&background=E1306C&color=fff",
+                "avatar_url": avatar_url or f"https://ui-avatars.com/api/?name={clean_user}&background=E1306C&color=fff",
             }
             user = await self.user_repo.create(user_data)
-            logger.info(f"New user registered via Instagram: {user.email} (ID: {user.id})")
+            logger.info(f"New user registered via Meta Instagram OAuth: {user.email} (ID: {user.id})")
 
         payload = {"sub": str(user.id), "role": user.role}
         access_token = create_access_token(payload)

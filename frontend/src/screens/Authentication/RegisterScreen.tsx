@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -56,6 +56,32 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
   const [isInstagramLoading, setIsInstagramLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [errors, setErrors] = useState<RegisterErrors>({});
+
+  const storeRegister = useAuthStore((state) => state.register);
+  const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
+  const storeLoginWithInstagram = useAuthStore((state) => state.loginWithInstagram);
+
+  useEffect(() => {
+    const handleMetaInstagramCallback = async () => {
+      if (typeof window !== 'undefined' && window.location?.search) {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        if (code) {
+          setIsLoading(true);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          const redirectUri = window.location.origin;
+          const success = await storeLoginWithInstagram({ code, redirectUri });
+          setIsLoading(false);
+          if (success) {
+            navigation.navigate('Home');
+          } else {
+            setErrors({ general: 'Instagram authentication failed. Please try again.' });
+          }
+        }
+      }
+    };
+    handleMetaInstagramCallback();
+  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: RegisterErrors = {};
@@ -119,10 +145,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const storeRegister = useAuthStore((state) => state.register);
-  const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
-  const storeLoginWithInstagram = useAuthStore((state) => state.loginWithInstagram);
 
   const handleRegister = async () => {
     if (!validateForm()) return;
