@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { authService, GoogleAuthPayload } from '@/services/authService';
+import { authService, GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
 import { tokenStorage } from '@/storage/tokenStorage';
 
 export interface UserProfile {
@@ -24,6 +24,7 @@ export interface AuthState {
   // Actions
   login: (email: string, password?: string) => Promise<boolean>;
   loginWithGoogle: (payload: GoogleAuthPayload) => Promise<boolean>;
+  loginWithInstagram: (payload: InstagramAuthPayload) => Promise<boolean>;
   register: (
     name: string,
     email: string,
@@ -132,6 +133,35 @@ export const useAuthStore = create<AuthState>()(
           set({
             isLoading: false,
             error: err.message || 'Google login failed.',
+          });
+          return false;
+        }
+      },
+
+      loginWithInstagram: async (payload) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authService.loginWithInstagram(payload);
+          await tokenStorage.setAccessToken(response.accessToken);
+          await tokenStorage.setRefreshToken(response.refreshToken);
+          set({
+            user: response.user,
+            token: response.accessToken,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+          try {
+            const { useCartStore } = require('@/store/cartStore');
+            const { useWishlistStore } = require('@/store/wishlistStore');
+            useCartStore.getState().fetchCart();
+            useWishlistStore.getState().fetchWishlist();
+          } catch {}
+          return true;
+        } catch (err: any) {
+          set({
+            isLoading: false,
+            error: err.message || 'Instagram login failed.',
           });
           return false;
         }

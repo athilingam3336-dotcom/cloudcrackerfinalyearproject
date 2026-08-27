@@ -118,6 +118,13 @@ class GoogleAuthRequest(BaseModel):
     id_token: Optional[str] = None
 
 
+class InstagramAuthRequest(BaseModel):
+    username: str
+    full_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    instagram_id: Optional[str] = None
+
+
 class UserResponse(BaseModel):
     id: str
     full_name: str

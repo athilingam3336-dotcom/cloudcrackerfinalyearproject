@@ -20,8 +20,9 @@ import { PasswordInput } from '@/components/inputs/PasswordInput';
 import { Checkbox } from '@/components/inputs/Checkbox';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { GoogleAccountChooserModal } from '@/components/auth/GoogleAccountChooserModal';
+import { InstagramAccountChooserModal } from '@/components/auth/InstagramAccountChooserModal';
 import { googleAuthService } from '@/services/googleAuthService';
-import { GoogleAuthPayload } from '@/services/authService';
+import { GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
 import { RootStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
 
@@ -36,6 +37,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [isInstagramLoading, setIsInstagramLoading] = useState(false);
+  const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validateForm = (): boolean => {
@@ -64,6 +67,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   const storeLogin = useAuthStore((state) => state.login);
   const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
+  const storeLoginWithInstagram = useAuthStore((state) => state.loginWithInstagram);
 
   const handleLogin = async () => {
     if (!validateForm()) return;
@@ -81,7 +85,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       }
     } else {
       const storeError = useAuthStore.getState().error;
-      setErrors({ email: storeError || 'Login failed. Please check credentials.' });
+      setErrors({ email: storeError || 'Invalid email or password.' });
     }
   };
 
@@ -135,6 +139,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     } else {
       const storeError = useAuthStore.getState().error;
       setErrors({ email: storeError || 'Google authentication failed.' });
+    }
+  };
+
+  const handleInstagramLoginClick = () => {
+    setErrors({});
+    setShowInstagramModal(true);
+  };
+
+  const handleInstagramAccountSelect = async (payload: InstagramAuthPayload) => {
+    setIsInstagramLoading(true);
+    const success = await storeLoginWithInstagram(payload);
+    setIsInstagramLoading(false);
+
+    if (success) {
+      setShowInstagramModal(false);
+      const user = useAuthStore.getState().user;
+      if (user?.role === 'admin') {
+        navigation.navigate('AdminDashboard');
+      } else {
+        navigation.navigate('Home');
+      }
+    } else {
+      const storeError = useAuthStore.getState().error;
+      setErrors({ email: storeError || 'Instagram authentication failed.' });
     }
   };
 
@@ -253,9 +281,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 <Text style={styles.socialText}>Google</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.socialButton} activeOpacity={0.8}>
-                <MaterialIcons name="apple" size={24} color={Colors.onSurface} />
-                <Text style={styles.socialText}>Apple</Text>
+              <TouchableOpacity
+                style={[styles.socialButton, styles.instagramBtn]}
+                activeOpacity={0.8}
+                onPress={handleInstagramLoginClick}
+                disabled={isInstagramLoading || isLoading}
+              >
+                <MaterialIcons name="camera-alt" size={20} color="#E1306C" />
+                <Text style={[styles.socialText, { color: '#E1306C', fontFamily: 'Inter-SemiBold' }]}>Instagram</Text>
               </TouchableOpacity>
             </View>
 
@@ -287,6 +320,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         onClose={() => setShowGoogleModal(false)}
         onSelectAccount={handleGoogleAccountSelect}
         isLoading={isGoogleLoading}
+      />
+
+      {/* Instagram Account Selector Modal */}
+      <InstagramAccountChooserModal
+        visible={showInstagramModal}
+        onClose={() => setShowInstagramModal(false)}
+        onSelectAccount={handleInstagramAccountSelect}
+        isLoading={isInstagramLoading}
       />
     </SafeAreaView>
   );
@@ -410,6 +451,10 @@ const styles = StyleSheet.create({
     ...Typography.bodyMd,
     fontFamily: 'Inter-SemiBold',
     color: Colors.onSurface,
+  },
+  instagramBtn: {
+    borderColor: 'rgba(225, 48, 108, 0.4)',
+    backgroundColor: 'rgba(225, 48, 108, 0.08)',
   },
   signupRow: {
     flexDirection: 'row',

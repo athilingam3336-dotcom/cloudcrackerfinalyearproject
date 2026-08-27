@@ -6,6 +6,7 @@ from app.schemas.auth import (
     AuthResponseData,
     ForgotPasswordRequest,
     GoogleAuthRequest,
+    InstagramAuthRequest,
     LoginRequest,
     RefreshTokenRequest,
     RegisterRequest,
@@ -23,8 +24,8 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
     "/register",
     response_model=ApiResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Register a new user account",
-    description="Registers a new customer account, validates password strength and phone digit count, hashes the password, inserts the user into MongoDB, and returns access/refresh JWT tokens.",
+    summary="Register a new customer account",
+    description="Accepts full name, email, 10-15 digit phone number, and password (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char). Auto-creates customer account in MongoDB and returns JWT tokens.",
 )
 async def register(
     data: RegisterRequest, auth_service: AuthService = Depends()
@@ -36,7 +37,9 @@ async def register(
         refresh_token=refresh_token,
     )
     return ApiResponse(
-        success=True, message="Registration Successful", data=response_data
+        success=True,
+        message="Registration Successful",
+        data=response_data,
     )
 
 
@@ -44,8 +47,8 @@ async def register(
     "/login",
     response_model=ApiResponse,
     status_code=status.HTTP_200_OK,
-    summary="User login authentication",
-    description="Validates user credentials (email & password), verifies the account status, and issues access/refresh tokens upon successful authentication.",
+    summary="Authenticate existing user",
+    description="Validates user credentials against MongoDB user collection and returns JWT access and refresh tokens.",
 )
 async def login(
     data: LoginRequest, auth_service: AuthService = Depends()
@@ -80,6 +83,29 @@ async def google_login(
     return ApiResponse(
         success=True,
         message="Google Login Successful",
+        data=response_data,
+    )
+
+
+@router.post(
+    "/instagram",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Instagram login / auto-registration",
+    description="Accepts Instagram profile details (username, full name, avatar), finds or auto-registers the user, and issues JWT access and refresh tokens.",
+)
+async def instagram_login(
+    data: InstagramAuthRequest, auth_service: AuthService = Depends()
+) -> ApiResponse:
+    user, access_token, refresh_token = await auth_service.instagram_login(data)
+    response_data = AuthResponseData(
+        user=UserResponse.convert_id(user),
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
+    return ApiResponse(
+        success=True,
+        message="Instagram Login Successful",
         data=response_data,
     )
 

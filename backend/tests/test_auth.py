@@ -334,3 +334,20 @@ async def test_google_user_auth_flow(client: AsyncClient):
     })
     assert login_res.status_code == 200
     assert login_res.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_instagram_user_auth_flow(client: AsyncClient):
+    """Tests Instagram OAuth registration and authentication."""
+    insta_payload = {
+        "username": "athi_pyro",
+        "full_name": "Athilingam Instagram",
+        "instagram_id": "insta_123456",
+    }
+    res = await client.post("/api/v1/auth/instagram", json=insta_payload)
+    assert res.status_code == 200
+    res_json = res.json()
+    assert res_json["success"] is True
+    assert res_json["message"] == "Instagram Login Successful"
+    assert "access_token" in res_json["data"]
+    assert res_json["data"]["user"]["auth_provider"] == "instagram"

@@ -22,6 +22,13 @@ export interface GoogleAuthPayload {
   idToken?: string;
 }
 
+export interface InstagramAuthPayload {
+  username: string;
+  fullName?: string;
+  avatarUrl?: string;
+  instagramId?: string;
+}
+
 const MOCK_ADMIN_USER: UserProfile = {
   id: 'usr_alex_123',
   name: 'Alex Stratos',
@@ -54,10 +61,10 @@ export class AuthService {
       return {
         user: {
           id: `usr_google_${Date.now()}`,
-          name: payload.fullName || 'Google User',
+          name: payload.fullName || payload.email.split('@')[0],
           email: payload.email,
           role: 'user',
-          membership: 'Standard Member',
+          membership: 'Google Member',
           ordersCount: 0,
           avatarUrl: payload.avatarUrl,
         },
@@ -71,6 +78,36 @@ export class AuthService {
       avatar_url: payload.avatarUrl,
       google_id: payload.googleId,
       id_token: payload.idToken,
+    });
+    const data = res.data || res;
+    return {
+      user: this.mapUserResponse(data.user),
+      accessToken: data.access_token || data.accessToken,
+      refreshToken: data.refresh_token || data.refreshToken,
+    };
+  }
+
+  async loginWithInstagram(payload: InstagramAuthPayload): Promise<AuthResponse> {
+    if (ENV.ENABLE_MOCK_API) {
+      return {
+        user: {
+          id: `usr_insta_${Date.now()}`,
+          name: payload.fullName || payload.username,
+          email: `${payload.username.toLowerCase()}@instagram.com`,
+          role: 'user',
+          membership: 'Instagram Member',
+          ordersCount: 0,
+          avatarUrl: payload.avatarUrl,
+        },
+        accessToken: 'mock_jwt_access_token_2026',
+        refreshToken: 'mock_jwt_refresh_token_2026',
+      };
+    }
+    const { data: res } = await apiClient.post('/auth/instagram', {
+      username: payload.username,
+      full_name: payload.fullName,
+      avatar_url: payload.avatarUrl,
+      instagram_id: payload.instagramId,
     });
     const data = res.data || res;
     return {

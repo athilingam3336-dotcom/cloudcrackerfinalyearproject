@@ -20,6 +20,7 @@ from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
     GoogleAuthRequest,
+    InstagramAuthRequest,
     LoginRequest,
     RegisterRequest,
     ResetPasswordRequest,
@@ -183,6 +184,52 @@ class AuthService:
             logger.info(f"New user registered via Google: {user.email} (ID: {user.id})")
 
         # Issue access/refresh tokens
+        payload = {"sub": str(user.id), "role": user.role}
+        access_token = create_access_token(payload)
+        refresh_token = create_refresh_token(payload)
+
+        return user, access_token, refresh_token
+
+    async def instagram_login(self, data: InstagramAuthRequest) -> Tuple[User, str, str]:
+        """Authenticates or auto-registers a user via Instagram login, issuing JWT tokens."""
+        clean_user = data.username.strip().lstrip("@").lower()
+        fake_email = f"{clean_user}@instagram.com"
+        user = await self.user_repo.get_by_email(fake_email)
+
+        if user:
+            if not user.is_active or user.status != "active":
+                raise UnauthorizedException(
+                    message="Your account has been deactivated. Please contact support."
+                )
+
+            update_data = {}
+            if not user.avatar_url and data.avatar_url:
+                update_data["avatar_url"] = data.avatar_url
+            if update_data:
+                user = await self.user_repo.update(user, update_data)
+
+            logger.info(f"Existing user logged in via Instagram: {user.email}")
+        else:
+            full_name = (
+                data.full_name.strip()
+                if data.full_name and data.full_name.strip()
+                else clean_user.capitalize()
+            )
+            user_data = {
+                "full_name": full_name,
+                "email": fake_email,
+                "phone": None,
+                "password_hash": None,
+                "role": "CUSTOMER",
+                "is_verified": True,
+                "is_active": True,
+                "auth_provider": "instagram",
+                "status": "active",
+                "avatar_url": data.avatar_url or f"https://ui-avatars.com/api/?name={clean_user}&background=E1306C&color=fff",
+            }
+            user = await self.user_repo.create(user_data)
+            logger.info(f"New user registered via Instagram: {user.email} (ID: {user.id})")
+
         payload = {"sub": str(user.id), "role": user.role}
         access_token = create_access_token(payload)
         refresh_token = create_refresh_token(payload)
