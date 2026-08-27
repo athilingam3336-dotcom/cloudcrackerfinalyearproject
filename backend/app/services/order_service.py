@@ -419,19 +419,22 @@ class OrderService:
         if not order:
             raise NotFoundException(message="Order not found.")
             
-        eligible_statuses = {"Delivered", "Cancelled"}
-        is_eligible = (order.order_status in eligible_statuses) or (order.payment_status == "Refunded")
+        status_lower = (order.order_status or "").strip().lower()
+        pay_status_lower = (order.payment_status or "").strip().lower()
+        eligible_statuses = {"delivered", "cancelled", "refunded"}
+        is_eligible = (status_lower in eligible_statuses) or (pay_status_lower == "refunded")
         
         if not is_eligible:
             raise BadRequestException(
                 message="Order cannot be deleted because it is still active. Only Delivered, Cancelled, or Refunded orders can be deleted."
             )
             
-        if user_role == "CUSTOMER":
+        role_upper = (user_role or "").strip().upper()
+        if role_upper in ("CUSTOMER", "USER"):
             if str(order.user_id) != user_id:
                 raise ForbiddenException(message="You can only delete your own orders.")
             order.customer_deleted_at = datetime.utcnow()
-        elif user_role == "ADMIN":
+        elif role_upper == "ADMIN":
             order.admin_deleted_at = datetime.utcnow()
         else:
             raise ForbiddenException(message="Unauthorized role for deletion.")

@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -68,64 +69,100 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
     return ['delivered', 'cancelled'].includes(s) || order.paymentStatus === 'Refunded';
   }, [order]);
 
+  const performCancelOrder = useCallback(async () => {
+    if (!order) return;
+    setIsCancelling(true);
+    try {
+      const updated = await orderService.cancelOrder(order.id);
+      if (updated) {
+        setOrder(updated);
+      } else {
+        fetchDetails();
+      }
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert('Your order has been successfully cancelled.');
+      } else {
+        Alert.alert('Order Cancelled', 'Your order has been successfully cancelled.');
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Failed to cancel order.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(`Error: ${msg}`);
+      } else {
+        Alert.alert('Error', msg);
+      }
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [order, fetchDetails]);
+
   const handleCancelOrder = useCallback(() => {
     if (!order) return;
-    Alert.alert(
-      'Cancel Order',
-      `Are you sure you want to cancel order ${order.orderNumber}? Stock items will be restored.`,
-      [
-        { text: 'Keep Order', style: 'cancel' },
-        {
-          text: 'Yes, Cancel Order',
-          style: 'destructive',
-          onPress: async () => {
-            setIsCancelling(true);
-            try {
-              const updated = await orderService.cancelOrder(order.id);
-              if (updated) {
-                setOrder(updated);
-              } else {
-                fetchDetails();
-              }
-              Alert.alert('Order Cancelled', 'Your order has been successfully cancelled.');
-            } catch (error: any) {
-              const msg = error.response?.data?.message || error.message || 'Failed to cancel order.';
-              Alert.alert('Error', msg);
-            } finally {
-              setIsCancelling(false);
-            }
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirmed = window.confirm(`Are you sure you want to cancel order ${order.orderNumber}? Stock items will be restored.`);
+      if (confirmed) {
+        performCancelOrder();
+      }
+    } else {
+      Alert.alert(
+        'Cancel Order',
+        `Are you sure you want to cancel order ${order.orderNumber}? Stock items will be restored.`,
+        [
+          { text: 'Keep Order', style: 'cancel' },
+          {
+            text: 'Yes, Cancel Order',
+            style: 'destructive',
+            onPress: performCancelOrder,
           },
-        },
-      ]
-    );
-  }, [order, fetchDetails]);
+        ]
+      );
+    }
+  }, [order, performCancelOrder]);
+
+  const performDeleteOrder = useCallback(async () => {
+    if (!order) return;
+    setIsDeleting(true);
+    try {
+      await orderService.deleteOrder(order.id);
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert('Order removed from your order list.');
+      } else {
+        Alert.alert('Success', 'Order removed from your order list.');
+      }
+      navigation.goBack();
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Failed to delete order.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(`Error: ${msg}`);
+      } else {
+        Alert.alert('Error', msg);
+      }
+      setIsDeleting(false);
+    }
+  }, [order, navigation]);
 
   const handleDeleteOrder = useCallback(() => {
     if (!order) return;
-    Alert.alert(
-      'Delete this order?',
-      'This order will be removed from your order list.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              await orderService.deleteOrder(order.id);
-              Alert.alert('Success', 'Order removed from your order list.');
-              navigation.goBack();
-            } catch (error: any) {
-              const msg = error.response?.data?.message || error.message || 'Failed to delete order.';
-              Alert.alert('Error', msg);
-              setIsDeleting(false);
-            }
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirmed = window.confirm(`Delete Order ${order.orderNumber}?\n\nThis order will be removed from your order list.`);
+      if (confirmed) {
+        performDeleteOrder();
+      }
+    } else {
+      Alert.alert(
+        'Delete this order?',
+        'This order will be removed from your order list.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: performDeleteOrder,
           },
-        },
-      ]
-    );
-  }, [order, navigation]);
+        ]
+      );
+    }
+  }, [order, performDeleteOrder]);
 
   const handleTabPress = useCallback(
     (tab: TabRoute) => {
