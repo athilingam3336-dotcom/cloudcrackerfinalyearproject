@@ -373,11 +373,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
         {/* Client Banner Card */}
         <View style={styles.clientBannerContainer}>
-          <Text style={styles.devotionalText}>
-            {CLIENT_INFO.devotionalText.sudalai} • {CLIENT_INFO.devotionalText.uvari}
-          </Text>
-
-          <Text style={styles.clientBannerTitle}>{CLIENT_INFO.name.toUpperCase()}</Text>
           <Text style={styles.clientBannerTagline}>{CLIENT_INFO.tagline}</Text>
           <Text style={styles.clientBannerLic}>{CLIENT_INFO.licenseNo} • {CLIENT_INFO.allDaysAvailable}</Text>
 
