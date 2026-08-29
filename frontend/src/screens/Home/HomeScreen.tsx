@@ -373,7 +373,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
         {/* Client Banner Card */}
         <View style={styles.clientBannerContainer}>
-          <Text style={styles.clientBannerTagline}>{CLIENT_INFO.tagline}</Text>
           <Text style={styles.clientBannerLic}>{CLIENT_INFO.licenseNo} • {CLIENT_INFO.allDaysAvailable}</Text>
 
           <View style={styles.clientActionsRow}>

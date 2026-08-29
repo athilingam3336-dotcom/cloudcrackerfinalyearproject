@@ -139,18 +139,22 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   brandTitle: {
     ...Typography.titleLg,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
     letterSpacing: -0.5,
+    textAlign: 'center',
   },
   greetingText: {
     ...Typography.bodyMd,
     fontFamily: 'Inter-Regular',
     color: Colors.tertiary,
     marginTop: 2,
+    textAlign: 'center',
   },
   rightSection: {
     flexDirection: 'row',
