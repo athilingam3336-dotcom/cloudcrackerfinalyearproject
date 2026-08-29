@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
   Linking,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,6 +21,7 @@ import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { HomeHeader } from '@/components/common/HomeHeader';
 import { CLIENT_INFO } from '@/constants/clientInfo';
+import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 import { SearchBar } from '@/components/inputs/SearchBar';
 import { BannerCarousel } from '@/components/common/BannerCarousel';
 import { ProductCard } from '@/components/cards/ProductCard';
@@ -371,11 +373,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           userName={user?.name ? user.name.split(' ')[0] : 'Explorer'}
         />
 
-        {/* Wide Full-Width Top Bar */}
+        {/* Wide Full-Width Top Bar with Sparkler Mascots */}
         <View style={styles.topWideBar}>
-          <View style={styles.badgePill}>
-            <MaterialIcons name="schedule" size={13} color="#B30000" />
-            <Text style={styles.badgePillText}>{CLIENT_INFO.allDaysAvailable.toUpperCase()}</Text>
+          <View style={styles.topBarLeftItem}>
+            <Image
+              source={LOCAL_PRODUCT_IMAGES.KID_BOY_SPARKLER}
+              style={styles.topBarMascot}
+              resizeMode="contain"
+            />
+            <View style={styles.badgePill}>
+              <MaterialIcons name="schedule" size={13} color="#B30000" />
+              <Text style={styles.badgePillText}>{CLIENT_INFO.allDaysAvailable.toUpperCase()}</Text>
+            </View>
           </View>
 
           <View style={styles.topActionsRow}>
@@ -405,6 +414,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <MaterialIcons name="location-on" size={15} color="#B45309" />
               <Text style={styles.topActionMapText}>Map Location</Text>
             </TouchableOpacity>
+
+            <Image
+              source={LOCAL_PRODUCT_IMAGES.KID_GIRL_SPARKLER}
+              style={styles.topBarMascot}
+              resizeMode="contain"
+            />
           </View>
         </View>
 
@@ -727,7 +742,7 @@ const styles = StyleSheet.create({
   topWideBar: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    paddingVertical: 10,
+    paddingVertical: 6,
     paddingHorizontal: Spacing.marginMobile,
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
@@ -736,6 +751,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  topBarLeftItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  topBarMascot: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
   },
   badgePill: {
     flexDirection: 'row',

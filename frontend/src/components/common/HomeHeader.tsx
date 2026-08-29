@@ -5,7 +5,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
-import { sanitizeRemoteImageUrl } from '@/constants/productImages';
+import { sanitizeRemoteImageUrl, LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 
 interface HomeHeaderProps {
   onNotificationPress: () => void;
@@ -33,7 +33,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
     return (
       <View style={styles.header}>
         <View style={styles.leftSection}>
-          {onBackPress && (
+          {onBackPress ? (
             <TouchableOpacity
               style={styles.backCircleButton}
               onPress={onBackPress}
@@ -43,11 +43,29 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             >
               <MaterialIcons name="arrow-back" size={22} color={Colors.primary} />
             </TouchableOpacity>
+          ) : (
+            <Image
+              source={LOCAL_PRODUCT_IMAGES.KID_BOY_SPARKLER}
+              style={styles.headerMascotLeft}
+              resizeMode="contain"
+            />
           )}
+
           <View style={styles.titleContainer}>
-            <Text style={styles.brandTitle}>Meera Crackers</Text>
+            <View style={styles.brandTitleRow}>
+              <Text style={styles.brandTitle}>Meera Crackers</Text>
+              <Text style={styles.sparkleEmoji}>✨</Text>
+            </View>
             <Text style={styles.greetingText}>Welcome back, {userName}</Text>
           </View>
+
+          {!onBackPress && (
+            <Image
+              source={LOCAL_PRODUCT_IMAGES.KID_GIRL_SPARKLER}
+              style={styles.headerMascotRight}
+              resizeMode="contain"
+            />
+          )}
         </View>
 
         <View style={styles.rightSection}>
@@ -137,10 +155,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 4,
   },
+  headerMascotLeft: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  headerMascotRight: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
   titleContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  brandTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   brandTitle: {
     ...Typography.titleLg,
@@ -148,6 +181,9 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     letterSpacing: -0.5,
     textAlign: 'center',
+  },
+  sparkleEmoji: {
+    fontSize: 14,
   },
   greetingText: {
     ...Typography.bodyMd,

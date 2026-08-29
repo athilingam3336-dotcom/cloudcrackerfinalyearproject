@@ -27,6 +27,11 @@ export const LOCAL_PRODUCT_IMAGES = {
 
   // 8. High-Fly Rockets Bunch (Solar Flare / Supernova / Sky Rockets)
   ROCKETS: require('../../assets/products/rockets_fireworks.png'),
+
+  // Festive Mascot & Celebration Artwork
+  FESTIVE_KIDS_FIREWORKS: require('../../assets/diwali_kids_fireworks.png'),
+  KID_BOY_SPARKLER: require('../../assets/kid_sparkler_mascot.png'),
+  KID_GIRL_SPARKLER: require('../../assets/girl_sparkler_mascot.png'),
 };
 
 /**

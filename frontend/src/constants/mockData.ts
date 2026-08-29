@@ -150,6 +150,15 @@ export const MOCK_CATEGORIES: CategoryItem[] = [
 
 export const MOCK_BANNERS: BannerItem[] = [
   {
+    id: 'banner0',
+    tag: '✨ Diwali Special',
+    title: 'Happy & Safe Diwali Celebrations!\nWholesale Sivakasi Fireworks',
+    subtitle: 'Brighten your festival with premium sparklers & grand aerial barrages.',
+    discountText: 'Factory Wholesale Prices',
+    ctaText: 'Explore Crackers',
+    imageUrl: LOCAL_PRODUCT_IMAGES.FESTIVE_KIDS_FIREWORKS,
+  },
+  {
     id: 'banner1',
     tag: 'Fancy Aerials',
     title: '30-Shots Multi-Shot:\nLight Up Your Night',
