@@ -194,46 +194,114 @@ class AuthService:
 
     async def instagram_login(self, data: InstagramAuthRequest) -> Tuple[User, str, str]:
         """Authenticates or auto-registers a user via Meta Instagram OAuth code exchange, issuing JWT tokens."""
+        client_id = settings.INSTAGRAM_CLIENT_ID or "2262885951230627"
+        client_secret = settings.INSTAGRAM_CLIENT_SECRET or ""
+
+        # 1. Validate redirect_uri securely
+        target_redirect_uri = (
+            data.redirect_uri
+            or settings.INSTAGRAM_REDIRECT_URI
+            or "https://cloudcrackerfinalyearproject-1.onrender.com"
+        )
+
+        allowed_list = list(settings.ALLOWED_ORIGINS or []) + [
+            settings.INSTAGRAM_REDIRECT_URI,
+            "https://cloudcrackerfinalyearproject-1.onrender.com",
+            "https://cloudcrackerfinalyearproject.onrender.com",
+            "http://localhost:3000",
+            "http://localhost:8081",
+            "http://localhost:5173",
+        ]
+        is_valid_uri = False
+        for allowed in allowed_list:
+            if allowed and (
+                target_redirect_uri.startswith(allowed)
+                or allowed.rstrip('/') in target_redirect_uri
+            ):
+                is_valid_uri = True
+                break
+
+        if not is_valid_uri and settings.ENVIRONMENT != "development":
+            raise BadRequestException("Invalid or untrusted redirect_uri provided.")
+
         clean_user = None
         avatar_url = data.avatar_url
         instagram_id = data.instagram_id
 
+        # 2. Production Code Exchange with Meta Instagram API
         if data.code:
             try:
-                client_id = settings.INSTAGRAM_CLIENT_ID or "2262885951230627"
-                client_secret = settings.INSTAGRAM_CLIENT_SECRET or ""
-                redirect_uri = data.redirect_uri or "https://cloudcrackerfinalyearproject-1.onrender.com"
-
-                async with httpx.AsyncClient() as http_client:
+                async with httpx.AsyncClient(timeout=10.0) as http_client:
                     token_res = await http_client.post(
                         "https://api.instagram.com/oauth/access_token",
                         data={
                             "client_id": client_id,
                             "client_secret": client_secret,
                             "grant_type": "authorization_code",
-                            "redirect_uri": redirect_uri,
+                            "redirect_uri": target_redirect_uri,
                             "code": data.code,
                         },
                     )
+
+                    if token_res.status_code != 200:
+                        err_body = (
+                            token_res.json()
+                            if token_res.headers.get("content-type", "").startswith(
+                                "application/json"
+                            )
+                            else {}
+                        )
+                        err_msg = (
+                            err_body.get("error_message")
+                            or err_body.get("message")
+                            or "Failed to exchange Instagram authorization code with Meta."
+                        )
+                        logger.error(
+                            f"Meta Instagram OAuth token exchange error ({token_res.status_code}): {token_res.text}"
+                        )
+                        raise UnauthorizedException(
+                            message=f"Instagram authentication failed: {err_msg}"
+                        )
+
                     token_data = token_res.json()
                     user_id = token_data.get("user_id")
                     meta_access_token = token_data.get("access_token")
 
                     if meta_access_token and user_id:
                         profile_res = await http_client.get(
-                            f"https://graph.instagram.com/me?fields=id,username&access_token={meta_access_token}"
+                            f"https://graph.instagram.com/me?fields=id,username,account_type&access_token={meta_access_token}"
                         )
-                        profile_data = profile_res.json()
-                        clean_user = profile_data.get("username")
-                        instagram_id = str(profile_data.get("id", user_id))
+                        if profile_res.status_code == 200:
+                            profile_data = profile_res.json()
+                            clean_user = profile_data.get("username")
+                            instagram_id = str(profile_data.get("id", user_id))
+                        else:
+                            logger.error(
+                                f"Meta Instagram profile fetch error: {profile_res.text}"
+                            )
+                            raise UnauthorizedException(
+                                message="Failed to fetch verified Instagram profile data."
+                            )
+                    else:
+                        raise UnauthorizedException(
+                            message="Invalid token response received from Instagram."
+                        )
+            except UnauthorizedException:
+                raise
             except Exception as e:
-                logger.warning(f"Meta Instagram OAuth code exchange failed/fallback: {e}")
+                logger.error(f"Meta Instagram OAuth exception: {e}")
+                raise UnauthorizedException(
+                    message="Meta Instagram authentication network or API error. Please try again."
+                )
 
-        if not clean_user and data.username:
+        # 3. Handle Development/Mock Fallback
+        elif data.username and (settings.ENVIRONMENT == "development" or settings.DEBUG):
             clean_user = data.username.strip().lstrip("@").lower()
+        else:
+            raise BadRequestException("Authorization code is required for Instagram authentication.")
 
         if not clean_user:
-            clean_user = "instagram_user"
+            raise BadRequestException("Could not retrieve a valid Instagram username.")
 
         fake_email = f"{clean_user}@instagram.com"
         user = await self.user_repo.get_by_email(fake_email)
@@ -267,7 +335,8 @@ class AuthService:
                 "is_active": True,
                 "auth_provider": "instagram",
                 "status": "active",
-                "avatar_url": avatar_url or f"https://ui-avatars.com/api/?name={clean_user}&background=E1306C&color=fff",
+                "avatar_url": avatar_url
+                or f"https://ui-avatars.com/api/?name={clean_user}&background=E1306C&color=fff",
             }
             user = await self.user_repo.create(user_data)
             logger.info(f"New user registered via Meta Instagram OAuth: {user.email} (ID: {user.id})")

@@ -26,12 +26,13 @@ import { googleAuthService } from '@/services/googleAuthService';
 import { GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
 import { RootStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
+import { ENV } from '@/config/env';
 
 type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -48,30 +49,60 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   useEffect(() => {
     const handleMetaInstagramCallback = async () => {
+      let code: string | null = null;
+      let errorParam: string | null = null;
+      let errorReason: string | null = null;
+      let redirectUri =
+        typeof window !== 'undefined' && window.location?.origin
+          ? window.location.origin
+          : 'cloudcrackers://auth/instagram/callback';
+
       if (typeof window !== 'undefined' && window.location?.search) {
         const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        if (code) {
-          setIsLoading(true);
+        code = params.get('code');
+        errorParam = params.get('error');
+        errorReason = params.get('error_reason');
+      } else if (route?.params) {
+        const routeParams = route.params as any;
+        code = routeParams.code || null;
+        errorParam = routeParams.error || null;
+        errorReason = routeParams.error_reason || null;
+      }
+
+      if (errorParam || errorReason) {
+        if (typeof window !== 'undefined' && window.history) {
           window.history.replaceState({}, document.title, window.location.pathname);
-          const redirectUri = window.location.origin;
-          const success = await storeLoginWithInstagram({ code, redirectUri });
-          setIsLoading(false);
-          if (success) {
-            const user = useAuthStore.getState().user;
-            if (user?.role === 'admin') {
-              navigation.navigate('AdminDashboard');
-            } else {
-              navigation.navigate('Home');
-            }
+        }
+        if (errorParam === 'access_denied' || errorReason === 'user_denied') {
+          setErrors({ email: 'Instagram authorization was cancelled.' });
+        } else {
+          setErrors({ email: 'Instagram authentication error. Please try again.' });
+        }
+        return;
+      }
+
+      if (code) {
+        setIsLoading(true);
+        if (typeof window !== 'undefined' && window.history) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        const success = await storeLoginWithInstagram({ code, redirectUri });
+        setIsLoading(false);
+        if (success) {
+          const user = useAuthStore.getState().user;
+          if (user?.role === 'admin') {
+            navigation.navigate('AdminDashboard');
           } else {
-            setErrors({ email: 'Instagram authentication failed. Please try again.' });
+            navigation.navigate('Home');
           }
+        } else {
+          const storeError = useAuthStore.getState().error;
+          setErrors({ email: storeError || 'Instagram authentication failed. Please try again.' });
         }
       }
     };
     handleMetaInstagramCallback();
-  }, []);
+  }, [route?.params]);
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
@@ -172,8 +203,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   const handleInstagramLoginClick = () => {
     setErrors({});
-    setIsInstagramLoading(false);
-    setShowInstagramModal(true);
+    if (ENV.ENABLE_MOCK_API) {
+      setIsInstagramLoading(false);
+      setShowInstagramModal(true);
+    } else {
+      const clientId = ENV.INSTAGRAM_CLIENT_ID || '2262885951230627';
+      const redirectUri = encodeURIComponent(
+        typeof window !== 'undefined' && window.location?.origin
+          ? window.location.origin
+          : 'https://cloudcrackerfinalyearproject-1.onrender.com'
+      );
+      const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`;
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.href = authUrl;
+      } else {
+        Linking.openURL(authUrl);
+      }
+    }
   };
 
   const handleInstagramAccountSelect = async (payload: InstagramAuthPayload) => {

@@ -18,6 +18,20 @@ import { RootNavigator } from '@/navigation/RootNavigator';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { RazorpayWebViewCheckout } from '@/components/payment/RazorpayWebViewCheckout';
 
+const linking = {
+  prefixes: [
+    'cloudcrackers://',
+    'https://cloudcrackerfinalyearproject-1.onrender.com',
+    'https://cloudcrackerfinalyearproject.onrender.com',
+  ],
+  config: {
+    screens: {
+      Login: 'auth/instagram/callback',
+      Register: 'auth/instagram/register-callback',
+    },
+  },
+};
+
 export default function App() {
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -97,7 +111,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <StatusBar style="light" />
         <RootNavigator />
         <RazorpayWebViewCheckout />

@@ -79,6 +79,7 @@ class Settings(BaseSettings):
     # Instagram Auth Settings
     INSTAGRAM_CLIENT_ID: Optional[str] = "2262885951230627"
     INSTAGRAM_CLIENT_SECRET: Optional[str] = None
+    INSTAGRAM_REDIRECT_URI: Optional[str] = "https://cloudcrackerfinalyearproject-1.onrender.com"
 
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [
