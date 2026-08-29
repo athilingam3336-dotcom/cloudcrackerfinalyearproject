@@ -371,36 +371,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           userName={user?.name ? user.name.split(' ')[0] : 'Explorer'}
         />
 
-        {/* Client Contact Banner Card */}
-        <View style={styles.clientBannerContainer}>
-          <Text style={styles.clientBannerTagline}>• {CLIENT_INFO.allDaysAvailable.toUpperCase()} •</Text>
+        {/* Wide Full-Width Top Bar */}
+        <View style={styles.topWideBar}>
+          <View style={styles.badgePill}>
+            <MaterialIcons name="schedule" size={13} color="#B30000" />
+            <Text style={styles.badgePillText}>{CLIENT_INFO.allDaysAvailable.toUpperCase()}</Text>
+          </View>
 
-          <View style={styles.clientActionsRow}>
+          <View style={styles.topActionsRow}>
             <TouchableOpacity
-              style={styles.clientActionChip}
+              style={styles.topActionChip}
               onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <MaterialIcons name="call" size={16} color="#FFFFFF" />
-              <Text style={styles.clientActionChipText}>{CLIENT_INFO.primaryPhone}</Text>
+              <MaterialIcons name="call" size={15} color="#B30000" />
+              <Text style={styles.topActionChipText}>{CLIENT_INFO.primaryPhone}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.clientActionChip}
+              style={styles.topActionChip}
               onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <MaterialIcons name="email" size={16} color="#FFFFFF" />
-              <Text style={styles.clientActionChipText}>Email Us</Text>
+              <MaterialIcons name="email" size={15} color="#B30000" />
+              <Text style={styles.topActionChipText}>Email Us</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.clientActionChip, styles.clientActionChipHighlight]}
+              style={[styles.topActionChip, styles.topActionMapChip]}
               onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <MaterialIcons name="location-on" size={16} color="#900C3F" />
-              <Text style={styles.clientActionChipTextHighlight}>Map Location</Text>
+              <MaterialIcons name="location-on" size={15} color="#B45309" />
+              <Text style={styles.topActionMapText}>Map Location</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -721,90 +724,68 @@ const styles = StyleSheet.create({
     right: -20,
     bottom: -20,
   },
-  clientBannerContainer: {
-    backgroundColor: '#A81818',
-    marginHorizontal: Spacing.marginMobile,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.xs,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.xl,
+  topWideBar: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.marginMobile,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.25)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 5,
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  devotionalText: {
+  badgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF0F0',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+  },
+  badgePillText: {
     ...Typography.labelLg,
-    color: '#FFECB3',
+    color: '#B30000',
     fontSize: 11,
     fontFamily: 'Inter-Bold',
     letterSpacing: 0.5,
-    marginBottom: 4,
-    textAlign: 'center',
   },
-  clientBannerTitle: {
-    ...Typography.headlineLg,
-    color: '#FFD700',
-    fontSize: 22,
-    fontFamily: 'Inter-Bold',
-    textAlign: 'center',
-    letterSpacing: 1,
-  },
-  clientBannerTagline: {
-    ...Typography.labelLg,
-    color: '#FFECB3',
-    fontSize: 11,
-    fontFamily: 'Inter-Bold',
-    letterSpacing: 0.8,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  clientBannerLic: {
-    ...Typography.labelLg,
-    color: '#FFF8E1',
-    fontSize: 10,
-    fontFamily: 'Inter-Regular',
-    textAlign: 'center',
-    marginTop: 4,
-    opacity: 0.9,
-  },
-  clientActionsRow: {
+  topActionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
+    gap: 8,
     flexWrap: 'wrap',
   },
-  clientActionChip: {
+  topActionChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.full,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderColor: '#E2E8F0',
   },
-  clientActionChipText: {
+  topActionChipText: {
     ...Typography.labelLg,
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontFamily: 'Inter-Bold',
+    color: '#1E293B',
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
   },
-  clientActionChipHighlight: {
-    backgroundColor: '#FFD700',
-    borderColor: '#FFE082',
+  topActionMapChip: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
   },
-  clientActionChipTextHighlight: {
+  topActionMapText: {
     ...Typography.labelLg,
-    color: '#900C3F',
-    fontSize: 13,
+    color: '#92400E',
+    fontSize: 12,
     fontFamily: 'Inter-Bold',
   },
 });
