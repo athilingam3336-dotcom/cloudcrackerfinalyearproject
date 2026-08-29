@@ -371,33 +371,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           userName={user?.name ? user.name.split(' ')[0] : 'Explorer'}
         />
 
-        {/* Client Banner Card */}
+        {/* Client Contact Banner Card */}
         <View style={styles.clientBannerContainer}>
-          <Text style={styles.clientBannerLic}>{CLIENT_INFO.licenseNo} • {CLIENT_INFO.allDaysAvailable}</Text>
+          <Text style={styles.clientBannerTagline}>• {CLIENT_INFO.allDaysAvailable.toUpperCase()} •</Text>
 
           <View style={styles.clientActionsRow}>
             <TouchableOpacity
               style={styles.clientActionChip}
               onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
+              activeOpacity={0.8}
             >
-              <MaterialIcons name="call" size={15} color="#FFFFFF" />
+              <MaterialIcons name="call" size={16} color="#FFFFFF" />
               <Text style={styles.clientActionChipText}>{CLIENT_INFO.primaryPhone}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.clientActionChip}
               onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
+              activeOpacity={0.8}
             >
-              <MaterialIcons name="email" size={15} color="#FFFFFF" />
+              <MaterialIcons name="email" size={16} color="#FFFFFF" />
               <Text style={styles.clientActionChipText}>Email Us</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.clientActionChip, styles.clientActionChipHighlight]}
               onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
+              activeOpacity={0.8}
             >
-              <MaterialIcons name="location-on" size={15} color="#B30000" />
-              <Text style={styles.clientActionChipTextHighlight}>Map</Text>
+              <MaterialIcons name="location-on" size={16} color="#900C3F" />
+              <Text style={styles.clientActionChipTextHighlight}>Map Location</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -719,7 +722,7 @@ const styles = StyleSheet.create({
     bottom: -20,
   },
   clientBannerContainer: {
-    backgroundColor: '#B71C1C',
+    backgroundColor: '#A81818',
     marginHorizontal: Spacing.marginMobile,
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
@@ -727,6 +730,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     borderRadius: BorderRadius.xl,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.25)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -751,12 +756,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   clientBannerTagline: {
-    ...Typography.bodyMd,
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    ...Typography.labelLg,
+    color: '#FFECB3',
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.8,
     textAlign: 'center',
-    marginTop: 2,
+    marginBottom: 6,
   },
   clientBannerLic: {
     ...Typography.labelLg,
@@ -771,17 +777,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.xs,
-    marginTop: Spacing.sm,
+    gap: Spacing.sm,
     flexWrap: 'wrap',
   },
   clientActionChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.35)',
@@ -789,17 +794,17 @@ const styles = StyleSheet.create({
   clientActionChipText: {
     ...Typography.labelLg,
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Inter-Bold',
   },
   clientActionChipHighlight: {
     backgroundColor: '#FFD700',
-    borderColor: '#FFD700',
+    borderColor: '#FFE082',
   },
   clientActionChipTextHighlight: {
     ...Typography.labelLg,
-    color: '#B71C1C',
-    fontSize: 12,
+    color: '#900C3F',
+    fontSize: 13,
     fontFamily: 'Inter-Bold',
   },
 });
