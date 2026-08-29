@@ -267,11 +267,11 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
                     <Text
                       style={[
                         styles.feedStatus,
-                        ord.status === 'DELIVERED'
+                        (ord.status || '').toLowerCase() === 'delivered'
                           ? styles.statusDelivered
-                          : ord.status === 'CANCELLED'
+                          : (ord.status || '').toLowerCase() === 'cancelled'
                           ? styles.statusCancelled
-                          : ord.status === 'SHIPPED' || ord.status === 'IN TRANSIT'
+                          : ['shipped', 'in transit'].includes((ord.status || '').toLowerCase())
                           ? styles.statusShipped
                           : styles.statusPending,
                       ]}

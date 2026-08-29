@@ -53,10 +53,10 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
 
           <View style={styles.titleContainer}>
             <View style={styles.brandTitleRow}>
-              <Text style={styles.brandTitle}>Meera Crackers</Text>
+              <Text style={styles.brandTitle} numberOfLines={1}>Meera Crackers</Text>
               <MaterialIcons name="auto-awesome" size={16} color="#D97706" style={styles.sparkleIcon} />
             </View>
-            <Text style={styles.greetingText}>
+            <Text style={styles.greetingText} numberOfLines={1}>
               Welcome back, <Text style={styles.greetingUserName}>{userName}</Text>
             </Text>
           </View>
@@ -210,6 +210,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
+    flexShrink: 0,
   },
   iconCircleButton: {
     width: 40,

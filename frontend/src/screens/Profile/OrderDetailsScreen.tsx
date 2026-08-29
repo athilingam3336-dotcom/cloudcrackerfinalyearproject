@@ -145,11 +145,13 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
     );
   }
 
+  const stLower = (order.status || '').toLowerCase();
+
   const timelineSteps = order.timeline || [
     { status: 'Order Placed', date: order.date, completed: true },
-    { status: 'Processing', date: 'In Progress', completed: order.status !== 'Pending' },
-    { status: 'In Transit', date: 'Courier Dispatch', completed: order.status === 'In Transit' || order.status === 'Delivered' },
-    { status: 'Delivered', date: 'Final Destination', completed: order.status === 'Delivered' },
+    { status: 'Processing', date: 'In Progress', completed: stLower !== 'pending' },
+    { status: 'In Transit', date: 'Courier Dispatch', completed: ['in transit', 'shipped', 'delivered'].includes(stLower) },
+    { status: 'Delivered', date: 'Final Destination', completed: stLower === 'delivered' },
   ];
 
   return (
@@ -173,11 +175,11 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
             <View
               style={[
                 styles.statusBadge,
-                order.status === 'In Transit'
+                ['in transit', 'shipped'].includes(stLower)
                   ? styles.inTransitBadge
-                  : order.status === 'Delivered'
+                  : stLower === 'delivered'
                   ? styles.deliveredBadge
-                  : order.status === 'Cancelled'
+                  : stLower === 'cancelled'
                   ? styles.cancelledBadge
                   : styles.pendingBadge,
               ]}

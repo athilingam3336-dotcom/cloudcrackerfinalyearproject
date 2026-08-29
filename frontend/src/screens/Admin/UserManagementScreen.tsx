@@ -799,11 +799,11 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
                             <View
                               style={[
                                 styles.orderStatusPill,
-                                ord.orderStatus === 'Delivered'
+                                (ord.orderStatus || '').toLowerCase() === 'delivered'
                                   ? styles.pillDelivered
-                                  : ord.orderStatus === 'Shipped' || ord.orderStatus === 'Packed'
+                                  : ['shipped', 'packed', 'in transit'].includes((ord.orderStatus || '').toLowerCase())
                                   ? styles.pillShipped
-                                  : ord.orderStatus === 'Cancelled'
+                                  : (ord.orderStatus || '').toLowerCase() === 'cancelled'
                                   ? styles.pillCancelled
                                   : styles.pillPending,
                               ]}

@@ -8,6 +8,21 @@ import { ProductItem } from '@/constants/mockData';
 import { apiClient } from '@/api/axios';
 import { ENV } from '@/config/env';
 
+export function normalizeAdminOrderStatus(rawStatus?: string): string {
+  if (!rawStatus) return 'Pending';
+  const s = String(rawStatus).trim().toLowerCase();
+  if (s === 'delivered') return 'Delivered';
+  if (s === 'shipped') return 'Shipped';
+  if (s === 'in transit' || s === 'in_transit') return 'In Transit';
+  if (s === 'processing') return 'Processing';
+  if (s === 'packed') return 'Packed';
+  if (s === 'confirmed') return 'Confirmed';
+  if (s === 'cancelled' || s === 'canceled') return 'Cancelled';
+  if (s === 'pending') return 'Pending';
+  if (s === 'refunded') return 'Refunded';
+  return rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+}
+
 export interface DashboardRecentOrder {
   id: string;
   orderNumber: string;
@@ -458,7 +473,7 @@ export class AdminService {
           customerEmail: o.customer_email || o.user_id || 'customer@example.com',
           itemName,
           amount: typeof o.total === 'number' ? o.total : (o.totalAmount || 0),
-          status: (o.order_status || o.orderStatus || 'Pending').toUpperCase(),
+          status: normalizeAdminOrderStatus(o.order_status || o.orderStatus || o.status),
           paymentStatus: o.payment_status || o.paymentStatus || 'Pending',
           createdAt: o.created_at || new Date().toISOString(),
         };
@@ -1187,7 +1202,7 @@ export class AdminService {
       shipping: typeof item.shipping === 'number' ? item.shipping : 0,
       tax: typeof item.tax === 'number' ? item.tax : 0,
       itemCount: typeof item.item_count === 'number' ? item.item_count : (mappedItems.length || 1),
-      orderStatus: item.order_status || item.orderStatus || 'Pending',
+      orderStatus: normalizeAdminOrderStatus(item.order_status || item.orderStatus) as AdminOrderItem['orderStatus'],
       paymentStatus: item.payment_status || item.paymentStatus || 'Pending',
       paymentMethod: item.payment_method || item.paymentMethod || 'Credit Card',
       shippingAddress: typeof item.shipping_address === 'string' ? item.shipping_address : (item.shipping_address?.full_name ? `${item.shipping_address.full_name}, ${item.shipping_address.street || ''}` : ''),
@@ -1218,7 +1233,7 @@ export class AdminService {
       userId: ord.user_id || ord.userId,
       date: ord.date || (ord.created_at ? new Date(ord.created_at).toLocaleDateString() : 'Recent'),
       createdAt: ord.created_at || ord.createdAt,
-      orderStatus: ord.order_status || ord.orderStatus || 'Pending',
+      orderStatus: normalizeAdminOrderStatus(ord.order_status || ord.orderStatus),
       paymentStatus: ord.payment_status || ord.paymentStatus || 'Pending',
       paymentMethod: ord.payment_method || ord.paymentMethod || 'Card',
       subtotal: typeof ord.subtotal === 'number' ? ord.subtotal : (ord.total || 0),

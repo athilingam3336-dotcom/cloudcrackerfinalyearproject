@@ -36,14 +36,14 @@ class DashboardService:
             {"$group": {"_id": None, "total_stock": {"$sum": "$stock"}}},
         ]
         rev_pipeline = [
-            {"$match": {"order_status": {"$ne": "Cancelled"}}},
+            {"$match": {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total"}}},
         ]
         today_rev_pipeline = [
             {
                 "$match": {
                     "created_at": {"$gte": today_start},
-                    "order_status": {"$ne": "Cancelled"},
+                    "order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}},
                 }
             },
             {"$group": {"_id": None, "revenue": {"$sum": "$total"}}},
@@ -75,12 +75,12 @@ class DashboardService:
             Category.find(Category.status != "deleted").count(),
             Product.find(Product.status != "deleted").count(),
             Order.find().count(),
-            Order.find(Order.order_status == "Pending").count(),
-            Order.find(Order.order_status == "Delivered").count(),
-            Order.find(Order.order_status == "Cancelled").count(),
+            Order.find({"order_status": {"$regex": "^pending$", "$options": "i"}}).count(),
+            Order.find({"order_status": {"$regex": "^delivered$", "$options": "i"}}).count(),
+            Order.find({"order_status": {"$regex": "^cancelled$", "$options": "i"}}).count(),
             Order.find(Order.created_at >= today_start).count(),
-            Order.find(Order.created_at >= last_30_start, Order.order_status != "Cancelled").count(),
-            Order.find(Order.created_at >= prev_30_start, Order.created_at < last_30_start, Order.order_status != "Cancelled").count(),
+            Order.find(Order.created_at >= last_30_start, {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}).count(),
+            Order.find(Order.created_at >= prev_30_start, Order.created_at < last_30_start, {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}).count(),
             User.find(User.created_at >= last_30_start).count(),
             User.find(User.created_at >= prev_30_start, User.created_at < last_30_start).count(),
             Product.get_pymongo_collection().aggregate(stock_pipeline).to_list(length=None),

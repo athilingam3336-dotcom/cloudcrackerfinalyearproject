@@ -10,6 +10,7 @@ import {
   Alert,
   RefreshControl,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -71,27 +72,31 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   );
 
   const totalOrders = orders.length;
-  const inTransitCount = orders.filter(
-    (o) => o.status === 'In Transit' || o.status === 'Processing' || o.status === 'Confirmed' || o.status === 'Pending'
-  ).length;
+  const inTransitCount = orders.filter((o) => {
+    const st = (o.status || '').toLowerCase();
+    return ['in transit', 'shipped', 'processing', 'confirmed', 'pending', 'packed'].includes(st);
+  }).length;
   const totalSpent = orders
-    .filter((o) => o.status !== 'Cancelled')
+    .filter((o) => (o.status || '').toLowerCase() !== 'cancelled')
     .reduce((sum, o) => sum + (o.totalPrice || 0), 0);
 
   const filteredOrders = useMemo(() => {
     if (selectedFilter === 'All') return orders;
     if (selectedFilter === 'In Transit') {
-      return orders.filter(
-        (o) => o.status === 'In Transit' || o.status === 'Processing' || o.status === 'Confirmed' || o.status === 'Pending'
-      );
+      return orders.filter((o) => {
+        const st = (o.status || '').toLowerCase();
+        return ['in transit', 'shipped', 'processing', 'confirmed', 'pending', 'packed'].includes(st);
+      });
     }
     if (selectedFilter === 'Delivered') {
-      return orders.filter((o) => o.status === 'Delivered');
+      return orders.filter((o) => (o.status || '').toLowerCase() === 'delivered');
     }
     if (selectedFilter === 'Cancelled') {
-      return orders.filter(
-        (o) => o.status === 'Cancelled' || o.paymentStatus === 'Refunded' || o.status === 'Refunded'
-      );
+      return orders.filter((o) => {
+        const st = (o.status || '').toLowerCase();
+        const ps = (o.paymentStatus || '').toLowerCase();
+        return st === 'cancelled' || ps === 'refunded' || st === 'refunded';
+      });
     }
     return orders;
   }, [selectedFilter, orders]);
@@ -199,20 +204,23 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   );
 
   const getStatusBadgeStyles = (status: string, paymentStatus?: string) => {
-    if (status === 'Cancelled') {
+    const s = (status || '').toLowerCase();
+    const ps = (paymentStatus || '').toLowerCase();
+
+    if (s === 'cancelled') {
       return { badge: styles.cancelledBadge, text: styles.cancelledBadgeText, label: 'Cancelled' };
     }
-    if (paymentStatus === 'Refunded' || status === 'Refunded') {
+    if (ps === 'refunded' || s === 'refunded') {
       return { badge: styles.refundedBadge, text: styles.refundedBadgeText, label: 'Refunded' };
     }
-    if (status === 'Delivered') {
+    if (s === 'delivered') {
       return { badge: styles.deliveredBadge, text: styles.deliveredBadgeText, label: 'Delivered' };
     }
-    if (status === 'In Transit') {
-      return { badge: styles.inTransitBadge, text: styles.inTransitBadgeText, label: 'In Transit' };
+    if (s === 'in transit' || s === 'shipped') {
+      return { badge: styles.inTransitBadge, text: styles.inTransitBadgeText, label: s === 'shipped' ? 'Shipped' : 'In Transit' };
     }
-    if (status === 'Processing' || status === 'Confirmed') {
-      return { badge: styles.processingBadge, text: styles.processingBadgeText, label: status };
+    if (s === 'processing' || s === 'packed' || s === 'confirmed') {
+      return { badge: styles.processingBadge, text: styles.processingBadgeText, label: status || 'Processing' };
     }
     return { badge: styles.pendingBadge, text: styles.pendingBadgeText, label: status || 'Pending' };
   };
@@ -220,14 +228,15 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const renderOrderItem: ListRenderItem<OrderRecord> = useCallback(
     ({ item }) => {
       const badgeInfo = getStatusBadgeStyles(item.status, item.paymentStatus);
-      const isCancellable = ['pending', 'confirmed', 'processing'].includes(
-        (item.status || '').toLowerCase()
-      );
+      const st = (item.status || '').toLowerCase();
+      const ps = (item.paymentStatus || '').toLowerCase();
+
+      const isCancellable = ['pending', 'confirmed', 'processing'].includes(st);
       const isDeletable =
-        item.status === 'Cancelled' ||
-        item.status === 'Delivered' ||
-        item.paymentStatus === 'Refunded' ||
-        item.status === 'Refunded';
+        st === 'cancelled' ||
+        st === 'delivered' ||
+        ps === 'refunded' ||
+        st === 'refunded';
 
       const isDeletingThis = deletingOrderId === item.id;
       const isCancellingThis = cancellingOrderId === item.id;
@@ -303,7 +312,7 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
               <Text style={styles.trackBtnText}>Details</Text>
             </TouchableOpacity>
 
-            {item.status !== 'Cancelled' && (
+            {st !== 'cancelled' && (
               <TouchableOpacity
                 style={styles.reorderBtn}
                 onPress={() => handleReorder(item.orderNumber)}
@@ -343,38 +352,48 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           <Text style={styles.subtitle}>Review and track your previous pyrotechnic purchases.</Text>
 
           {/* Stats Bento Grid */}
-          <View style={styles.statsGrid}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.statsGridScrollContent}
+            style={styles.statsScrollView}
+          >
             <View style={styles.statCard}>
               <View style={styles.statIconBox}>
-                <MaterialIcons name="shopping-bag" size={20} color={Colors.primary} />
+                <MaterialIcons name="shopping-bag" size={18} color={Colors.primary} />
               </View>
-              <View>
-                <Text style={styles.statLabel}>TOTAL ORDERS</Text>
-                <Text style={styles.statValue}>{totalOrders}</Text>
+              <View style={styles.statTextBox}>
+                <Text style={styles.statLabel} numberOfLines={1}>TOTAL ORDERS</Text>
+                <Text style={styles.statValue} numberOfLines={1}>{totalOrders}</Text>
               </View>
             </View>
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: Colors.secondaryContainer }]}>
-                <MaterialIcons name="local-shipping" size={20} color={Colors.onSecondaryContainer} />
+                <MaterialIcons name="local-shipping" size={18} color={Colors.onSecondaryContainer} />
               </View>
-              <View>
-                <Text style={styles.statLabel}>IN TRANSIT</Text>
-                <Text style={styles.statValue}>{inTransitCount}</Text>
+              <View style={styles.statTextBox}>
+                <Text style={styles.statLabel} numberOfLines={1}>IN TRANSIT</Text>
+                <Text style={styles.statValue} numberOfLines={1}>{inTransitCount}</Text>
               </View>
             </View>
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: Colors.primaryFixed }]}>
-                <MaterialIcons name="savings" size={20} color={Colors.primary} />
+                <MaterialIcons name="savings" size={18} color={Colors.primary} />
               </View>
-              <View>
-                <Text style={styles.statLabel}>TOTAL SPENT</Text>
-                <Text style={styles.statValue}>{formatCurrency(totalSpent)}</Text>
+              <View style={styles.statTextBox}>
+                <Text style={styles.statLabel} numberOfLines={1}>TOTAL SPENT</Text>
+                <Text style={styles.statValue} numberOfLines={1}>{formatCurrency(totalSpent)}</Text>
               </View>
             </View>
-          </View>
+          </ScrollView>
 
           {/* Filter Chips */}
-          <View style={styles.filterRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScrollContent}
+            style={styles.filterScrollView}
+          >
             {(['All', 'In Transit', 'Delivered', 'Cancelled'] as const).map((chip) => (
               <TouchableOpacity
                 key={chip}
@@ -390,12 +409,13 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
                     styles.filterChipText,
                     selectedFilter === chip && styles.activeFilterChipText,
                   ]}
+                  numberOfLines={1}
                 >
                   {chip}
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
 
           {/* Bulk Delete All Cancelled Orders Button */}
           {(selectedFilter === 'Cancelled' || orders.some((o) => o.status === 'Cancelled' || o.paymentStatus === 'Refunded')) && (
@@ -543,53 +563,65 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
     marginTop: 2,
   },
-  statsGrid: {
+  statsScrollView: {
+    marginTop: Spacing.sm,
+  },
+  statsGridScrollContent: {
     flexDirection: 'row',
     gap: Spacing.xs,
-    marginTop: Spacing.md,
+    paddingRight: Spacing.xs,
   },
   statCard: {
-    flex: 1,
+    minWidth: 108,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.xs,
-    gap: Spacing.xs,
+    paddingHorizontal: Spacing.xs + 2,
+    paddingVertical: Spacing.xs + 2,
+    gap: 6,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
   },
   statIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.lg,
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.primaryFixed,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  statTextBox: {
     justifyContent: 'center',
   },
   statLabel: {
     ...Typography.labelLg,
-    fontSize: 9,
+    fontSize: 8.5,
     fontFamily: 'Inter-Bold',
     color: Colors.tertiary,
   },
   statValue: {
     ...Typography.titleLg,
-    fontSize: 13,
+    fontSize: 12.5,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
-  filterRow: {
+  filterScrollView: {
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  filterScrollContent: {
     flexDirection: 'row',
     gap: Spacing.xs,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xs,
+    paddingRight: Spacing.xs,
   },
   filterChip: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surfaceContainerLow,
+    flexShrink: 0,
   },
   activeFilterChip: {
     backgroundColor: Colors.primaryContainer,
@@ -711,6 +743,7 @@ const styles = StyleSheet.create({
   },
   orderActionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     alignItems: 'center',
     gap: Spacing.xs,

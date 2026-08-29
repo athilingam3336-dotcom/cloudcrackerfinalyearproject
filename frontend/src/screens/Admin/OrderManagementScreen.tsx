@@ -315,7 +315,9 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   const renderOrderItem = useCallback(
     ({ item }: { item: AdminOrderItem }) => {
       const isExpanded = Boolean(expandedOrderIds[item.id]);
-      const isDeletable = ['Delivered', 'Cancelled'].includes(item.orderStatus) || item.paymentStatus === 'Refunded';
+      const st = (item.orderStatus || '').toLowerCase();
+      const ps = (item.paymentStatus || '').toLowerCase();
+      const isDeletable = ['delivered', 'cancelled'].includes(st) || ps === 'refunded';
 
       return (
         <View style={styles.orderCard}>
@@ -350,11 +352,11 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
             <TouchableOpacity
               style={[
                 styles.statusBadge,
-                item.orderStatus === 'Shipped' || item.orderStatus === 'Packed'
+                ['shipped', 'packed', 'in transit'].includes(st)
                   ? styles.inTransitBadge
-                  : item.orderStatus === 'Delivered'
+                  : st === 'delivered'
                   ? styles.deliveredBadge
-                  : item.orderStatus === 'Cancelled'
+                  : st === 'cancelled'
                   ? styles.cancelledBadge
                   : styles.pendingBadge,
               ]}

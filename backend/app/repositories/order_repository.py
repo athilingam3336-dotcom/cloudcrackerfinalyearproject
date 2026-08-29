@@ -89,13 +89,13 @@ class OrderRepository:
         total_orders = len(orders)
         # Sum total of non-cancelled orders
         total_spent = sum(
-            order.total for order in orders if order.order_status != "Cancelled"
+            order.total for order in orders if (order.order_status or "").strip().lower() != "cancelled"
         )
         pending_orders = sum(
-            1 for order in orders if order.order_status == "Pending"
+            1 for order in orders if (order.order_status or "").strip().lower() == "pending"
         )
         completed_orders = sum(
-            1 for order in orders if order.order_status == "Delivered"
+            1 for order in orders if (order.order_status or "").strip().lower() == "delivered"
         )
 
         return {
@@ -117,9 +117,9 @@ class OrderRepository:
         query_conditions = [Order.admin_deleted_at == None]
 
         if order_status and order_status != "All":
-            query_conditions.append(Order.order_status == order_status)
+            query_conditions.append({"order_status": {"$regex": f"^{order_status}$", "$options": "i"}})
         if payment_status and payment_status != "All":
-            query_conditions.append(Order.payment_status == payment_status)
+            query_conditions.append({"payment_status": {"$regex": f"^{payment_status}$", "$options": "i"}})
         if search and search.strip():
             s = search.strip()
             from app.models.user import User

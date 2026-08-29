@@ -367,13 +367,27 @@ export class OrderService {
     return undefined;
   }
 
-  private mapBackendOrderToUi(bo: any): OrderRecord {
+  private normalizeStatus(rawStatus?: string): string {
+    if (!rawStatus) return 'Pending';
+    const s = String(rawStatus).trim().toLowerCase();
+    if (s === 'delivered') return 'Delivered';
+    if (s === 'shipped') return 'Shipped';
+    if (s === 'in transit' || s === 'in_transit') return 'In Transit';
+    if (s === 'processing') return 'Processing';
+    if (s === 'packed') return 'Packed';
+    if (s === 'confirmed') return 'Confirmed';
+    if (s === 'cancelled' || s === 'canceled') return 'Cancelled';
+    if (s === 'pending') return 'Pending';
+    if (s === 'refunded') return 'Refunded';
+    return rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+  }
 
+  private mapBackendOrderToUi(bo: any): OrderRecord {
     return {
       id: bo.id || bo._id || 'ord_meta',
       orderNumber: bo.order_number || bo.orderNumber || '#CC-99000',
       date: bo.created_at ? new Date(bo.created_at).toLocaleDateString() : 'Today',
-      status: bo.order_status || bo.status || 'Pending',
+      status: this.normalizeStatus(bo.order_status || bo.status),
       itemCount: bo.items?.length || 1,
       totalPrice: bo.total || bo.totalPrice || 0.0,
       subtotal: bo.subtotal || 0.0,
