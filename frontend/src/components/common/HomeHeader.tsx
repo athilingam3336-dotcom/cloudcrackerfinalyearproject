@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -54,9 +54,11 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
           <View style={styles.titleContainer}>
             <View style={styles.brandTitleRow}>
               <Text style={styles.brandTitle}>Meera Crackers</Text>
-              <Text style={styles.sparkleEmoji}>✨</Text>
+              <MaterialIcons name="auto-awesome" size={16} color="#D97706" style={styles.sparkleIcon} />
             </View>
-            <Text style={styles.greetingText}>Welcome back, {userName}</Text>
+            <Text style={styles.greetingText}>
+              Welcome back, <Text style={styles.greetingUserName}>{userName}</Text>
+            </Text>
           </View>
 
           {!onBackPress && (
@@ -173,24 +175,36 @@ const styles = StyleSheet.create({
   brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    gap: 6,
   },
   brandTitle: {
-    ...Typography.titleLg,
-    fontFamily: 'Inter-Bold',
-    color: Colors.primary,
-    letterSpacing: -0.5,
+    fontSize: 22,
+    lineHeight: 28,
+    fontFamily: Platform.OS === 'web' ? "'Cinzel', 'Outfit', 'Playfair Display', Georgia, serif" : 'Cinzel-Bold',
+    fontWeight: '800',
+    color: '#A81818',
+    letterSpacing: 0.5,
     textAlign: 'center',
   },
-  sparkleEmoji: {
-    fontSize: 14,
+  sparkleIcon: {
+    marginTop: -2,
   },
   greetingText: {
-    ...Typography.bodyMd,
-    fontFamily: 'Inter-Regular',
-    color: Colors.tertiary,
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: Platform.OS === 'web' ? "'Outfit', 'Poppins', sans-serif" : 'Outfit-Medium',
+    fontWeight: '500',
+    color: '#64748B',
     marginTop: 2,
     textAlign: 'center',
+    letterSpacing: 0.2,
+  },
+  greetingUserName: {
+    fontFamily: Platform.OS === 'web' ? "'Outfit', 'Poppins', sans-serif" : 'Outfit-Bold',
+    fontWeight: '700',
+    color: '#1E293B',
+    textTransform: 'capitalize',
   },
   rightSection: {
     flexDirection: 'row',
