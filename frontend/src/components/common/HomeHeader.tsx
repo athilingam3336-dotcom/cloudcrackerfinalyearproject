@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -29,6 +29,8 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
   }) => {
     const user = useAuthStore((state) => state.user);
     const activeAvatar = sanitizeRemoteImageUrl(avatarUrl || user?.avatarUrl);
+    const { width } = useWindowDimensions();
+    const isSmallScreen = width < 520;
 
     return (
       <View style={styles.header}>
@@ -43,25 +45,33 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             >
               <MaterialIcons name="arrow-back" size={22} color={Colors.primary} />
             </TouchableOpacity>
-          ) : (
+          ) : !isSmallScreen ? (
             <Image
               source={LOCAL_PRODUCT_IMAGES.KID_BOY_SPARKLER}
               style={styles.headerMascotLeft}
               resizeMode="contain"
             />
-          )}
+          ) : null}
 
           <View style={styles.titleContainer}>
             <View style={styles.brandTitleRow}>
-              <Text style={styles.brandTitle} numberOfLines={1}>Meera Crackers</Text>
-              <MaterialIcons name="auto-awesome" size={16} color="#D97706" style={styles.sparkleIcon} />
+              <Text
+                style={[
+                  styles.brandTitle,
+                  isSmallScreen && { fontSize: 17, lineHeight: 22 },
+                ]}
+                numberOfLines={1}
+              >
+                Meera Crackers
+              </Text>
+              <MaterialIcons name="auto-awesome" size={14} color="#D97706" style={styles.sparkleIcon} />
             </View>
             <Text style={styles.greetingText} numberOfLines={1}>
               Welcome back, <Text style={styles.greetingUserName}>{userName}</Text>
             </Text>
           </View>
 
-          {!onBackPress && (
+          {!onBackPress && !isSmallScreen && (
             <Image
               source={LOCAL_PRODUCT_IMAGES.KID_GIRL_SPARKLER}
               style={styles.headerMascotRight}

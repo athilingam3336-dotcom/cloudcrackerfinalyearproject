@@ -736,6 +736,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surfaceContainerLow,
+    flexShrink: 0,
   },
   activeFilterChip: {
     backgroundColor: Colors.primaryContainer,
@@ -820,6 +821,7 @@ const styles = StyleSheet.create({
   },
   statusRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.xs,
     marginTop: Spacing.sm,
   },
@@ -867,8 +869,10 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: Spacing.xs,
     marginTop: Spacing.sm,
     paddingTop: Spacing.xs,
     borderTopWidth: 1,

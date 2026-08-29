@@ -21,13 +21,57 @@ import { RazorpayWebViewCheckout } from '@/components/payment/RazorpayWebViewChe
 export default function App() {
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      // 1. Ensure responsive viewport meta tag for mobile browsers (Chrome, Safari iOS, Samsung Internet, Firefox)
+      let metaViewport = document.querySelector('meta[name="viewport"]');
+      if (!metaViewport) {
+        metaViewport = document.createElement('meta');
+        metaViewport.setAttribute('name', 'viewport');
+        document.head.appendChild(metaViewport);
+      }
+      metaViewport.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+      );
+
+      // 2. Load custom Web typography
       const fontId = 'google-fonts-stylish-crackers';
       if (!document.getElementById(fontId)) {
         const link = document.createElement('link');
         link.id = fontId;
         link.rel = 'stylesheet';
-        link.href = 'https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Outfit:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&family=Poppins:wght@500;600;700&display=swap';
+        link.href =
+          'https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Outfit:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&family=Poppins:wght@500;600;700&display=swap';
         document.head.appendChild(link);
+      }
+
+      // 3. Global CSS Reset for consistent cross-browser mobile layout & typography
+      const cssId = 'cross-browser-mobile-reset';
+      if (!document.getElementById(cssId)) {
+        const style = document.createElement('style');
+        style.id = cssId;
+        style.textContent = `
+          * {
+            box-sizing: border-box !important;
+            -webkit-tap-highlight-color: transparent;
+          }
+          html, body, #root {
+            width: 100% !important;
+            max-width: 100vw !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+            -webkit-text-size-adjust: 100% !important;
+            text-size-adjust: 100% !important;
+          }
+          ::-webkit-scrollbar {
+            display: none !important;
+          }
+          * {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+          }
+        `;
+        document.head.appendChild(style);
       }
     }
   }, []);

@@ -12,6 +12,7 @@ import {
   Platform,
   Linking,
   Image,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -374,7 +375,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         />
 
         {/* Wide Full-Width Top Bar with Sparkler Mascots */}
-        <View style={styles.topWideBar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.topWideBarScroll}
+          contentContainerStyle={styles.topWideBarScrollContent}
+        >
           <View style={styles.topBarLeftItem}>
             <Image
               source={LOCAL_PRODUCT_IMAGES.KID_BOY_SPARKLER}
@@ -421,7 +427,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               resizeMode="contain"
             />
           </View>
-        </View>
+        </ScrollView>
 
         {/* Search Bar */}
         <SearchBar
@@ -739,17 +745,16 @@ const styles = StyleSheet.create({
     right: -20,
     bottom: -20,
   },
-  topWideBar: {
-    width: '100%',
+  topWideBarScroll: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: 6,
-    paddingHorizontal: Spacing.marginMobile,
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
+  },
+  topWideBarScrollContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.marginMobile,
     gap: 8,
   },
   topBarLeftItem: {
