@@ -23,6 +23,7 @@ import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { GoogleAccountChooserModal } from '@/components/auth/GoogleAccountChooserModal';
 import { InstagramAccountChooserModal } from '@/components/auth/InstagramAccountChooserModal';
 import { googleAuthService } from '@/services/googleAuthService';
+import { instagramAuthService } from '@/services/instagramAuthService';
 import { GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
 import { RootStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
@@ -207,13 +208,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       setIsInstagramLoading(false);
       setShowInstagramModal(true);
     } else {
-      const clientId = ENV.INSTAGRAM_CLIENT_ID || '2262885951230627';
-      const redirectUri = encodeURIComponent(
+      const rawRedirectUri =
         typeof window !== 'undefined' && window.location?.origin
           ? window.location.origin
-          : 'https://cloudcrackerfinalyearproject-1.onrender.com'
-      );
-      const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`;
+          : 'cloudcrackers://auth/instagram/callback';
+      const authUrl = instagramAuthService.getAuthorizationUrl(rawRedirectUri);
 
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.location.href = authUrl;

@@ -24,10 +24,11 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
     onCartPress,
     onBackPress,
     notificationCount = 3,
-    userName = 'Explorer',
+    userName,
     avatarUrl,
   }) => {
     const user = useAuthStore((state) => state.user);
+    const activeUserName = userName || (user?.name ? user.name.split(' ')[0] : 'Explorer');
     const activeAvatar = sanitizeRemoteImageUrl(avatarUrl || user?.avatarUrl);
     const { width } = useWindowDimensions();
     const isSmallScreen = width < 520;
@@ -67,7 +68,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
               <MaterialIcons name="auto-awesome" size={14} color="#D97706" style={styles.sparkleIcon} />
             </View>
             <Text style={styles.greetingText} numberOfLines={1}>
-              Welcome back, <Text style={styles.greetingUserName}>{userName}</Text>
+              Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
             </Text>
           </View>
 

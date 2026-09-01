@@ -33,7 +33,7 @@ type CheckoutScreenProps = NativeStackScreenProps<RootStackParamList, 'Checkout'
 type PaymentMethod = 'razorpay' | 'cod';
 
 export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) => {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(2);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   const user = useAuthStore((state) => state.user);
   const updateProfile = useAuthStore((state) => state.updateProfile);
@@ -86,6 +86,22 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
+  const handleProceedToPayment = useCallback(() => {
+    setPaymentError(null);
+    if (!fullName.trim() || !address.trim() || !city.trim() || !pincode.trim()) {
+      const missingFields: string[] = [];
+      if (!fullName.trim()) missingFields.push('Full Name');
+      if (!address.trim()) missingFields.push('Street Address');
+      if (!city.trim()) missingFields.push('City');
+      if (!pincode.trim()) missingFields.push('Pincode');
+
+      const errorMsg = `⚠️ Please fill in: ${missingFields.join(', ')} before proceeding to payment.`;
+      setPaymentError(errorMsg);
+      return;
+    }
+    setCurrentStep(2);
+  }, [fullName, address, city, pincode]);
+
   const handlePlaceOrder = useCallback(async () => {
     setPaymentError(null);
     if (!fullName.trim() || !address.trim() || !city.trim() || !pincode.trim()) {
@@ -97,9 +113,10 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
 
       const errorMsg = `⚠️ Please fill in: ${missingFields.join(', ')} before placing your order.`;
       setPaymentError(errorMsg);
+      setCurrentStep(1);
 
       if (Platform.OS === 'web') {
-        window.alert(`Incomplete Address!\nPlease fill in your shipping details (${missingFields.join(', ')}) before proceeding to payment.`);
+        window.alert(`Incomplete Address!\nPlease fill in your shipping details (${missingFields.join(', ')}) before proceeding.`);
       } else {
         Alert.alert('Incomplete Address', `Please fill in: ${missingFields.join(', ')}`);
       }
@@ -299,43 +316,67 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
         notificationCount={unreadNotifs}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Step Progress Indicator */}
-        <View style={styles.progressContainer}>
-          <TouchableOpacity
-            style={styles.inlineBackRow}
-            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Cart'))}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
-            <Text style={styles.inlineBackText}>Back to Cart</Text>
-          </TouchableOpacity>
+      {/* Sleek Horizontal Stepper Header Bar */}
+      <View style={styles.horizontalStepperBar}>
+        <TouchableOpacity
+          style={styles.inlineBackBtn}
+          onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Cart'))}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
+          <Text style={styles.inlineBackText}>Cart</Text>
+        </TouchableOpacity>
+
+        <View style={styles.stepperRowHorizontal}>
           {[
             { step: 1, label: 'Shipping' },
             { step: 2, label: 'Payment' },
             { step: 3, label: 'Confirm' },
-          ].map(({ step, label }) => {
+          ].map(({ step, label }, idx) => {
+            const isCompleted = currentStep > step;
+            const isCurrent = currentStep === step;
             const isActive = currentStep >= step;
             return (
-              <TouchableOpacity
-                key={step}
-                style={styles.stepItem}
-                onPress={() => setCurrentStep(step as any)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.stepCircle, isActive && styles.activeStepCircle]}>
-                  <Text style={[styles.stepNumber, isActive && styles.activeStepNumber]}>
-                    {step}
+              <React.Fragment key={step}>
+                {idx > 0 && (
+                  <View style={[styles.stepLineHorizontal, currentStep >= step && styles.activeStepLineHorizontal]} />
+                )}
+                <TouchableOpacity
+                  style={styles.stepItemHorizontal}
+                  onPress={() => {
+                    if (step === 2 && currentStep === 1) {
+                      handleProceedToPayment();
+                    } else {
+                      setCurrentStep(step as any);
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View
+                    style={[
+                      styles.stepCircleHorizontal,
+                      isCurrent ? styles.currentStepCircle : isCompleted ? styles.completedStepCircle : null,
+                    ]}
+                  >
+                    {isCompleted ? (
+                      <MaterialIcons name="check" size={13} color="#ffffff" />
+                    ) : (
+                      <Text style={[styles.stepNumberHorizontal, isActive && styles.activeStepNumberHorizontal]}>
+                        {step}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={[styles.stepLabelHorizontal, isActive && styles.activeStepLabelHorizontal]}>
+                    {label}
                   </Text>
-                </View>
-                <Text style={[styles.stepLabel, isActive && styles.activeStepLabel]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </React.Fragment>
             );
           })}
         </View>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {paymentError && (
           <View style={styles.errorCard}>
             <MaterialIcons name="error-outline" size={20} color="#D32F2F" />
@@ -344,261 +385,339 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
         )}
 
         <View style={styles.checkoutContainer}>
-          {/* Shipping Address Section */}
-          <View style={styles.cardSection}>
-            <View style={styles.sectionHeaderRow}>
-              <MaterialIcons name="local-shipping" size={22} color={Colors.primary} />
-              <Text style={styles.sectionTitle}>Shipping Address</Text>
-            </View>
-
-            {/* Name */}
-            <CustomInput
-              label="Name"
-              value={fullName}
-              onChangeText={setFullName}
-              placeholder="Enter your name"
-            />
-
-            {/* Email */}
-            <CustomInput
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            {/* Phone Number */}
-            <CustomInput
-              label="Phone Number"
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Enter phone number"
-              keyboardType="phone-pad"
-            />
-
-            {/* Address */}
-            <CustomInput
-              label="Address"
-              value={address}
-              onChangeText={setAddress}
-              placeholder="Enter your address"
-            />
-
-            {/* City & Pincode */}
-            <View style={styles.nameRow}>
-              <CustomInput
-                label="City"
-                value={city}
-                onChangeText={setCity}
-                placeholder="Enter city"
-                containerStyle={styles.halfInput}
-              />
-              <CustomInput
-                label="Pincode"
-                value={pincode}
-                onChangeText={setPincode}
-                placeholder="Enter pincode"
-                keyboardType="numeric"
-                containerStyle={styles.halfInput}
-              />
-            </View>
-          </View>
-
-          {/* Delivery Method Section */}
-          <View style={styles.cardSection}>
-            <View style={styles.sectionHeaderRow}>
-              <MaterialIcons name="speed" size={22} color={Colors.primary} />
-              <Text style={styles.sectionTitle}>Delivery Method</Text>
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.radioOption,
-                deliveryMethod === 'standard' && styles.selectedRadioOption,
-              ]}
-              onPress={() => setDeliveryMethod('standard')}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons
-                name={deliveryMethod === 'standard' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                size={20}
-                color={Colors.primary}
-              />
-              <View style={styles.radioTextWrapper}>
-                <Text style={styles.radioTitle}>Standard Hazmat Delivery</Text>
-                <Text style={styles.radioSubtitle}>3-5 business days (Free over {formatCurrency(1000)})</Text>
+          {/* STEP 1: Shipping Address & Delivery Method */}
+          {currentStep === 1 && (
+            <View style={styles.cardSection}>
+              <View style={styles.sectionHeaderRow}>
+                <MaterialIcons name="local-shipping" size={22} color={Colors.primary} />
+                <Text style={styles.sectionTitle}>1. Shipping & Delivery Address</Text>
               </View>
-              <Text style={styles.radioPrice}>{subtotal > 1000 ? 'FREE' : formatCurrency(99)}</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.radioOption,
-                deliveryMethod === 'express' && styles.selectedRadioOption,
-              ]}
-              onPress={() => setDeliveryMethod('express')}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons
-                name={deliveryMethod === 'express' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                size={20}
-                color={Colors.primary}
+              {/* Name */}
+              <CustomInput
+                label="Name"
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Enter your name"
               />
-              <View style={styles.radioTextWrapper}>
-                <Text style={styles.radioTitle}>Express Priority Hazmat</Text>
-                <Text style={styles.radioSubtitle}>1-2 business days express dispatch</Text>
+
+              {/* Email */}
+              <CustomInput
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              {/* Phone Number */}
+              <CustomInput
+                label="Phone Number"
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="Enter phone number"
+                keyboardType="phone-pad"
+              />
+
+              {/* Address */}
+              <CustomInput
+                label="Street Address"
+                value={address}
+                onChangeText={setAddress}
+                placeholder="House No., Building, Street Name"
+              />
+
+              {/* City & Pincode */}
+              <View style={styles.nameRow}>
+                <CustomInput
+                  label="City"
+                  value={city}
+                  onChangeText={setCity}
+                  placeholder="Enter city"
+                  containerStyle={styles.halfInput}
+                />
+                <CustomInput
+                  label="Pincode"
+                  value={pincode}
+                  onChangeText={setPincode}
+                  placeholder="6-digit pincode"
+                  keyboardType="numeric"
+                  containerStyle={styles.halfInput}
+                />
               </View>
-              <Text style={styles.radioPrice}>{formatCurrency(250)}</Text>
-            </TouchableOpacity>
-          </View>
 
-          {/* Payment Method Section */}
-          <View style={styles.cardSection}>
-            <View style={styles.sectionHeaderRow}>
-              <MaterialIcons name="payment" size={22} color={Colors.primary} />
-              <Text style={styles.sectionTitle}>Payment Method</Text>
-            </View>
+              {/* Delivery Method Header */}
+              <View style={[styles.sectionHeaderRow, { marginTop: Spacing.md }]}>
+                <MaterialIcons name="speed" size={20} color={Colors.primary} />
+                <Text style={styles.sectionTitle}>Delivery Speed</Text>
+              </View>
 
-            {/* Razorpay Option */}
-            <TouchableOpacity
-              style={[
-                styles.paymentOptionCard,
-                paymentMethod === 'razorpay' && styles.activePaymentOptionCard,
-              ]}
-              onPress={() => setPaymentMethod('razorpay')}
-              activeOpacity={0.8}
-            >
-              <View style={styles.paymentOptionHeader}>
+              <TouchableOpacity
+                style={[
+                  styles.radioOption,
+                  deliveryMethod === 'standard' && styles.selectedRadioOption,
+                ]}
+                onPress={() => setDeliveryMethod('standard')}
+                activeOpacity={0.8}
+              >
                 <MaterialIcons
-                  name={paymentMethod === 'razorpay' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                  size={22}
+                  name={deliveryMethod === 'standard' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                  size={20}
                   color={Colors.primary}
                 />
-                <View style={styles.paymentOptionTextWrap}>
-                  <View style={styles.paymentBadgeRow}>
-                    <Text style={styles.paymentOptionTitle}>Razorpay</Text>
-                    <View style={styles.testModeBadge}>
-                      <Text style={styles.testModeBadgeText}>TEST MODE</Text>
+                <View style={styles.radioTextWrapper}>
+                  <Text style={styles.radioTitle}>Standard Hazmat Delivery</Text>
+                  <Text style={styles.radioSubtitle}>3-5 business days (Free over {formatCurrency(1000)})</Text>
+                </View>
+                <Text style={styles.radioPrice}>{subtotal > 1000 ? 'FREE' : formatCurrency(99)}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.radioOption,
+                  deliveryMethod === 'express' && styles.selectedRadioOption,
+                ]}
+                onPress={() => setDeliveryMethod('express')}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons
+                  name={deliveryMethod === 'express' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                  size={20}
+                  color={Colors.primary}
+                />
+                <View style={styles.radioTextWrapper}>
+                  <Text style={styles.radioTitle}>Express Priority Hazmat</Text>
+                  <Text style={styles.radioSubtitle}>1-2 business days express dispatch</Text>
+                </View>
+                <Text style={styles.radioPrice}>{formatCurrency(250)}</Text>
+              </TouchableOpacity>
+
+              <PrimaryButton
+                title="Proceed to Payment →"
+                onPress={handleProceedToPayment}
+                style={{ marginTop: Spacing.md }}
+              />
+            </View>
+          )}
+
+          {/* STEP 2: Payment Method */}
+          {currentStep === 2 && (
+            <View style={styles.cardSection}>
+              {/* Compact Address Summary Pill */}
+              <View style={styles.addressSummaryPill}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.summaryPillTitle}>Deliver to: {fullName || 'Customer'}</Text>
+                  <Text style={styles.summaryPillText} numberOfLines={1}>
+                    {address ? `${address}, ${city} - ${pincode}` : 'Address not specified'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.changeAddressBtn}
+                  onPress={() => setCurrentStep(1)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.changeAddressText}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.sectionHeaderRow}>
+                <MaterialIcons name="payment" size={22} color={Colors.primary} />
+                <Text style={styles.sectionTitle}>2. Choose Payment Method</Text>
+              </View>
+
+              {/* Razorpay Option */}
+              <TouchableOpacity
+                style={[
+                  styles.paymentOptionCard,
+                  paymentMethod === 'razorpay' && styles.activePaymentOptionCard,
+                ]}
+                onPress={() => setPaymentMethod('razorpay')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.paymentOptionHeader}>
+                  <MaterialIcons
+                    name={paymentMethod === 'razorpay' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                    size={22}
+                    color={Colors.primary}
+                  />
+                  <View style={styles.paymentOptionTextWrap}>
+                    <View style={styles.paymentBadgeRow}>
+                      <Text style={styles.paymentOptionTitle}>Razorpay</Text>
+                      <View style={styles.testModeBadge}>
+                        <Text style={styles.testModeBadgeText}>TEST MODE</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.paymentOptionDesc}>
+                      UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, Net Banking & Wallets
+                    </Text>
+                  </View>
+                </View>
+
+                {paymentMethod === 'razorpay' && (
+                  <View style={styles.gatewayPillsRow}>
+                    <View style={styles.gatewayPill}>
+                      <MaterialIcons name="account-balance-wallet" size={14} color={Colors.primary} />
+                      <Text style={styles.gatewayPillText}>UPI</Text>
+                    </View>
+                    <View style={styles.gatewayPill}>
+                      <MaterialIcons name="credit-card" size={14} color={Colors.primary} />
+                      <Text style={styles.gatewayPillText}>Cards</Text>
+                    </View>
+                    <View style={styles.gatewayPill}>
+                      <MaterialIcons name="account-balance" size={14} color={Colors.primary} />
+                      <Text style={styles.gatewayPillText}>Net Banking</Text>
+                    </View>
+                    <View style={styles.gatewayPill}>
+                      <MaterialIcons name="wallet" size={14} color={Colors.primary} />
+                      <Text style={styles.gatewayPillText}>Wallets</Text>
                     </View>
                   </View>
-                  <Text style={styles.paymentOptionDesc}>
-                    UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, Net Banking & Wallets
+                )}
+              </TouchableOpacity>
+
+              {/* COD Option */}
+              <TouchableOpacity
+                style={[
+                  styles.paymentOptionCard,
+                  paymentMethod === 'cod' && styles.activePaymentOptionCard,
+                  { marginTop: Spacing.sm },
+                ]}
+                onPress={() => setPaymentMethod('cod')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.paymentOptionHeader}>
+                  <MaterialIcons
+                    name={paymentMethod === 'cod' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                    size={22}
+                    color={Colors.primary}
+                  />
+                  <View style={styles.paymentOptionTextWrap}>
+                    <Text style={styles.paymentOptionTitle}>Cash on Delivery (COD)</Text>
+                    <Text style={styles.paymentOptionDesc}>Pay in cash when order arrives</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              <PrimaryButton
+                title="Review Order & Pay →"
+                onPress={() => setCurrentStep(3)}
+                style={{ marginTop: Spacing.md }}
+              />
+
+              <TouchableOpacity
+                style={styles.backStepBtn}
+                onPress={() => setCurrentStep(1)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backStepBtnText}>← Back to Shipping Address</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* STEP 3: Confirm & Order Summary */}
+          {currentStep === 3 && (
+            <View style={styles.cardSection}>
+              {/* Shipping & Payment Summary Banners */}
+              <View style={styles.addressSummaryPill}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.summaryPillTitle}>Deliver To: {fullName}</Text>
+                  <Text style={styles.summaryPillText} numberOfLines={1}>
+                    {address}, {city} - {pincode}
                   </Text>
                 </View>
+                <TouchableOpacity
+                  style={styles.changeAddressBtn}
+                  onPress={() => setCurrentStep(1)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.changeAddressText}>Change</Text>
+                </TouchableOpacity>
               </View>
 
-              {paymentMethod === 'razorpay' && (
-                <View style={styles.gatewayPillsRow}>
-                  <View style={styles.gatewayPill}>
-                    <MaterialIcons name="account-balance-wallet" size={14} color={Colors.primary} />
-                    <Text style={styles.gatewayPillText}>UPI</Text>
+              <View style={[styles.addressSummaryPill, { marginTop: Spacing.xs }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.summaryPillTitle}>Payment Method</Text>
+                  <Text style={styles.summaryPillText}>
+                    {paymentMethod === 'razorpay' ? 'Razorpay (UPI / Card / NetBanking)' : 'Cash on Delivery (COD)'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.changeAddressBtn}
+                  onPress={() => setCurrentStep(2)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.changeAddressText}>Change</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Order Summary */}
+              <View style={styles.summaryCardInner}>
+                <Text style={styles.summaryTitle}>3. Order Summary & Payment</Text>
+
+                <View style={styles.summaryRows}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Subtotal ({items.length} items)</Text>
+                    <Text style={styles.summaryValue}>{formatCurrency(subtotal)}</Text>
                   </View>
-                  <View style={styles.gatewayPill}>
-                    <MaterialIcons name="credit-card" size={14} color={Colors.primary} />
-                    <Text style={styles.gatewayPillText}>Cards</Text>
+
+                  {couponDiscount > 0 && (
+                    <View style={styles.summaryRow}>
+                      <Text style={[styles.summaryLabel, { color: '#2E7D32' }]}>
+                        Coupon Discount ({couponCode})
+                      </Text>
+                      <Text style={[styles.summaryValue, { color: '#2E7D32' }]}>
+                        -{formatCurrency(couponDiscount)}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Shipping ({deliveryMethod === 'express' ? 'Express' : 'Standard'})</Text>
+                    <Text style={styles.summaryValue}>{shippingFee === 0 ? 'FREE' : formatCurrency(shippingFee)}</Text>
                   </View>
-                  <View style={styles.gatewayPill}>
-                    <MaterialIcons name="account-balance" size={14} color={Colors.primary} />
-                    <Text style={styles.gatewayPillText}>Net Banking</Text>
-                  </View>
-                  <View style={styles.gatewayPill}>
-                    <MaterialIcons name="wallet" size={14} color={Colors.primary} />
-                    <Text style={styles.gatewayPillText}>Wallets</Text>
+
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>GST / Hazmat Tax (5%)</Text>
+                    <Text style={styles.summaryValue}>{formatCurrency(tax)}</Text>
                   </View>
                 </View>
-              )}
-            </TouchableOpacity>
 
-            {/* COD Option */}
-            <TouchableOpacity
-              style={[
-                styles.paymentOptionCard,
-                paymentMethod === 'cod' && styles.activePaymentOptionCard,
-                { marginTop: Spacing.sm },
-              ]}
-              onPress={() => setPaymentMethod('cod')}
-              activeOpacity={0.8}
-            >
-              <View style={styles.paymentOptionHeader}>
-                <MaterialIcons
-                  name={paymentMethod === 'cod' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                  size={22}
-                  color={Colors.primary}
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Payable Total</Text>
+                  <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
+                </View>
+
+                <PrimaryButton
+                  title={
+                    isPlacingOrder
+                      ? 'Processing Payment...'
+                      : paymentMethod === 'razorpay'
+                      ? `Pay Now • ${formatCurrency(total)}`
+                      : `Confirm COD Order • ${formatCurrency(total)}`
+                  }
+                  onPress={handlePlaceOrder}
+                  disabled={isPlacingOrder}
+                  style={styles.placeOrderCta}
                 />
-                <View style={styles.paymentOptionTextWrap}>
-                  <Text style={styles.paymentOptionTitle}>Cash on Delivery (COD)</Text>
-                  <Text style={styles.paymentOptionDesc}>Pay in cash when order arrives</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
 
-          {/* Order Summary */}
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Order Summary</Text>
-
-            <View style={styles.summaryRows}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Subtotal ({items.length} items)</Text>
-                <Text style={styles.summaryValue}>{formatCurrency(subtotal)}</Text>
+                {isPlacingOrder && (
+                  <View style={styles.loadingIndicatorRow}>
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                    <Text style={styles.loadingText}>Securing transaction with Razorpay...</Text>
+                  </View>
+                )}
               </View>
 
-              {couponDiscount > 0 && (
-                <View style={styles.summaryRow}>
-                  <Text style={[styles.summaryLabel, { color: '#2E7D32' }]}>
-                    Coupon Discount ({couponCode})
-                  </Text>
-                  <Text style={[styles.summaryValue, { color: '#2E7D32' }]}>
-                    -{formatCurrency(couponDiscount)}
-                  </Text>
-                </View>
-              )}
-
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Shipping ({deliveryMethod === 'express' ? 'Express' : 'Standard'})</Text>
-                <Text style={styles.summaryValue}>{shippingFee === 0 ? 'FREE' : formatCurrency(shippingFee)}</Text>
-              </View>
-
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>GST / Hazmat Tax (5%)</Text>
-                <Text style={styles.summaryValue}>{formatCurrency(tax)}</Text>
-              </View>
+              <TouchableOpacity
+                style={styles.backStepBtn}
+                onPress={() => setCurrentStep(2)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backStepBtnText}>← Back to Payment Method</Text>
+              </TouchableOpacity>
             </View>
-
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Payable Total</Text>
-              <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
-            </View>
-
-            {paymentError && (
-              <View style={[styles.errorCard, { marginHorizontal: 0, marginTop: Spacing.xs, marginBottom: Spacing.sm }]}>
-                <MaterialIcons name="error-outline" size={20} color="#D32F2F" />
-                <Text style={styles.errorText}>{paymentError}</Text>
-              </View>
-            )}
-
-            <PrimaryButton
-              title={
-                isPlacingOrder
-                  ? 'Processing Payment...'
-                  : paymentMethod === 'razorpay'
-                  ? `Pay Now • ${formatCurrency(total)}`
-                  : `Confirm COD Order • ${formatCurrency(total)}`
-              }
-              onPress={handlePlaceOrder}
-              disabled={isPlacingOrder}
-              style={styles.placeOrderCta}
-            />
-
-            {isPlacingOrder && (
-              <View style={styles.loadingIndicatorRow}>
-                <ActivityIndicator size="small" color={Colors.primary} />
-                <Text style={styles.loadingText}>Securing transaction with Razorpay...</Text>
-              </View>
-            )}
-          </View>
+          )}
         </View>
       </ScrollView>
 
@@ -615,16 +734,22 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: Spacing.xl,
   },
-  progressContainer: {
+  horizontalStepperBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surfaceContainerLowest,
     paddingHorizontal: Spacing.marginMobile,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.surfaceContainerHigh,
+    marginBottom: Spacing.sm,
   },
-  inlineBackRow: {
+  inlineBackBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: Spacing.xs,
+    paddingRight: Spacing.xs,
   },
   inlineBackText: {
     ...Typography.labelLg,
@@ -632,37 +757,56 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
-  stepItem: {
+  stepperRowHorizontal: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
   },
-  stepCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.full,
+  stepItemHorizontal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stepLineHorizontal: {
+    width: 24,
+    height: 2,
+    backgroundColor: Colors.surfaceContainerHigh,
+    marginHorizontal: 4,
+  },
+  activeStepLineHorizontal: {
+    backgroundColor: Colors.primary,
+  },
+  stepCircleHorizontal: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: Colors.surfaceContainerHigh,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
-  activeStepCircle: {
+  currentStepCircle: {
     backgroundColor: Colors.primary,
   },
-  stepNumber: {
+  completedStepCircle: {
+    backgroundColor: Colors.primary,
+  },
+  stepNumberHorizontal: {
     ...Typography.labelLg,
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter-Bold',
     color: Colors.tertiary,
   },
-  activeStepNumber: {
+  activeStepNumberHorizontal: {
     color: '#ffffff',
   },
-  stepLabel: {
+  stepLabelHorizontal: {
     ...Typography.labelLg,
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: Colors.tertiary,
   },
-  activeStepLabel: {
+  activeStepLabelHorizontal: {
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
@@ -684,7 +828,6 @@ const styles = StyleSheet.create({
   },
   checkoutContainer: {
     paddingHorizontal: Spacing.marginMobile,
-    gap: Spacing.md,
   },
   cardSection: {
     backgroundColor: Colors.surfaceContainerLowest,
@@ -706,7 +849,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...Typography.titleLg,
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
@@ -717,15 +860,12 @@ const styles = StyleSheet.create({
   halfInput: {
     flex: 1,
   },
-  quarterInput: {
-    flex: 1,
-  },
   radioOption: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surfaceContainerLow,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    padding: Spacing.sm,
     marginBottom: Spacing.xs,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
@@ -752,6 +892,42 @@ const styles = StyleSheet.create({
   radioPrice: {
     ...Typography.titleLg,
     fontSize: 14,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+  },
+  addressSummaryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.sm,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+  },
+  summaryPillTitle: {
+    ...Typography.titleLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+  },
+  summaryPillText: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    color: Colors.onSurfaceVariant,
+    marginTop: 2,
+  },
+  changeAddressBtn: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    backgroundColor: Colors.primaryFixed,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  changeAddressText: {
+    ...Typography.labelLg,
+    fontSize: 12,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
@@ -829,21 +1005,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: Colors.onSurface,
   },
-  summaryCard: {
-    backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.surfaceContainerHigh,
-    shadowColor: Colors.shadowColor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+  summaryCardInner: {
+    marginTop: Spacing.xs,
   },
   summaryTitle: {
     ...Typography.headlineLg,
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
     marginBottom: Spacing.sm,
@@ -878,18 +1045,30 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     ...Typography.headlineLg,
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   totalValue: {
     ...Typography.headlineLg,
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
   placeOrderCta: {
     marginTop: Spacing.xs,
+  },
+  backStepBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  backStepBtnText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Medium',
+    color: Colors.tertiary,
   },
   loadingIndicatorRow: {
     flexDirection: 'row',

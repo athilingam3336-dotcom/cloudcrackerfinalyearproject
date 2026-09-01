@@ -4,6 +4,7 @@
  */
 
 import { InstagramAuthPayload } from '@/services/authService';
+import { ENV } from '@/config/env';
 
 export interface SavedInstagramAccount {
   username: string;
@@ -33,6 +34,17 @@ const DEFAULT_INSTAGRAM_ACCOUNTS: SavedInstagramAccount[] = [
 ];
 
 class InstagramAuthManager {
+  getAuthorizationUrl(customRedirectUri?: string): string {
+    const clientId = ENV.INSTAGRAM_CLIENT_ID || '2262885951230627';
+    const redirectUri = encodeURIComponent(
+      customRedirectUri ||
+        (typeof window !== 'undefined' && window.location?.origin
+          ? window.location.origin
+          : 'https://cloudcrackerfinalyearproject-1.onrender.com')
+    );
+    return `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`;
+  }
+
   getSavedAccounts(): SavedInstagramAccount[] {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -52,7 +64,7 @@ class InstagramAuthManager {
     onSuccess: (payload: InstagramAuthPayload) => void,
     onError: (error: string) => void
   ): Promise<boolean> {
-    const clientId = '2262885951230627';
+    const clientId = ENV.INSTAGRAM_CLIENT_ID || '2262885951230627';
     if (!clientId) return false;
     if (typeof window === 'undefined') return false;
 
@@ -60,7 +72,9 @@ class InstagramAuthManager {
       const redirectUri = encodeURIComponent(
         window.location.origin || 'https://cloudcrackerfinalyearproject-1.onrender.com'
       );
-      const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code`;
+      const authUrl = this.getAuthorizationUrl(
+        window.location.origin || 'https://cloudcrackerfinalyearproject-1.onrender.com'
+      );
 
       const width = 600;
       const height = 700;
