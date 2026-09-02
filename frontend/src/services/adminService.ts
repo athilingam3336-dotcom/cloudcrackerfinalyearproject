@@ -7,6 +7,7 @@
 import { ProductItem } from '@/constants/mockData';
 import { apiClient } from '@/api/axios';
 import { ENV } from '@/config/env';
+import { productService } from './productService';
 
 export function normalizeAdminOrderStatus(rawStatus?: string): string {
   if (!rawStatus) return 'Pending';
@@ -520,13 +521,19 @@ export class AdminService {
     search = '',
     categoryId = ''
   ): Promise<AdminProductsResponse> {
-    const params: Record<string, any> = { page, limit };
+    const params: Record<string, any> = { page, limit, _t: Date.now() };
     if (search.trim()) params.search = search.trim();
     if (categoryId && categoryId !== 'All' && categoryId !== 'all') {
       params.category_id = categoryId;
     }
 
-    const { data: res } = await apiClient.get('/products', { params });
+    const { data: res } = await apiClient.get('/products', {
+      params,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+      },
+    });
     const payload = res?.data || res;
     const items = Array.isArray(payload?.products)
       ? payload.products
@@ -631,11 +638,13 @@ export class AdminService {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const payload = res?.data || res;
+      productService.clearCache();
       return this.mapBackendProductToUI(payload);
     }
 
     const { data: res } = await apiClient.post('/products', product);
     const payload = res?.data || res;
+    productService.clearCache();
     return this.mapBackendProductToUI(payload);
   }
 
@@ -686,16 +695,19 @@ export class AdminService {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const payload = res?.data || res;
+      productService.clearCache();
       return this.mapBackendProductToUI(payload);
     }
 
     const { data: res } = await apiClient.put(`/products/${id}`, updates);
     const payload = res?.data || res;
+    productService.clearCache();
     return this.mapBackendProductToUI(payload);
   }
 
   async deleteAdminProduct(id: string): Promise<boolean> {
     const { data: res } = await apiClient.delete(`/products/${id}`);
+    productService.clearCache();
     return res?.success !== undefined ? res.success : true;
   }
 

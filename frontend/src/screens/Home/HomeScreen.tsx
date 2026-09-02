@@ -149,16 +149,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('Categories');
   }, [navigation]);
 
+  const activeBanners = useMemo(() => {
+    const featuredAsBanners: BannerItem[] = products
+      .filter((p: any) => p.badge === 'Featured' || p.badge === 'Bestseller' || p.isFeatured || p.is_featured)
+      .map((p: any) => ({
+        id: p.id,
+        tag: p.badge ? `✨ ${p.badge}` : '✨ Featured Deal',
+        title: p.title || p.name,
+        subtitle: p.subtitle || p.description || 'Exclusive Sivakasi celebration pyrotechnics.',
+        discountText: p.originalPrice && p.originalPrice > p.price
+          ? `Save ₹${p.originalPrice - p.price}`
+          : 'Special Offer',
+        ctaText: 'Shop Now',
+        imageUrl: p.imageUrl,
+      }));
+
+    if (featuredAsBanners.length > 0) {
+      return [...featuredAsBanners, ...MOCK_BANNERS];
+    }
+    return MOCK_BANNERS;
+  }, [products]);
+
   const handleBannerPress = useCallback(
     (banner: BannerItem) => {
-      if (banner.id === 'banner1') {
-        navigation.navigate('ProductListing', { categoryId: '660000000000000000000007', query: 'Shot' });
-      } else if (banner.id === 'banner2') {
-        navigation.navigate('ProductListing', { categoryId: '660000000000000000000004', query: 'Rocket' });
-      } else if (banner.id === 'banner3') {
-        navigation.navigate('ProductListing', { categoryId: '660000000000000000000001', query: 'Sparkler' });
+      if (banner.id.startsWith('banner')) {
+        if (banner.id === 'banner1') {
+          navigation.navigate('ProductListing', { categoryId: '660000000000000000000007', query: 'Shot' });
+        } else if (banner.id === 'banner2') {
+          navigation.navigate('ProductListing', { categoryId: '660000000000000000000004', query: 'Rocket' });
+        } else if (banner.id === 'banner3') {
+          navigation.navigate('ProductListing', { categoryId: '660000000000000000000001', query: 'Sparkler' });
+        } else {
+          navigation.navigate('ProductListing', { query: banner.tag });
+        }
       } else {
-        navigation.navigate('ProductListing', { query: banner.tag });
+        navigation.navigate('ProductDetails', { productId: banner.id });
       }
     },
     [navigation]
@@ -404,7 +429,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
         {/* Hero Banner Carousel */}
         <BannerCarousel
-          banners={MOCK_BANNERS}
+          banners={activeBanners}
           onBannerPress={handleBannerPress}
         />
 
