@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { MOCK_PRODUCTS, ProductItem } from '@/constants/mockData';
 import { cartService } from '@/services/cartService';
 import { ENV } from '@/config/env';
+import { triggerPyrotechnicCartEffect } from '@/utils/pyrotechnicEffects';
 
 export interface ProductVariantOption {
   size?: string;
@@ -74,6 +75,14 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     // Optimistic Update: Immediately update cart items in memory (0ms)
     set({ items: updatedItems });
+
+    // Trigger Pyrotechnic Action Animation & Audio Synthesizer Effect!
+    try {
+      triggerPyrotechnicCartEffect(
+        (product as any).title || (product as any).name || 'Cracker Product',
+        (product as any).category || ''
+      );
+    } catch {}
 
     try {
       await cartService.addToCartApi(product.id, quantity);

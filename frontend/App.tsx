@@ -17,6 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { RazorpayWebViewCheckout } from '@/components/payment/RazorpayWebViewCheckout';
+import { PyrotechnicEffectOverlay } from '@/components/effects/PyrotechnicEffectOverlay';
 
 import { useUiStore } from '@/store';
 
@@ -182,6 +183,7 @@ export default function App() {
           <StatusBar style={isDarkMode ? 'light' : 'dark'} />
           <RootNavigator />
           <RazorpayWebViewCheckout />
+          <PyrotechnicEffectOverlay />
         </NavigationContainer>
       </ThemeAppController>
     </SafeAreaProvider>
