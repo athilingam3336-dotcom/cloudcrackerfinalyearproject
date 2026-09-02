@@ -197,6 +197,7 @@ export interface AdminProductItemUI {
   isFlashSale: boolean;
   isRecommended: boolean;
   isActive: boolean;
+  timeOfDay?: 'morning' | 'night' | 'both';
   rating: number;
   reviewsCount: number;
   createdAt: string;
@@ -1177,6 +1178,7 @@ export class AdminService {
       isFlashSale: Boolean(p.is_flash_sale || p.isFlashSale),
       isRecommended: Boolean(p.is_recommended || p.isRecommended),
       isActive: p.is_active !== undefined ? Boolean(p.is_active) : (p.status !== 'deleted'),
+      timeOfDay: (p.time_of_day || p.timeOfDay || 'both') as any,
       rating: p.rating || p.average_rating || 5.0,
       reviewsCount: p.reviews_count || p.total_reviews || 0,
       createdAt: p.created_at || new Date().toISOString(),

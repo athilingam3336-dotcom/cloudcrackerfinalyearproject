@@ -81,6 +81,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [formIsBestseller, setFormIsBestseller] = useState(false);
   const [formIsFlashSale, setFormIsFlashSale] = useState(false);
   const [formIsRecommended, setFormIsRecommended] = useState(false);
+  const [formTimeOfDay, setFormTimeOfDay] = useState<'morning' | 'night' | 'both'>('both');
 
   // Product Image State
   const [selectedImage, setSelectedImage] = useState<SelectedProductImage | null>(null);
@@ -256,6 +257,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     setFormIsBestseller(false);
     setFormIsFlashSale(false);
     setFormIsRecommended(false);
+    setFormTimeOfDay('both');
     setSelectedImage(null);
     setFormExistingImageUrl(null);
     setImageError(null);
@@ -276,6 +278,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       setFormIsBestseller(Boolean(product.isBestseller));
       setFormIsFlashSale(Boolean(product.isFlashSale));
       setFormIsRecommended(Boolean(product.isRecommended));
+      setFormTimeOfDay(product.timeOfDay || 'both');
       setSelectedImage(null);
       setFormExistingImageUrl(
         product.imageUrl || (product.images && product.images.length > 0 ? product.images[0] : null)
@@ -346,8 +349,9 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           is_bestseller: formIsBestseller,
           is_flash_sale: formIsFlashSale,
           is_recommended: formIsRecommended,
+          time_of_day: formTimeOfDay,
         });
-        Alert.alert('Success', `Product "${formName}" updated successfully with Cloudinary asset.`);
+        Alert.alert('Success', `Product "${formName}" updated successfully.`);
       } else {
         await adminService.createProduct({
           name: formName.trim(),
@@ -362,8 +366,9 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           is_bestseller: formIsBestseller,
           is_flash_sale: formIsFlashSale,
           is_recommended: formIsRecommended,
+          time_of_day: formTimeOfDay,
         });
-        Alert.alert('Success', `Product "${formName}" uploaded to Cloudinary and registered in MongoDB.`);
+        Alert.alert('Success', `Product "${formName}" created successfully.`);
       }
       setIsProductModalVisible(false);
       fetchProducts();
@@ -562,6 +567,9 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                 <MaterialIcons name="edit" size={10} color={Colors.tertiary} />
               </TouchableOpacity>
 
+              {item.timeOfDay === 'morning' && <Text style={[styles.flagChip, { backgroundColor: '#FFF3E0', color: '#E65100' }]}>☀️ Morning</Text>}
+              {item.timeOfDay === 'night' && <Text style={[styles.flagChip, { backgroundColor: '#EDE7F6', color: '#4A148C' }]}>🌙 Night</Text>}
+              {item.timeOfDay === 'both' && <Text style={[styles.flagChip, { backgroundColor: '#E8F5E9', color: '#1B5E20' }]}>☀️🌙 Both</Text>}
               {item.isFeatured && <Text style={styles.flagChip}>Featured</Text>}
               {item.isBestseller && <Text style={styles.flagChip}>Bestseller</Text>}
               {item.isFlashSale && <Text style={styles.flagChip}>Flash Sale</Text>}
@@ -1012,6 +1020,50 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               keyboardType="numeric"
               placeholder="e.g. 50"
             />
+
+            {/* Celebration Timing Selector */}
+            <Text style={styles.formSectionLabel}>Celebration Burst Timing *</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+              {[
+                { label: '☀️ Morning', value: 'morning', icon: 'wb-sunny', color: '#ED6C02' },
+                { label: '🌙 Night', value: 'night', icon: 'nights-stay', color: '#673AB7' },
+                { label: '☀️🌙 Both', value: 'both', icon: 'wb-twilight', color: '#2E7D32' },
+              ].map((t) => {
+                const isSel = formTimeOfDay === t.value;
+                return (
+                  <TouchableOpacity
+                    key={t.value}
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingVertical: 10,
+                      paddingHorizontal: 8,
+                      borderRadius: BorderRadius.lg,
+                      borderWidth: isSel ? 2 : 1,
+                      borderColor: isSel ? Colors.primary : Colors.surfaceContainerHigh,
+                      backgroundColor: isSel ? Colors.primaryContainer : Colors.surfaceContainerLowest,
+                      gap: 4,
+                    }}
+                    onPress={() => setFormTimeOfDay(t.value as any)}
+                    activeOpacity={0.8}
+                  >
+                    <MaterialIcons name={t.icon as any} size={16} color={isSel ? Colors.primary : t.color} />
+                    <Text
+                      style={{
+                        ...Typography.labelLg,
+                        fontSize: 12,
+                        color: isSel ? Colors.primary : Colors.onSurface,
+                        fontFamily: isSel ? 'Inter-Bold' : 'Inter-Regular',
+                      }}
+                    >
+                      {t.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
             {/* Feature Flags */}
             <Text style={styles.formSectionLabel}>Product Badges & Visibility</Text>

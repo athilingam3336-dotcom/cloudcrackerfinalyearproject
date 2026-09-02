@@ -56,6 +56,7 @@ async def create_product(
         is_bestseller = str(form.get("is_bestseller", "false")).lower() in ("true", "1")
         is_flash_sale = str(form.get("is_flash_sale", "false")).lower() in ("true", "1")
         is_recommended = str(form.get("is_recommended", "false")).lower() in ("true", "1")
+        time_of_day = str(form.get("time_of_day", "both")).lower()
 
         raw_file = form.get("image") or form.get("file")
         if raw_file and hasattr(raw_file, "filename") and bool(raw_file.filename):
@@ -92,6 +93,7 @@ async def create_product(
                 is_bestseller=is_bestseller,
                 is_flash_sale=is_flash_sale,
                 is_recommended=is_recommended,
+                time_of_day=time_of_day,
             )
         except Exception as e:
             raise ValidationException(message=str(e))
@@ -174,6 +176,8 @@ async def update_product(
                 "true",
                 "1",
             )
+        if "time_of_day" in form:
+            update_kwargs["time_of_day"] = str(form.get("time_of_day")).lower()
         if "image_url" in form:
             update_kwargs["image_url"] = str(form.get("image_url"))
 

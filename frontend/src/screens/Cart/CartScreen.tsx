@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -27,6 +28,9 @@ import { resolveProductImage } from '@/constants/productImages';
 type CartScreenProps = NativeStackScreenProps<RootStackParamList, 'Cart'>;
 
 export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 700;
+
   const {
     items: cartItems,
     discount,
@@ -104,7 +108,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
             onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
             activeOpacity={0.7}
           >
-            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
+            <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
             <Text style={styles.inlineBackText}>Back</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Your Shopping Cart</Text>
@@ -114,9 +118,9 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
         </View>
 
         {cartItems.length > 0 ? (
-          <View style={styles.cartContainer}>
+          <View style={[styles.cartContainer, isDesktop && styles.cartContainerDesktop]}>
             {/* Cart Items List */}
-            <View style={styles.itemsList}>
+            <View style={[styles.itemsList, isDesktop && styles.itemsListDesktop]}>
               {cartItems.map(({ product, quantity }) => (
                 <View key={product.id} style={styles.cartItemCard}>
                   <Image
@@ -185,7 +189,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
             </View>
 
             {/* Order Summary & Coupon Section */}
-            <View style={styles.summaryCard}>
+            <View style={[styles.summaryCard, isDesktop && styles.summaryCardDesktop]}>
               <Text style={styles.summaryTitle}>Order Summary</Text>
 
               {/* Coupon Form */}
@@ -283,59 +287,67 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     paddingHorizontal: Spacing.marginMobile,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
+    marginTop: 4,
+    marginBottom: 8,
   },
   inlineBackRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: Spacing.xs,
+    marginBottom: 2,
   },
   inlineBackText: {
     ...Typography.labelLg,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
   title: {
     ...Typography.headlineLg,
-    fontSize: 26,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   subtitle: {
     ...Typography.bodyMd,
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.onSurfaceVariant,
-    marginTop: 4,
+    marginTop: 2,
   },
   cartContainer: {
     paddingHorizontal: Spacing.marginMobile,
-    gap: Spacing.lg,
+    gap: Spacing.md,
+  },
+  cartContainerDesktop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 20,
   },
   itemsList: {
-    gap: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  itemsListDesktop: {
+    flex: 1.3,
   },
   cartItemCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xs,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
     shadowColor: Colors.shadowColor,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-    gap: Spacing.sm,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+    gap: Spacing.xs,
   },
   itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: BorderRadius.lg,
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surfaceContainerLow,
   },
   itemInfo: {
@@ -343,27 +355,27 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     ...Typography.titleLg,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   itemSubtitle: {
     ...Typography.bodyMd,
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.onSurfaceVariant,
-    marginTop: 2,
+    marginTop: 1,
   },
   itemPrice: {
     ...Typography.titleLg,
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
-    marginTop: 4,
+    marginTop: 2,
   },
   itemActions: {
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 80,
+    height: 60,
   },
   deleteButton: {
     padding: 4,
@@ -391,7 +403,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
     shadowColor: Colors.shadowColor,
@@ -400,35 +412,41 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
+  summaryCardDesktop: {
+    flex: 1,
+    maxWidth: 400,
+  },
   summaryTitle: {
     ...Typography.headlineLg,
-    fontSize: 20,
+    fontSize: 17,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
-    marginBottom: Spacing.md,
+    marginBottom: 8,
   },
   couponRow: {
     flexDirection: 'row',
     gap: Spacing.xs,
-    marginBottom: Spacing.md,
+    marginBottom: 8,
   },
   couponInput: {
     flex: 1,
     backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.md,
-    height: 44,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.sm,
+    height: 38,
     ...Typography.bodyMd,
+    fontSize: 12,
     color: Colors.onSurface,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
   },
   applyCouponBtn: {
     backgroundColor: Colors.surfaceContainerHigh,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 38,
   },
   applyCouponText: {
     ...Typography.labelLg,
@@ -437,8 +455,8 @@ const styles = StyleSheet.create({
     color: Colors.onSurface,
   },
   summaryRows: {
-    gap: Spacing.xs,
-    paddingBottom: Spacing.sm,
+    gap: 4,
+    paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: Colors.surfaceContainerHigh,
   },
@@ -449,12 +467,12 @@ const styles = StyleSheet.create({
   },
   summaryRowLabel: {
     ...Typography.bodyMd,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.onSurfaceVariant,
   },
   summaryRowValue: {
     ...Typography.titleLg,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
@@ -462,17 +480,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: Spacing.md,
+    marginVertical: 8,
   },
   totalLabel: {
     ...Typography.headlineLg,
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   totalValue: {
     ...Typography.headlineLg,
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },

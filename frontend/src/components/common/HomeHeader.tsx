@@ -12,6 +12,7 @@ interface HomeHeaderProps {
   onProfilePress: () => void;
   onCartPress: () => void;
   onBackPress?: () => void;
+  onLogoPress?: () => void;
   notificationCount?: number;
   userName?: string;
   avatarUrl?: string;
@@ -23,6 +24,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
     onProfilePress,
     onCartPress,
     onBackPress,
+    onLogoPress,
     notificationCount = 3,
     userName,
     avatarUrl,
@@ -54,7 +56,12 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             />
           ) : null}
 
-          <View style={styles.titleContainer}>
+          <TouchableOpacity
+            style={styles.titleContainer}
+            onPress={onLogoPress}
+            activeOpacity={onLogoPress ? 0.7 : 1}
+            disabled={!onLogoPress}
+          >
             <View style={styles.brandTitleRow}>
               <Text
                 style={[
@@ -70,7 +77,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             <Text style={styles.greetingText} numberOfLines={1}>
               Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
             </Text>
-          </View>
+          </TouchableOpacity>
 
           {!onBackPress && !isSmallScreen && (
             <Image

@@ -230,8 +230,44 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
         if (!matchesSearch) return false;
       }
 
-      // 3. Sub-filter chip match (e.g. ON SALE)
-      if (selectedFilterChip === 'ON SALE') {
+      // 3. Sub-filter chip match (e.g. MORNING, NIGHT, ON SALE)
+      if (selectedFilterChip === '☀️ MORNING') {
+        const tod = product.timeOfDay || (product as any).time_of_day;
+        if (tod === 'night') return false;
+        if (tod === 'morning' || tod === 'both') return true;
+
+        const isMorning =
+          titleLower.includes('sparkler') ||
+          titleLower.includes('bomb') ||
+          titleLower.includes('chakkar') ||
+          titleLower.includes('bijili') ||
+          titleLower.includes('sound') ||
+          titleLower.includes('pencil') ||
+          catLower.includes('sparkler') ||
+          catLower.includes('bomb') ||
+          catLower.includes('chakkar') ||
+          catLower.includes('bijili') ||
+          catLower.includes('kid');
+        if (!isMorning) return false;
+      } else if (selectedFilterChip === '🌙 NIGHT') {
+        const tod = product.timeOfDay || (product as any).time_of_day;
+        if (tod === 'morning') return false;
+        if (tod === 'night' || tod === 'both') return true;
+
+        const isNight =
+          titleLower.includes('rocket') ||
+          titleLower.includes('pot') ||
+          titleLower.includes('fountain') ||
+          titleLower.includes('shot') ||
+          titleLower.includes('cake') ||
+          titleLower.includes('gift') ||
+          catLower.includes('rocket') ||
+          catLower.includes('pot') ||
+          catLower.includes('shot') ||
+          catLower.includes('aerial') ||
+          catLower.includes('gift');
+        if (!isNight) return false;
+      } else if (selectedFilterChip === 'ON SALE') {
         const isSale =
           Boolean(product.originalPrice && product.originalPrice > product.price) ||
           (product.badge || '').toLowerCase().includes('sale') ||
@@ -317,6 +353,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
+          onLogoPress={() => navigation.navigate('Home')}
           onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
@@ -345,11 +382,11 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
 
           <Text style={styles.breadcrumbDivider}>|</Text>
 
-          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} activeOpacity={0.7}>
             <Text style={styles.breadcrumbLink}>HOME</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
-          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Categories'))} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => navigation.navigate('Categories')} activeOpacity={0.7}>
             <Text style={styles.breadcrumbLink}>CATEGORIES</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
@@ -406,7 +443,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filterChipsContent}
             >
-              {['ALL', 'ROCKETS', 'SPARKLERS', 'POTS & FOUNTAINS', 'BOMBS', 'MULTI-SHOT', 'ON SALE'].map((chip) => {
+              {['ALL', '☀️ MORNING', '🌙 NIGHT', 'ROCKETS', 'SPARKLERS', 'POTS & FOUNTAINS', 'BOMBS', 'MULTI-SHOT', 'ON SALE'].map((chip) => {
                 const isSelected = selectedFilterChip === chip;
                 return (
                   <TouchableOpacity

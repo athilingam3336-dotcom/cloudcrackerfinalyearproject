@@ -208,6 +208,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Header Bar with Back Button */}
       <HomeHeader
+        onLogoPress={() => navigation.navigate('Home')}
         onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
@@ -229,12 +230,12 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
 
           <Text style={styles.breadcrumbDivider}>|</Text>
 
-          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))} activeOpacity={0.7}>
-            <Text style={styles.breadcrumbLink}>Shop</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} activeOpacity={0.7}>
+            <Text style={styles.breadcrumbLink}>HOME</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
-          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Categories'))} activeOpacity={0.7}>
-            <Text style={styles.breadcrumbLink}>{currentDisplayItem.category || product.category}</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Categories')} activeOpacity={0.7}>
+            <Text style={styles.breadcrumbLink}>CATEGORIES</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
           <Text style={styles.breadcrumbActive} numberOfLines={1}>

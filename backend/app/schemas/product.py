@@ -17,6 +17,7 @@ class ProductCreate(BaseModel):
     is_bestseller: bool = False
     is_flash_sale: bool = False
     is_recommended: bool = False
+    time_of_day: Optional[str] = "both"
 
     @field_validator("category_id")
     @classmethod
@@ -46,6 +47,7 @@ class ProductUpdate(BaseModel):
     is_flash_sale: Optional[bool] = None
     is_recommended: Optional[bool] = None
     is_active: Optional[bool] = None
+    time_of_day: Optional[str] = None
 
     @field_validator("category_id")
     @classmethod
@@ -85,6 +87,7 @@ class ProductResponse(BaseModel):
     is_flash_sale: bool = False
     is_recommended: bool = False
     is_active: bool = True
+    time_of_day: Optional[str] = "both"
     created_at: datetime
     updated_at: datetime
     status: str = "active"

@@ -39,7 +39,7 @@ const getNumColumns = (width: number) => {
 
 export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'popular' | 'trending'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'morning' | 'night'>('all');
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
 
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -61,7 +61,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
     };
   }, []);
 
-  // Filter categories by search query and category tags
+  // Filter categories by search query and morning/night tags
   const filteredCategories = useMemo(() => {
     return categories.filter((cat) => {
       const matchesSearch =
@@ -69,10 +69,27 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
         cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (cat.description && cat.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchesFilter =
-        selectedFilter === 'all' ||
-        (selectedFilter === 'popular' && cat.isPopular) ||
-        (selectedFilter === 'trending' && cat.isTrending);
+      const catName = cat.name.toLowerCase();
+
+      let matchesFilter = true;
+      if (selectedFilter === 'morning') {
+        matchesFilter =
+          catName.includes('sparkler') ||
+          catName.includes('chakkar') ||
+          catName.includes('bomb') ||
+          catName.includes('bijili') ||
+          catName.includes('sound') ||
+          catName.includes('kid');
+      } else if (selectedFilter === 'night') {
+        matchesFilter =
+          catName.includes('rocket') ||
+          catName.includes('pot') ||
+          catName.includes('fountain') ||
+          catName.includes('aerial') ||
+          catName.includes('shot') ||
+          catName.includes('star') ||
+          catName.includes('gift');
+      }
 
       return matchesSearch && matchesFilter;
     });
@@ -154,31 +171,31 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.filterChip, selectedFilter === 'popular' && styles.activeFilterChip]}
-            onPress={() => setSelectedFilter('popular')}
+            style={[styles.filterChip, selectedFilter === 'morning' && styles.activeFilterChip]}
+            onPress={() => setSelectedFilter('morning')}
             activeOpacity={0.8}
           >
             <Text
               style={[
                 styles.filterChipText,
-                selectedFilter === 'popular' && styles.activeFilterChipText,
+                selectedFilter === 'morning' && styles.activeFilterChipText,
               ]}
             >
-              🔥 Popular
+              ☀️ Morning Crackers
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.filterChip, selectedFilter === 'trending' && styles.activeFilterChip]}
-            onPress={() => setSelectedFilter('trending')}
+            style={[styles.filterChip, selectedFilter === 'night' && styles.activeFilterChip]}
+            onPress={() => setSelectedFilter('night')}
             activeOpacity={0.8}
           >
             <Text
               style={[
                 styles.filterChipText,
-                selectedFilter === 'trending' && styles.activeFilterChipText,
+                selectedFilter === 'night' && styles.activeFilterChipText,
               ]}
             >
-              ⚡ Trending
+              🌙 Night Crackers
             </Text>
           </TouchableOpacity>
         </View>
