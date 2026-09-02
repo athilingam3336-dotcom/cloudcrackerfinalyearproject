@@ -111,3 +111,53 @@ async def test_admin_dashboard_metrics_unauthorized(client: AsyncClient, custome
     """Tests that customers are forbidden from loading the admin dashboard (403)."""
     response = await client.get("/api/v1/admin/dashboard", headers=customer_headers)
     assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_dashboard_recent_orders_excludes_deleted(
+    client: AsyncClient, admin_headers: dict, customer_headers: dict
+):
+    """Tests that soft deleted orders do not appear in recent orders feed on the admin dashboard."""
+    cat_res = await client.post(
+        "/api/v1/categories",
+        json={"name": "Crackers", "description": "Sparklers", "image_url": "http://example.com/c.jpg"},
+        headers=admin_headers,
+    )
+    cat_id = cat_res.json()["data"]["id"]
+
+    prod_res = await client.post(
+        "/api/v1/products",
+        json={"name": "Sparkler", "description": "7cm", "price": 50.0, "category_id": cat_id, "stock": 20},
+        headers=admin_headers,
+    )
+    prod_id = prod_res.json()["data"]["id"]
+
+    await client.post("/api/v1/cart/add", json={"product_id": prod_id, "quantity": 1}, headers=customer_headers)
+    create_res = await client.post(
+        "/api/v1/orders/checkout",
+        json={"payment_method": "COD", "shipping_address": "Test Addr"},
+        headers=customer_headers,
+    )
+    ord_id = create_res.json()["data"]["id"]
+
+    # Cancel order so it becomes eligible for deletion
+    await client.put(f"/api/v1/orders/{ord_id}/cancel", headers=customer_headers)
+
+    # Soft delete order
+    del_res = await client.delete(f"/api/v1/orders/{ord_id}", headers=admin_headers)
+    assert del_res.status_code == 200
+
+    # Fetch dashboard analytics without cache hit
+    import app.services.dashboard_service as ds
+    ds._dashboard_cache.clear()
+    ds._dashboard_cache_time = 0.0
+
+    dash_res = await client.get("/api/v1/admin/dashboard", headers=admin_headers)
+    assert dash_res.status_code == 200
+    recent = dash_res.json()["data"]["recent_orders"]
+    recent_ids = [o["id"] for o in recent]
+    assert ord_id not in recent_ids
+
+
+
+

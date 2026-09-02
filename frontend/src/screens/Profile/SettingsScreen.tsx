@@ -25,8 +25,6 @@ type SettingsScreenProps = NativeStackScreenProps<RootStackParamList, 'Settings'
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [promoNotifs, setPromoNotifs] = useState(true);
   const [orderNotifs, setOrderNotifs] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [biometricAuth, setBiometricAuth] = useState(false);
 
   // About configuration state
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
@@ -159,38 +157,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
               <Switch
                 value={orderNotifs}
                 onValueChange={setOrderNotifs}
-                trackColor={{ false: Colors.surfaceContainerHigh, true: Colors.primary }}
-              />
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.settingsGroup}>
-          <Text style={styles.groupHeader}>APP PREFERENCES</Text>
-
-          <View style={styles.settingCard}>
-            <View style={styles.settingRow}>
-              <View style={styles.settingTextContent}>
-                <Text style={styles.settingTitle}>Dark Theme</Text>
-                <Text style={styles.settingSubtitle}>Switch to dark mode theme aesthetic</Text>
-              </View>
-              <Switch
-                value={darkMode}
-                onValueChange={setDarkMode}
-                trackColor={{ false: Colors.surfaceContainerHigh, true: Colors.primary }}
-              />
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.settingRow}>
-              <View style={styles.settingTextContent}>
-                <Text style={styles.settingTitle}>Biometric Authentication</Text>
-                <Text style={styles.settingSubtitle}>Enable Face ID / Fingerprint checkout</Text>
-              </View>
-              <Switch
-                value={biometricAuth}
-                onValueChange={setBiometricAuth}
                 trackColor={{ false: Colors.surfaceContainerHigh, true: Colors.primary }}
               />
             </View>

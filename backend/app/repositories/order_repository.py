@@ -39,7 +39,8 @@ class OrderRepository:
             return []
         return await Order.find(
             Order.user_id == uid,
-            Order.customer_deleted_at == None
+            Order.customer_deleted_at == None,
+            Order.admin_deleted_at == None
         ).sort(-Order.created_at).to_list()
 
     async def get_order_items(self, order_id: str) -> List[OrderItem]:
@@ -58,7 +59,8 @@ class OrderRepository:
             return 0
         return await Order.find(
             Order.user_id == uid,
-            Order.customer_deleted_at == None
+            Order.customer_deleted_at == None,
+            Order.admin_deleted_at == None
         ).count()
 
     async def update(self, order: Order, update_data: Dict[str, Any]) -> Order:
@@ -83,7 +85,8 @@ class OrderRepository:
 
         orders = await Order.find(
             Order.user_id == uid,
-            Order.customer_deleted_at == None
+            Order.customer_deleted_at == None,
+            Order.admin_deleted_at == None
         ).to_list()
 
         total_orders = len(orders)

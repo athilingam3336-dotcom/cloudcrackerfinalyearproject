@@ -208,12 +208,15 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
+    minHeight: 14,
   },
   title: {
     ...Typography.titleLg,
     fontSize: 14,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
+    minHeight: 38,
+    lineHeight: 19,
   },
   ratingRow: {
     flexDirection: 'row',

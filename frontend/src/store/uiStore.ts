@@ -7,10 +7,11 @@ export interface UiState {
 
   // Razorpay WebView Modal State
   razorpayModalVisible: boolean;
-  razorpayOptions: any | null; // We can use 'any' or import the type if available
+  razorpayOptions: any | null;
   
   // Actions
   toggleDarkMode: () => void;
+  setDarkMode: (isDarkMode: boolean) => void;
   setDrawerOpen: (open: boolean) => void;
   showToast: (message: string) => void;
   hideToast: () => void;
@@ -27,6 +28,8 @@ export const useUiStore = create<UiState>((set) => ({
   razorpayOptions: null,
 
   toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+
+  setDarkMode: (isDarkMode) => set({ isDarkMode }),
 
   setDrawerOpen: (isDrawerOpen) => set({ isDrawerOpen }),
 

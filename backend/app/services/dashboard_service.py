@@ -36,12 +36,13 @@ class DashboardService:
             {"$group": {"_id": None, "total_stock": {"$sum": "$stock"}}},
         ]
         rev_pipeline = [
-            {"$match": {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}},
+            {"$match": {"admin_deleted_at": None, "order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total"}}},
         ]
         today_rev_pipeline = [
             {
                 "$match": {
+                    "admin_deleted_at": None,
                     "created_at": {"$gte": today_start},
                     "order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}},
                 }
@@ -74,13 +75,13 @@ class DashboardService:
             User.find(User.role == "ADMIN").count(),
             Category.find(Category.status != "deleted").count(),
             Product.find(Product.status != "deleted").count(),
-            Order.find().count(),
-            Order.find({"order_status": {"$regex": "^pending$", "$options": "i"}}).count(),
-            Order.find({"order_status": {"$regex": "^delivered$", "$options": "i"}}).count(),
-            Order.find({"order_status": {"$regex": "^cancelled$", "$options": "i"}}).count(),
-            Order.find(Order.created_at >= today_start).count(),
-            Order.find(Order.created_at >= last_30_start, {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}).count(),
-            Order.find(Order.created_at >= prev_30_start, Order.created_at < last_30_start, {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}).count(),
+            Order.find(Order.admin_deleted_at == None).count(),
+            Order.find(Order.admin_deleted_at == None, {"order_status": {"$regex": "^pending$", "$options": "i"}}).count(),
+            Order.find(Order.admin_deleted_at == None, {"order_status": {"$regex": "^delivered$", "$options": "i"}}).count(),
+            Order.find(Order.admin_deleted_at == None, {"order_status": {"$regex": "^cancelled$", "$options": "i"}}).count(),
+            Order.find(Order.admin_deleted_at == None, Order.created_at >= today_start).count(),
+            Order.find(Order.admin_deleted_at == None, Order.created_at >= last_30_start, {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}).count(),
+            Order.find(Order.admin_deleted_at == None, Order.created_at >= prev_30_start, Order.created_at < last_30_start, {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}).count(),
             User.find(User.created_at >= last_30_start).count(),
             User.find(User.created_at >= prev_30_start, User.created_at < last_30_start).count(),
             Product.get_pymongo_collection().aggregate(stock_pipeline).to_list(length=None),
@@ -99,10 +100,12 @@ class DashboardService:
 
         # Recent 30 days revenue & orders
         cur_period_orders = await Order.find(
+            Order.admin_deleted_at == None,
             Order.created_at >= last_30_start,
             Order.order_status != "Cancelled"
         ).count()
         prev_period_orders = await Order.find(
+            Order.admin_deleted_at == None,
             Order.created_at >= prev_30_start,
             Order.created_at < last_30_start,
             Order.order_status != "Cancelled"
@@ -188,7 +191,7 @@ class DashboardService:
         ).count()
 
         # 10. Recent Orders list enriched with User information
-        recent_orders = await Order.find().sort(-Order.created_at).limit(10).to_list()
+        recent_orders = await Order.find({"admin_deleted_at": None, "customer_deleted_at": None}).sort(-Order.created_at).limit(10).to_list()
         recent_orders_out = []
         for order in recent_orders:
             items = await OrderItem.find(OrderItem.order_id == order.id).to_list()

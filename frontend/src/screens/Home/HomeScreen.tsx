@@ -56,7 +56,6 @@ const NUM_COLUMNS = IS_DESKTOP_OR_TABLET ? 4 : 2;
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [newsletterEmail, setNewsletterEmail] = useState('');
 
   // API State with Instant Hydration (0ms wait time)
   const [products, setProducts] = useState<ProductItem[]>(() => MOCK_PRODUCTS);
@@ -175,67 +174,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [navigation]
   );
 
-  const handleNewsletterSubscribe = useCallback(() => {
-    if (!newsletterEmail.includes('@')) {
-      if (Platform.OS === 'web') {
-        window.alert('Please enter a valid email address.');
-      } else {
-        Alert.alert('Invalid Email', 'Please enter a valid email address.');
-      }
-      return;
-    }
-    
-    const proceedToPayment = () => {
-      paymentService.openCheckout({
-        keyId: 'rzp_test_TNZEhfxl0Doyl7',
-        amountPaise: 10000,
-        currency: 'INR',
-        orderId: '',
-        orderNumber: 'VIP-' + Date.now(),
-        customerEmail: newsletterEmail,
-        customerName: user?.name || 'VIP Member',
-        onSuccess: (response) => {
-          updateProfile({ membership: 'VIP Member' });
-          if (Platform.OS === 'web') {
-            window.alert('Payment Successful! Thank you for joining! You are now a VIP Member.');
-          } else {
-            Alert.alert(
-              'Payment Successful!',
-              'Thank you for joining! You are now a VIP Member.'
-            );
-          }
-          setNewsletterEmail('');
-        },
-        onFailure: (err) => {
-          const msg = err.description || 'Payment was declined or cancelled.';
-          if (Platform.OS === 'web') {
-            window.alert(msg);
-          } else {
-            Alert.alert('Payment Failed', msg);
-          }
-        },
-        onDismiss: () => {},
-      });
-    };
 
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm('VIP Membership requires a one-time fee of ₹100. Proceed to payment?')) {
-        proceedToPayment();
-      }
-    } else {
-      Alert.alert(
-        'Join VIP Club',
-        'VIP Membership requires a one-time fee of ₹100. Proceed to payment?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Pay ₹100',
-            onPress: proceedToPayment,
-          },
-        ]
-      );
-    }
-  }, [newsletterEmail, updateProfile]);
 
   // Render Horizontal Product Card item
   const renderHorizontalProductItem = useCallback(
@@ -570,45 +509,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     renderFlashSaleItem,
     renderHorizontalProductItem,
   ]);
-
-  // List Footer Component (Club Subscription Banner)
-  const renderFooter = useMemo(() => {
-    return (
-      <View style={styles.footerWrapper}>
-        <View style={styles.clubCard}>
-          <Text style={styles.clubTitle}>Join the VIP Club</Text>
-          <Text style={styles.clubSubtitle}>
-            Get exclusive early access to new releases, safety tips, and special
-            member-only discounts straight to your inbox.
-          </Text>
-          <View style={styles.newsletterForm}>
-            <TextInput
-              style={styles.newsletterInput}
-              placeholder="Enter your email"
-              placeholderTextColor={Colors.tertiary}
-              value={newsletterEmail}
-              onChangeText={setNewsletterEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <PrimaryButton
-              title="SUBSCRIBE"
-              variant="secondary"
-              onPress={handleNewsletterSubscribe}
-              style={styles.newsletterCta}
-            />
-          </View>
-          <MaterialIcons
-            name="celebration"
-            size={120}
-            color="rgba(255,255,255,0.12)"
-            style={styles.clubWatermark}
-          />
-        </View>
-      </View>
-    );
-  }, [newsletterEmail, handleNewsletterSubscribe]);
-
   if (isLoading && products.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -633,7 +533,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         renderItem={renderProductItem}
         ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
         columnWrapperStyle={NUM_COLUMNS > 1 ? styles.gridRow : undefined}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -652,9 +551,13 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.background,
+    width: '100%',
   },
   listContent: {
     paddingBottom: Spacing.xl,
+    maxWidth: 1400,
+    width: '100%',
+    alignSelf: 'center',
   },
   headerWrapper: {
     marginBottom: Spacing.xs,
@@ -711,15 +614,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.marginMobile,
   },
   horizontalCardWrapper: {
-    width: 170,
+    width: IS_DESKTOP_OR_TABLET ? 210 : 165,
     marginRight: Spacing.sm,
   },
   flashSaleCardWrapper: {
-    width: 180,
+    width: IS_DESKTOP_OR_TABLET ? 220 : 175,
     marginRight: Spacing.sm,
   },
   gridRow: {
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingHorizontal: Spacing.marginMobile,
     gap: Spacing.sm,
   },

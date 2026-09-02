@@ -277,29 +277,6 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
             </Animated.View>
           )}
         </View>
-
-        {/* Dots Indicator */}
-        <View style={styles.paginationRow}>
-          {banners.map((_, idx) => (
-            <TouchableOpacity
-              key={idx}
-              onPress={() => {
-                setActiveIdx(idx);
-                handlePause();
-                setTimeout(handleResume, 3000);
-              }}
-              activeOpacity={0.7}
-              style={styles.dotTouch}
-            >
-              <View
-                style={[
-                  styles.dot,
-                  idx === activeIdx ? styles.activeDot : styles.inactiveDot,
-                ]}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
       </View>
     );
   }

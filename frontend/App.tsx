@@ -18,6 +18,8 @@ import { RootNavigator } from '@/navigation/RootNavigator';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { RazorpayWebViewCheckout } from '@/components/payment/RazorpayWebViewCheckout';
 
+import { useUiStore } from '@/store';
+
 const linking = {
   prefixes: [
     'cloudcrackers://',
@@ -32,7 +34,71 @@ const linking = {
   },
 };
 
+function ThemeAppController({ children }: { children: React.ReactNode }) {
+  const isDarkMode = useUiStore((state) => state.isDarkMode);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const themeCssId = 'app-dynamic-theme';
+      let styleEl = document.getElementById(themeCssId) as HTMLStyleElement | null;
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = themeCssId;
+        document.head.appendChild(styleEl);
+      }
+
+      if (isDarkMode) {
+        styleEl.textContent = `
+          html, body, #root {
+            background-color: #121316 !important;
+            color: #f3f4f6 !important;
+          }
+          div[style*="background-color: rgb(248, 249, 250)"],
+          div[style*="background-color: #f8f9fa"],
+          div[style*="background-color: rgb(255, 255, 255)"],
+          div[style*="background-color: #ffffff"] {
+            background-color: #1c1d22 !important;
+          }
+          div[style*="background-color: rgb(243, 244, 245)"],
+          div[style*="background-color: #f3f4f5"],
+          div[style*="background-color: rgb(237, 238, 239)"],
+          div[style*="background-color: #edeeef"] {
+            background-color: #24252a !important;
+          }
+          div[style*="color: rgb(25, 28, 29)"],
+          div[style*="color: #191c1d"],
+          span[style*="color: rgb(25, 28, 29)"],
+          span[style*="color: #191c1d"] {
+            color: #f3f4f6 !important;
+          }
+          div[style*="color: rgb(91, 92, 96)"],
+          div[style*="color: #5b5c60"],
+          div[style*="color: rgb(91, 64, 63)"] {
+            color: #9ca3af !important;
+          }
+          div[style*="border-color: rgb(231, 232, 233)"],
+          div[style*="border-color: #e7e8e9"],
+          div[style*="border-color: rgb(226, 232, 240)"] {
+            border-color: #33343c !important;
+          }
+        `;
+      } else {
+        styleEl.textContent = `
+          html, body, #root {
+            background-color: #f8f9fa !important;
+            color: #191c1d !important;
+          }
+        `;
+      }
+    }
+  }, [isDarkMode]);
+
+  return <>{children}</>;
+}
+
 export default function App() {
+  const isDarkMode = useUiStore((state) => state.isDarkMode);
+
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       // 1. Ensure responsive viewport meta tag for mobile browsers (Chrome, Safari iOS, Samsung Internet, Firefox)
@@ -111,11 +177,13 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer linking={linking}>
-        <StatusBar style="light" />
-        <RootNavigator />
-        <RazorpayWebViewCheckout />
-      </NavigationContainer>
+      <ThemeAppController>
+        <NavigationContainer linking={linking}>
+          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+          <RootNavigator />
+          <RazorpayWebViewCheckout />
+        </NavigationContainer>
+      </ThemeAppController>
     </SafeAreaProvider>
   );
 }
