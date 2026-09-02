@@ -82,7 +82,8 @@ class UserRepository:
         query_conditions = [User.status != "deleted"]
 
         if role and role.upper() != "ALL":
-            query_conditions.append(User.role == role.upper())
+            target_role = role.strip().upper()
+            query_conditions.append({"$or": [{"role": target_role}, {"role": target_role.lower()}]})
 
         if account_status and account_status.lower() != "all":
             st = account_status.lower()

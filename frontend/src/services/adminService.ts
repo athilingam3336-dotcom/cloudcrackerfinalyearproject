@@ -1140,12 +1140,13 @@ export class AdminService {
   }
 
   private mapBackendUserToUI(u: any): AdminUserItem {
+    const rawRole = (u.role || '').toString().trim().toUpperCase();
     return {
       id: u.id || u._id || '',
       fullName: u.full_name || u.fullName || 'Customer',
       email: u.email || '',
       phone: u.phone || '',
-      role: u.role === 'ADMIN' ? 'ADMIN' : 'CUSTOMER',
+      role: rawRole === 'ADMIN' ? 'ADMIN' : 'CUSTOMER',
       isVerified: Boolean(u.is_verified),
       isActive: Boolean(u.is_active),
       status: u.status || 'active',

@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     flex: 1,
-    minWidth: '47%',
+    minWidth: 130,
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.xl,
     padding: Spacing.sm,

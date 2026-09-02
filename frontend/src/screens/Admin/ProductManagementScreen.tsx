@@ -393,27 +393,39 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   // Soft Delete Product
   const handleDeleteProduct = useCallback(
     (product: AdminProductItemUI) => {
-      Alert.alert(
-        'Confirm Deactivation',
-        `Are you sure you want to soft-delete "${product.title}"? It will be removed from customer listings.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await adminService.deleteAdminProduct(product.id);
-                Alert.alert('Deleted', `Product "${product.title}" was soft-deleted.`);
-                fetchProducts();
-              } catch (err: any) {
-                const msg = err.response?.data?.message || err.message || 'Delete failed.';
-                Alert.alert('Error', msg);
-              }
+      const performDelete = async () => {
+        try {
+          setIsLoading(true);
+          await adminService.deleteAdminProduct(product.id);
+          Alert.alert('Deleted', `Product "${product.title}" was soft-deleted.`);
+          await fetchProducts();
+        } catch (err: any) {
+          const msg = err.response?.data?.message || err.message || 'Delete failed.';
+          Alert.alert('Error', msg);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const confirmed = window.confirm(`Are you sure you want to soft-delete "${product.title}"? It will be removed from customer listings.`);
+        if (confirmed) {
+          performDelete();
+        }
+      } else {
+        Alert.alert(
+          'Confirm Deactivation',
+          `Are you sure you want to soft-delete "${product.title}"? It will be removed from customer listings.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: performDelete,
             },
-          },
-        ]
-      );
+          ]
+        );
+      }
     },
     [fetchProducts]
   );
@@ -477,7 +489,11 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       const isLowStock = item.stock > 0 && item.stock <= 10;
 
       return (
-        <View style={styles.productCard}>
+        <TouchableOpacity
+          style={styles.productCard}
+          onPress={() => handleOpenEditModal(item)}
+          activeOpacity={0.88}
+        >
           <Image
             source={resolveProductImage(item)}
             style={styles.productThumb}
@@ -569,7 +585,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               <MaterialIcons name="delete-outline" size={18} color={Colors.error} />
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       );
     },
     [handleOpenEditModal, handleDeleteProduct, handleOpenStockModal]

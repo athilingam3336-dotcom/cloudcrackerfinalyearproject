@@ -140,6 +140,24 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
     fetchUsers();
   }, [fetchUsers]);
 
+  // Strictly filtered user list based on active filter chip for 100% UI accuracy
+  const displayUsers = useMemo(() => {
+    return users.filter((u) => {
+      const isRoleAdmin = (u.role || '').toUpperCase() === 'ADMIN';
+      const isUserActive = u.isActive && u.status === 'active';
+      const isUserBlocked = u.status === 'blocked';
+      const isUserInactive = !u.isActive || u.status === 'inactive';
+
+      if (activeFilter === 'Admins') return isRoleAdmin;
+      if (activeFilter === 'Customers') return !isRoleAdmin;
+      if (activeFilter === 'Active') return isUserActive;
+      if (activeFilter === 'Inactive') return isUserInactive;
+      if (activeFilter === 'Blocked') return isUserBlocked;
+
+      return true;
+    });
+  }, [users, activeFilter]);
+
   // Open Details Modal
   const handleOpenDetails = useCallback(async (user: AdminUserItem) => {
     setIsDetailModalVisible(true);
@@ -560,7 +578,7 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
           </View>
         ) : (
           <FlatList
-            data={users}
+            data={displayUsers}
             keyExtractor={(item) => item.id}
             renderItem={renderUserItem}
             contentContainerStyle={styles.listContent}
@@ -1661,7 +1679,7 @@ const styles = StyleSheet.create({
   },
   summaryBox: {
     flex: 1,
-    minWidth: '45%',
+    minWidth: 130,
     backgroundColor: Colors.surfaceContainerLow,
     borderRadius: BorderRadius.sm,
     padding: Spacing.sm,

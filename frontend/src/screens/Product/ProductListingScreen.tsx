@@ -152,103 +152,95 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
       );
       if (foundCat) {
         categoryConstraintName = foundCat.name.toLowerCase();
+      } else {
+        categoryConstraintName = String(categoryIdParam).toLowerCase();
       }
     }
 
-    let result = allItems.filter((product) => {
-      // 1. Search query match
-      const q = searchQuery.trim().toLowerCase();
-      let matchesSearch = true;
-      if (
-        q &&
-        q !== 'special edition' &&
-        q !== 'grand finale' &&
-        q !== 'new arrival'
-      ) {
-        matchesSearch =
-          (product.title || '').toLowerCase().includes(q) ||
-          (product.subtitle || '').toLowerCase().includes(q) ||
-          (product.category || '').toLowerCase().includes(q);
-      }
-
-      // 2. Chip / Category Filter match
-      let matchesChip = true;
+    const result = allItems.filter((product) => {
       const titleLower = (product.title || '').toLowerCase();
       const subLower = (product.subtitle || '').toLowerCase();
       const catLower = (product.category || '').toLowerCase();
 
-      if (selectedFilterChip === 'ROCKETS') {
-        matchesChip =
-          titleLower.includes('rocket') ||
-          subLower.includes('rocket') ||
-          subLower.includes('flare') ||
-          catLower.includes('rocket');
-      } else if (selectedFilterChip === 'SPARKLERS') {
-        matchesChip =
-          titleLower.includes('sparkler') ||
-          subLower.includes('sparkler') ||
-          catLower.includes('sparkler');
-      } else if (selectedFilterChip === 'POTS & FOUNTAINS') {
-        matchesChip =
-          titleLower.includes('pot') ||
-          titleLower.includes('fountain') ||
-          subLower.includes('pot') ||
-          subLower.includes('fountain') ||
-          catLower.includes('pot');
-      } else if (selectedFilterChip === 'BOMBS') {
-        matchesChip =
-          titleLower.includes('bomb') ||
-          subLower.includes('bomb') ||
-          subLower.includes('hydro') ||
-          titleLower.includes('sound') ||
-          catLower.includes('bomb') ||
-          catLower.includes('sound');
-      } else if (selectedFilterChip === 'MULTI-SHOT') {
-        matchesChip =
-          titleLower.includes('shot') ||
-          subLower.includes('shot') ||
-          titleLower.includes('cake') ||
-          titleLower.includes('barrage') ||
-          catLower.includes('aerial') ||
-          catLower.includes('shot');
-      } else if (selectedFilterChip === 'ON SALE') {
-        matchesChip =
+      // 1. Primary Category Filter (from URL / navigation route param)
+      if (categoryIdParam && categoryIdParam !== 'all') {
+        const catId = String(categoryIdParam).toLowerCase();
+        let matchesCat = false;
+
+        if (catLower === catId || product.id === catId) {
+          matchesCat = true;
+        } else if (categoryConstraintName.includes('gift')) {
+          matchesCat =
+            titleLower.includes('gift') ||
+            subLower.includes('gift') ||
+            catLower.includes('gift');
+        } else if (categoryConstraintName.includes('pot') || categoryConstraintName.includes('fountain')) {
+          matchesCat =
+            titleLower.includes('pot') ||
+            titleLower.includes('fountain') ||
+            subLower.includes('pot') ||
+            catLower.includes('pot');
+        } else if (categoryConstraintName.includes('sparkler')) {
+          matchesCat = titleLower.includes('sparkler') || catLower.includes('sparkler');
+        } else if (categoryConstraintName.includes('rocket')) {
+          matchesCat = titleLower.includes('rocket') || catLower.includes('rocket');
+        } else if (
+          categoryConstraintName.includes('bomb') ||
+          categoryConstraintName.includes('sound') ||
+          categoryConstraintName.includes('bijili')
+        ) {
+          matchesCat =
+            titleLower.includes('bomb') ||
+            titleLower.includes('sound') ||
+            titleLower.includes('bijili') ||
+            catLower.includes('bomb');
+        } else if (categoryConstraintName.includes('shot') || categoryConstraintName.includes('aerial')) {
+          matchesCat =
+            titleLower.includes('shot') ||
+            titleLower.includes('cake') ||
+            catLower.includes('shot') ||
+            catLower.includes('aerial');
+        } else if (categoryConstraintName.includes('chakkar') || categoryConstraintName.includes('wheel')) {
+          matchesCat =
+            titleLower.includes('chakkar') ||
+            titleLower.includes('wheel') ||
+            catLower.includes('chakkar');
+        } else if (categoryConstraintName.includes('kid')) {
+          matchesCat =
+            titleLower.includes('kid') ||
+            titleLower.includes('pencil') ||
+            subLower.includes('kid') ||
+            catLower.includes('kid');
+        } else {
+          matchesCat =
+            catLower.includes(categoryConstraintName) ||
+            titleLower.includes(categoryConstraintName);
+        }
+
+        if (!matchesCat) return false;
+      }
+
+      // 2. Search Query filter
+      const q = searchQuery.trim().toLowerCase();
+      if (q && q !== 'special edition' && q !== 'grand finale' && q !== 'new arrival') {
+        const matchesSearch =
+          titleLower.includes(q) ||
+          subLower.includes(q) ||
+          catLower.includes(q);
+        if (!matchesSearch) return false;
+      }
+
+      // 3. Sub-filter chip match (e.g. ON SALE)
+      if (selectedFilterChip === 'ON SALE') {
+        const isSale =
           Boolean(product.originalPrice && product.originalPrice > product.price) ||
           (product.badge || '').toLowerCase().includes('sale') ||
           (product.badge || '').toLowerCase().includes('off');
-      } else if (selectedFilterChip === 'ALL') {
-        if (categoryConstraintName) {
-          if (categoryConstraintName.includes('pot') || categoryConstraintName.includes('fountain')) {
-            matchesChip =
-              titleLower.includes('pot') ||
-              titleLower.includes('fountain') ||
-              subLower.includes('pot') ||
-              catLower.includes('pot');
-          } else if (categoryConstraintName.includes('sparkler')) {
-            matchesChip = titleLower.includes('sparkler') || catLower.includes('sparkler');
-          } else if (categoryConstraintName.includes('rocket')) {
-            matchesChip = titleLower.includes('rocket') || catLower.includes('rocket');
-          } else if (categoryConstraintName.includes('bomb') || categoryConstraintName.includes('sound')) {
-            matchesChip = titleLower.includes('bomb') || titleLower.includes('sound') || catLower.includes('bomb');
-          } else if (categoryConstraintName.includes('shot') || categoryConstraintName.includes('aerial')) {
-            matchesChip = titleLower.includes('shot') || titleLower.includes('cake') || catLower.includes('shot');
-          } else {
-            matchesChip =
-              catLower.includes(categoryConstraintName) ||
-              titleLower.includes(categoryConstraintName);
-          }
-        } else {
-          matchesChip = true;
-        }
+        if (!isSale) return false;
       }
 
-      return matchesSearch && matchesChip;
+      return true;
     });
-
-    // Fallback if strict category filter produces 0 items (never leave catalog empty)
-    if (result.length === 0 && (selectedFilterChip === 'ALL' || selectedFilterChip !== 'ALL')) {
-      result = allItems;
-    }
 
     // Sort logic
     const sorted = [...result];
@@ -258,24 +250,15 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
       const ratingA = typeof a.rating === 'number' ? a.rating : parseFloat(a.rating as any) || 0;
       const ratingB = typeof b.rating === 'number' ? b.rating : parseFloat(b.rating as any) || 0;
 
-      if (sortBy === 'PRICE_LOW_HIGH') {
-        return priceA - priceB;
-      }
-      if (sortBy === 'PRICE_HIGH_LOW') {
-        return priceB - priceA;
-      }
-      if (sortBy === 'RATING') {
-        return ratingB - ratingA;
-      }
-      if (sortBy === 'NEWEST') {
-        return (b.reviewCount || 0) - (a.reviewCount || 0);
-      }
-      // Default: Best Selling / Popular
-      return ratingB * (b.reviewCount || 1) - ratingA * (a.reviewCount || 1);
+      if (sortBy === 'PRICE_LOW_HIGH') return priceA - priceB;
+      if (sortBy === 'PRICE_HIGH_LOW') return priceB - priceA;
+      if (sortBy === 'RATING') return ratingB - ratingA;
+      if (sortBy === 'NEWEST') return (b.id || '').localeCompare(a.id || '');
+      return 0;
     });
 
     return sorted;
-  }, [products, searchQuery, selectedFilterChip, sortBy, categoryIdParam, categories]);
+  }, [products, categoryIdParam, categories, searchQuery, selectedFilterChip, sortBy]);
 
   // Paginated dataset
   const totalPages = Math.max(1, Math.ceil(filteredAndSortedProducts.length / PAGE_SIZE));
@@ -414,39 +397,41 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           </ScrollView>
         </View>
 
-        {/* Category Filter Chips */}
-        <View style={styles.filterSection}>
-          <Text style={styles.sortHeaderLabel}>FILTER COLLECTION:</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterChipsContent}
-          >
-            {['ALL', 'ROCKETS', 'SPARKLERS', 'POTS & FOUNTAINS', 'BOMBS', 'MULTI-SHOT', 'ON SALE'].map((chip) => {
-              const isSelected = selectedFilterChip === chip;
-              return (
-                <TouchableOpacity
-                  key={chip}
-                  style={[
-                    styles.chipButton,
-                    isSelected && styles.activeChipButton,
-                  ]}
-                  onPress={() => setSelectedFilterChip(chip)}
-                  activeOpacity={0.8}
-                >
-                  <Text
+        {/* Category Filter Chips (Rendered only when viewing All Pyrotechnics) */}
+        {(!categoryIdParam || categoryIdParam === 'all') && (
+          <View style={styles.filterSection}>
+            <Text style={styles.sortHeaderLabel}>FILTER COLLECTION:</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterChipsContent}
+            >
+              {['ALL', 'ROCKETS', 'SPARKLERS', 'POTS & FOUNTAINS', 'BOMBS', 'MULTI-SHOT', 'ON SALE'].map((chip) => {
+                const isSelected = selectedFilterChip === chip;
+                return (
+                  <TouchableOpacity
+                    key={chip}
                     style={[
-                      styles.chipText,
-                      isSelected && styles.activeChipText,
+                      styles.chipButton,
+                      isSelected && styles.activeChipButton,
                     ]}
+                    onPress={() => setSelectedFilterChip(chip)}
+                    activeOpacity={0.8}
                   >
-                    {chip}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        isSelected && styles.activeChipText,
+                      ]}
+                    >
+                      {chip}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
       </View>
     );
   }, [
@@ -456,6 +441,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     selectedFilterChip,
     sortBy,
     unreadNotifs,
+    categoryIdParam,
     navigation,
   ]);
 

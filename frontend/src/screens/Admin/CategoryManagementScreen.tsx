@@ -11,6 +11,7 @@ import {
   ScrollView,
   Switch,
   ListRenderItem,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -197,30 +198,39 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
   // Soft Delete Category
   const handleDeleteCategory = useCallback(
     (category: AdminCategoryItem) => {
-      Alert.alert(
-        'Confirm Deactivation',
-        `Are you sure you want to soft-delete category "${category.name}"?\n\nNote: Categories with active products cannot be deleted.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await adminService.deleteCategory(category.id);
-                Alert.alert('Deleted', `Category "${category.name}" was soft-deleted.`);
-                fetchCategories();
-              } catch (err: any) {
-                const msg =
-                  err.response?.data?.message ||
-                  err.message ||
-                  'Failed to delete category.';
-                Alert.alert('Cannot Delete Category', msg);
-              }
+      const performDelete = async () => {
+        try {
+          await adminService.deleteCategory(category.id);
+          Alert.alert('Deleted', `Category "${category.name}" was soft-deleted.`);
+          fetchCategories();
+        } catch (err: any) {
+          const msg =
+            err.response?.data?.message ||
+            err.message ||
+            'Failed to delete category.';
+          Alert.alert('Cannot Delete Category', msg);
+        }
+      };
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const confirmed = window.confirm(`Are you sure you want to soft-delete category "${category.name}"?\n\nNote: Categories with active products cannot be deleted.`);
+        if (confirmed) {
+          performDelete();
+        }
+      } else {
+        Alert.alert(
+          'Confirm Deactivation',
+          `Are you sure you want to soft-delete category "${category.name}"?\n\nNote: Categories with active products cannot be deleted.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: performDelete,
             },
-          },
-        ]
-      );
+          ]
+        );
+      }
     },
     [fetchCategories]
   );
@@ -240,7 +250,11 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
   const renderCategoryRow: ListRenderItem<AdminCategoryItem> = useCallback(
     ({ item }) => {
       return (
-        <View style={styles.categoryCard}>
+        <TouchableOpacity
+          style={styles.categoryCard}
+          onPress={() => handleOpenEditModal(item)}
+          activeOpacity={0.88}
+        >
           <Image
             source={resolveProductImage(item.name)}
             style={styles.categoryThumb}
@@ -308,7 +322,7 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
               <MaterialIcons name="delete-outline" size={18} color={Colors.error} />
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       );
     },
     [handleToggleActive, handleOpenEditModal, handleDeleteCategory]
