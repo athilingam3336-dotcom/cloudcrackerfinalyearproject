@@ -14,13 +14,44 @@ from app.middleware.request_logger import RequestLoggerMiddleware
 setup_logging()
 
 
+import asyncio
+from datetime import datetime, timedelta
+
+async def schedule_midnight_admin_email_task():
+    """Background task running continuously: triggers daily sales & stock report email to all admins at 12:00 AM midnight."""
+    logger.info("Initializing Midnight 12:00 AM Automated Admin Report Scheduler...")
+    while True:
+        try:
+            now = datetime.now()
+            tomorrow = now + timedelta(days=1)
+            midnight = datetime(year=tomorrow.year, month=tomorrow.month, day=tomorrow.day, hour=0, minute=0, second=0)
+            seconds_until_midnight = (midnight - now).total_seconds()
+            
+            logger.info(f"Next automated 12:00 AM Admin Email Report scheduled in {seconds_until_midnight:.0f} seconds.")
+            await asyncio.sleep(seconds_until_midnight)
+
+            from app.api.v1.admin.reports import dispatch_daily_report_to_all_admins
+            result = await dispatch_daily_report_to_all_admins(requested_by_email="Automated 12:00 AM Midnight Cron")
+            logger.info(f"[12:00 AM MIDNIGHT CRON] Automated Daily Report emailed to {len(result.get('admin_emails_notified', []))} admins!")
+
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            logger.info("Midnight Admin Report Scheduler task cancelled.")
+            break
+        except Exception as e:
+            logger.error(f"Error in midnight admin report scheduler: {e}")
+            await asyncio.sleep(300)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup tasks
     logger.info("FastAPI lifecycle startup: Connecting database client.")
     await db_manager.connect()
+    cron_task = asyncio.create_task(schedule_midnight_admin_email_task())
     yield
     # Shutdown tasks
+    cron_task.cancel()
     logger.info("FastAPI lifecycle shutdown: Disconnecting database client.")
     await db_manager.disconnect()
 

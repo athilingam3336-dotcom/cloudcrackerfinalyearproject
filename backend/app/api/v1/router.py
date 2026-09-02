@@ -13,6 +13,7 @@ from app.api.v1.coupons.coupons import router as coupons_router
 from app.api.v1.inventory.inventory import router as inventory_router
 from app.api.v1.admin.dashboard import router as dashboard_router
 from app.api.v1.admin.users import router as admin_users_router
+from app.api.v1.admin.reports import router as reports_router
 from app.api.v1.reviews.reviews import router as reviews_router, admin_router as admin_reviews_router
 from app.api.v1.upload.upload import router as upload_router
 from app.api.v1.notifications.notifications import router as notifications_router, admin_router as admin_notifications_router
@@ -37,6 +38,7 @@ api_v1_router.include_router(coupons_router)
 api_v1_router.include_router(inventory_router)
 api_v1_router.include_router(dashboard_router)
 api_v1_router.include_router(admin_users_router)
+api_v1_router.include_router(reports_router)
 api_v1_router.include_router(reviews_router)
 api_v1_router.include_router(admin_reviews_router)
 api_v1_router.include_router(upload_router)

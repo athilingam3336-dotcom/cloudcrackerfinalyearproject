@@ -15,6 +15,7 @@ from app.schemas.product import ProductResponse
 # Module-level cache for dashboard metrics (15-second TTL)
 _dashboard_cache: Dict[str, Any] = {}
 _dashboard_cache_time: float = 0.0
+_today_report_downloads: Dict[str, int] = {}
 
 
 class DashboardService:
@@ -276,3 +277,91 @@ class DashboardService:
         _dashboard_cache = result
         _dashboard_cache_time = time.time()
         return result
+
+    async def get_today_report_metrics(self) -> Dict[str, Any]:
+        """Calculates real-time today's sales, today's order count, today's stock outflow & download tracking."""
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+
+        stock_pipeline = [
+            {"$match": {"status": {"$ne": "deleted"}}},
+            {"$group": {"_id": None, "total_stock": {"$sum": "$stock"}}},
+        ]
+        today_rev_pipeline = [
+            {
+                "$match": {
+                    "admin_deleted_at": None,
+                    "created_at": {"$gte": today_start},
+                    "order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}},
+                }
+            },
+            {"$group": {"_id": None, "revenue": {"$sum": "$total"}}},
+        ]
+        today_items_pipeline = [
+            {
+                "$match": {
+                    "admin_deleted_at": None,
+                    "created_at": {"$gte": today_start},
+                    "order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}},
+                }
+            },
+            {"$unwind": "$items"},
+            {"$group": {"_id": None, "total_items_sold": {"$sum": "$items.quantity"}}},
+        ]
+
+        stock_results, today_rev_results, items_results = await asyncio.gather(
+            Product.get_pymongo_collection().aggregate(stock_pipeline).to_list(length=None),
+            Order.get_pymongo_collection().aggregate(today_rev_pipeline).to_list(length=None),
+            Order.get_pymongo_collection().aggregate(today_items_pipeline).to_list(length=None),
+        )
+
+        today_orders_count = await Order.find(
+            Order.admin_deleted_at == None,
+            Order.created_at >= today_start
+        ).count()
+
+        today_orders = await Order.find(
+            Order.admin_deleted_at == None,
+            Order.created_at >= today_start
+        ).sort("-created_at").to_list(length=100)
+
+        orders_list = []
+        for o in today_orders:
+            items_summary = []
+            for item in o.items:
+                items_summary.append(f"{item.product_name} x{item.quantity}")
+            orders_list.append({
+                "id": str(o.id),
+                "order_number": str(o.id)[-6:].upper(),
+                "customer_name": o.shipping_address.split(",")[0].split("(")[0].strip() if o.shipping_address else "Customer",
+                "total": round(o.total, 2),
+                "order_status": o.order_status,
+                "payment_status": o.payment_status,
+                "items_summary": ", ".join(items_summary) if items_summary else "Crackers item",
+                "created_at": o.created_at.strftime("%I:%M %p"),
+            })
+
+        total_stock = stock_results[0]["total_stock"] if stock_results else 0
+        today_revenue = round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
+        today_items_sold = items_results[0]["total_items_sold"] if items_results else 0
+
+        dl_count = _today_report_downloads.get(today_str, 0)
+        day_closed = dl_count >= 2
+
+        return {
+            "date": today_str,
+            "today_revenue": today_revenue,
+            "today_orders": today_orders_count,
+            "today_items_sold": today_items_sold,
+            "remaining_stock": total_stock,
+            "download_count": dl_count,
+            "day_closed": day_closed,
+            "today_orders_list": orders_list,
+        }
+
+    async def record_today_report_download(self) -> Dict[str, Any]:
+        global _today_report_downloads
+        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+        current_count = _today_report_downloads.get(today_str, 0)
+        _today_report_downloads[today_str] = current_count + 1
+        return await self.get_today_report_metrics()
