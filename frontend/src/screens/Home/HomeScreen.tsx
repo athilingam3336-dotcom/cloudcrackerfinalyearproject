@@ -75,7 +75,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
     setIsError(false);
     try {
-      const data = await productService.getProducts(selectedCategory, searchQuery, 20);
+      const data = await productService.getProducts(selectedCategory, searchQuery, 50, 1, true);
       if (data && data.length > 0) {
         setProducts(data);
       }
@@ -151,10 +151,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const activeBanners = useMemo(() => {
     const featuredAsBanners: BannerItem[] = products
-      .filter((p: any) => p.badge === 'Featured' || p.badge === 'Bestseller' || p.isFeatured || p.is_featured)
+      .filter((p: any) => Boolean(p.isFeatured || p.is_featured))
       .map((p: any) => ({
         id: p.id,
-        tag: p.badge ? `✨ ${p.badge}` : '✨ Featured Deal',
+        tag: '✨ FEATURED DEAL',
         title: p.title || p.name,
         subtitle: p.subtitle || p.description || 'Exclusive Sivakasi celebration pyrotechnics.',
         discountText: p.originalPrice && p.originalPrice > p.price

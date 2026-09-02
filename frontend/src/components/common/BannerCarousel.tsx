@@ -47,12 +47,18 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
 
     const singleSetWidth = banners.length * CARD_TOTAL;
 
+    // Calculate dynamic duration for ~40px per second (relaxed, readable, smooth glide)
+    const effectiveSpeedSec = React.useMemo(() => {
+      if (speedSec && speedSec !== 22) return speedSec;
+      return Math.max(35, Math.round(singleSetWidth / 40));
+    }, [singleSetWidth, speedSec]);
+
     // Mobile Animated Loop
     useEffect(() => {
       if (Platform.OS === 'web') return; // Web uses hardware accelerated CSS keyframes
       if (banners.length <= 1) return;
 
-      const duration = (singleSetWidth / 40) * 1000; // ~40px per second
+      const duration = effectiveSpeedSec * 1000;
 
       const runAnimation = () => {
         scrollAnim.setValue(0);
@@ -76,7 +82,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
           animationLoop.current.stop();
         }
       };
-    }, [banners.length, singleSetWidth, isPaused, scrollAnim]);
+    }, [banners.length, singleSetWidth, effectiveSpeedSec, isPaused, scrollAnim]);
 
     const handlePause = useCallback(() => {
       setIsPaused(true);
@@ -113,7 +119,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
           gap: `${CARD_GAP}px`,
           width: 'max-content',
           animationName: 'bannerContinuousGlide',
-          animationDuration: `${speedSec}s`,
+          animationDuration: `${effectiveSpeedSec}s`,
           animationTimingFunction: 'linear',
           animationIterationCount: 'infinite',
           animationPlayState: isPaused ? 'paused' : 'running',

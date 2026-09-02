@@ -59,6 +59,10 @@ export class ProductService {
       (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : undefined);
     const stockVal = typeof p.stock === 'number' ? p.stock : 100;
     const isOutOfStock = stockVal <= 0 || p.status === 'out_of_stock';
+    const isFeatured = Boolean(p.is_featured || p.isFeatured);
+    const isBestseller = Boolean(p.is_bestseller || p.isBestseller);
+    const isFlashSale = Boolean(p.is_flash_sale || p.isFlashSale);
+
     return {
       id: p.id || p._id,
       title: p.name || p.title || 'Pyrotechnic Item',
@@ -69,16 +73,19 @@ export class ProductService {
       stock: stockVal,
       badge: isOutOfStock
         ? 'Out of Stock'
-        : p.is_bestseller
+        : isBestseller
         ? 'Bestseller'
-        : p.is_featured
+        : isFeatured
         ? 'Featured'
-        : p.is_flash_sale
+        : isFlashSale
         ? 'Flash Sale'
         : undefined,
       rating: p.rating || p.average_rating || 5.0,
       reviewCount: p.reviews_count || p.total_reviews || 0,
       imageUrl: mainImage,
+      isFeatured,
+      isBestseller,
+      isFlashSale,
     };
   }
 
@@ -146,7 +153,7 @@ export class ProductService {
     }
 
     const fetchPromise = (async () => {
-      const params: Record<string, any> = { limit, page };
+      const params: Record<string, any> = { limit, page, _t: Date.now() };
       if (query && query.trim()) params.search = query.trim();
       if (category && category !== 'all') {
         if (/^[0-9a-fA-F]{24}$/.test(category)) {
@@ -155,7 +162,13 @@ export class ProductService {
       }
 
       try {
-        const { data: res } = await apiClient.get('/products', { params });
+        const { data: res } = await apiClient.get('/products', {
+          params,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            Pragma: 'no-cache',
+          },
+        });
         const payload = res.data !== undefined ? res.data : res;
         const items = Array.isArray(payload?.products)
           ? payload.products
