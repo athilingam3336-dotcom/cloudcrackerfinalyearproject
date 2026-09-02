@@ -31,13 +31,18 @@ const CARD_GAP = 16;
 const CARD_TOTAL = CARD_WIDTH + CARD_GAP;
 
 export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
-  ({ banners, onBannerPress, speedSec = 22 }) => {
+  ({ banners, onBannerPress, speedSec = 25 }) => {
     const [isPaused, setIsPaused] = useState(false);
+    const [isMouseDown, setIsMouseDown] = useState(false);
     const [activeIdx, setActiveIdx] = useState(0);
+
+    const webContainerRef = useRef<HTMLDivElement>(null);
+    const startXRef = useRef(0);
+    const scrollLeftRef = useRef(0);
+    const animFrameRef = useRef<number | null>(null);
+
     const scrollAnim = useRef(new Animated.Value(0)).current;
     const animationLoop = useRef<Animated.CompositeAnimation | null>(null);
-    const currentOffsetRef = useRef(0);
-    const scrollViewRef = useRef<ScrollView>(null);
 
     // Quadruple the banner list for seamless infinite loop
     const loopedBanners = React.useMemo(() => {
@@ -47,18 +52,38 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
 
     const singleSetWidth = banners.length * CARD_TOTAL;
 
-    // Calculate dynamic duration for ~40px per second (relaxed, readable, smooth glide)
-    const effectiveSpeedSec = React.useMemo(() => {
-      if (speedSec && speedSec !== 22) return speedSec;
-      return Math.max(35, Math.round(singleSetWidth / 40));
-    }, [singleSetWidth, speedSec]);
-
-    // Mobile Animated Loop
+    // WEB: Smooth Auto-Gliding using requestAnimationFrame on scrollLeft
     useEffect(() => {
-      if (Platform.OS === 'web') return; // Web uses hardware accelerated CSS keyframes
+      if (Platform.OS !== 'web') return;
       if (banners.length <= 1) return;
 
-      const duration = effectiveSpeedSec * 1000;
+      const step = () => {
+        if (!isPaused && !isMouseDown && webContainerRef.current) {
+          const el = webContainerRef.current;
+          if (el.scrollLeft >= singleSetWidth) {
+            el.scrollLeft = 0;
+          } else {
+            el.scrollLeft += 1.2; // Normal pleasant speed (~70px/sec)
+          }
+        }
+        animFrameRef.current = requestAnimationFrame(step);
+      };
+
+      animFrameRef.current = requestAnimationFrame(step);
+
+      return () => {
+        if (animFrameRef.current) {
+          cancelAnimationFrame(animFrameRef.current);
+        }
+      };
+    }, [isPaused, isMouseDown, singleSetWidth, banners.length]);
+
+    // MOBILE: Animated Loop
+    useEffect(() => {
+      if (Platform.OS === 'web') return;
+      if (banners.length <= 1) return;
+
+      const duration = (singleSetWidth / 70) * 1000; // Normal ~70px per second
 
       const runAnimation = () => {
         scrollAnim.setValue(0);
@@ -82,7 +107,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
           animationLoop.current.stop();
         }
       };
-    }, [banners.length, singleSetWidth, effectiveSpeedSec, isPaused, scrollAnim]);
+    }, [banners.length, singleSetWidth, isPaused, scrollAnim]);
 
     const handlePause = useCallback(() => {
       setIsPaused(true);
@@ -98,34 +123,45 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
       }
     }, []);
 
+    // Web Mouse Drag Handlers
+    const handleMouseDown = (e: React.MouseEvent) => {
+      if (Platform.OS !== 'web' || !webContainerRef.current) return;
+      setIsMouseDown(true);
+      handlePause();
+      startXRef.current = e.pageX - webContainerRef.current.offsetLeft;
+      scrollLeftRef.current = webContainerRef.current.scrollLeft;
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+      if (Platform.OS !== 'web' || !isMouseDown || !webContainerRef.current) return;
+      e.preventDefault();
+      const x = e.pageX - webContainerRef.current.offsetLeft;
+      const walk = (x - startXRef.current) * 1.5;
+      webContainerRef.current.scrollLeft = scrollLeftRef.current - walk;
+    };
+
+    const handleMouseUp = () => {
+      if (Platform.OS !== 'web') return;
+      setIsMouseDown(false);
+      setTimeout(handleResume, 2000);
+    };
+
     const handleManualScroll = useCallback(
       (direction: 'next' | 'prev') => {
         handlePause();
-        setActiveIdx((prev) => {
-          const next = direction === 'next' ? (prev + 1) % banners.length : (prev - 1 + banners.length) % banners.length;
-          return next;
-        });
-        // Auto-resume after 3.5s of inactivity
-        setTimeout(handleResume, 3500);
+        if (Platform.OS === 'web' && webContainerRef.current) {
+          const delta = direction === 'next' ? CARD_TOTAL : -CARD_TOTAL;
+          webContainerRef.current.scrollBy({ left: delta, behavior: 'smooth' });
+        } else {
+          setActiveIdx((prev) => {
+            const next = direction === 'next' ? (prev + 1) % banners.length : (prev - 1 + banners.length) % banners.length;
+            return next;
+          });
+        }
+        setTimeout(handleResume, 3000);
       },
       [banners.length, handlePause, handleResume]
     );
-
-    // CSS Keyframes for Web
-    const webAnimationStyle = Platform.OS === 'web'
-      ? ({
-          display: 'flex',
-          flexDirection: 'row',
-          gap: `${CARD_GAP}px`,
-          width: 'max-content',
-          animationName: 'bannerContinuousGlide',
-          animationDuration: `${effectiveSpeedSec}s`,
-          animationTimingFunction: 'linear',
-          animationIterationCount: 'infinite',
-          animationPlayState: isPaused ? 'paused' : 'running',
-          willChange: 'transform',
-        } as any)
-      : null;
 
     return (
       <View
@@ -134,18 +170,17 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
         onMouseEnter={handlePause}
         onMouseLeave={handleResume}
       >
-        {/* Web Keyframes Injection */}
+        {/* Hide default scrollbars on web */}
         {Platform.OS === 'web' && (
           <style
             dangerouslySetInnerHTML={{
               __html: `
-                @keyframes bannerContinuousGlide {
-                  0% {
-                    transform: translate3d(0, 0, 0);
-                  }
-                  100% {
-                    transform: translate3d(-${singleSetWidth}px, 0, 0);
-                  }
+                .banner-web-scroll::-webkit-scrollbar {
+                  display: none;
+                }
+                .banner-web-scroll {
+                  -ms-overflow-style: none;
+                  scrollbar-width: none;
                 }
               `,
             }}
@@ -190,9 +225,26 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
           onTouchCancel={handleResume}
         >
           {Platform.OS === 'web' ? (
-            <div style={webAnimationStyle}>
+            <div
+              ref={webContainerRef}
+              className="banner-web-scroll"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                gap: `${CARD_GAP}px`,
+                overflowX: 'auto',
+                cursor: isMouseDown ? 'grabbing' : 'grab',
+                userSelect: 'none',
+                WebkitOverflowScrolling: 'touch',
+                paddingBottom: '4px',
+              }}
+            >
               {loopedBanners.map((item, idx) => (
-                <View key={`${item.id}-${idx}`} style={[styles.bannerSlide, { width: CARD_WIDTH }]}>
+                <View key={`${item.id}-${idx}`} style={[styles.bannerSlide, { width: CARD_WIDTH, flexShrink: 0 }]}>
                   <ImageBackground
                     source={resolveProductImage(item)}
                     style={styles.bannerImage}
