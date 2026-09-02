@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,9 +18,10 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { HomeHeader } from '@/components/common/HomeHeader';
+import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { RootStackParamList } from '@/navigation/types';
-import { adminService, AdminMetrics } from '@/services/adminService';
+import { adminService, AdminMetrics, TodayReportData } from '@/services/adminService';
 import { useNotificationStore } from '@/store';
 import { formatCurrency } from '@/utils/currency';
 
@@ -42,6 +46,121 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
+
+  // Today's Sales & Stock Report Modal State
+  const [isTodayReportModalVisible, setIsTodayReportModalVisible] = useState(false);
+  const [todayReport, setTodayReport] = useState<TodayReportData | null>(null);
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  const fetchTodayReport = useCallback(async () => {
+    setIsLoadingReport(true);
+    try {
+      const data = await adminService.getTodayReport();
+      setTodayReport(data);
+    } catch (err: any) {
+      Alert.alert('Report Error', err?.message || 'Failed to load today\'s sales metrics.');
+    } finally {
+      setIsLoadingReport(false);
+    }
+  }, []);
+
+  const handleOpenTodayReportModal = useCallback(() => {
+    setIsTodayReportModalVisible(true);
+    fetchTodayReport();
+  }, [fetchTodayReport]);
+
+  const handleDownloadPdfReport = useCallback(async () => {
+    setIsDownloadingPdf(true);
+    try {
+      const updatedData = await adminService.recordTodayReportDownload();
+      setTodayReport(updatedData);
+
+      const htmlContent = `
+        <html>
+          <head>
+            <title>Today Sales Report - Meera Crackers</title>
+            <style>
+              body { font-family: sans-serif; padding: 20px; color: #1e293b; }
+              h1 { color: #b91c1c; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; }
+              .grid { display: flex; gap: 15px; margin: 20px 0; }
+              .card { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; }
+              .val { font-size: 20px; font-weight: bold; color: #0f172a; margin-top: 5px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; font-size: 13px; }
+              th { background: #f1f5f9; }
+            </style>
+          </head>
+          <body>
+            <h1>🔥 Meera Crackers - Today's Sales & Stock Report (${updatedData.date})</h1>
+            <div class="grid">
+              <div class="card">Today Revenue<div class="val">₹${updatedData.today_revenue.toLocaleString()}</div></div>
+              <div class="card">Orders Placed<div class="val">${updatedData.today_orders}</div></div>
+              <div class="card">Crackers Outflow<div class="val">${updatedData.today_items_sold} Items</div></div>
+              <div class="card">Stock Left<div class="val">${updatedData.remaining_stock} Items</div></div>
+            </div>
+            <p><strong>Shift Download Counter:</strong> ${updatedData.download_count}/2 | <strong>Status:</strong> ${updatedData.day_closed ? '🟢 Day Shift Complete / Next Day Initialized' : '🟡 Active Shift'}</p>
+            <h3>Today's Orders Breakdown</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th>Items</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(updatedData.today_orders_list || []).map(o => `
+                  <tr>
+                    <td>#${o.order_number}</td>
+                    <td>${o.customer_name}</td>
+                    <td>₹${o.total}</td>
+                    <td>${o.order_status}</td>
+                    <td>${o.items_summary}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          printWindow.print();
+        } else {
+          Alert.alert('PDF Report Ready', `Shift download #${updatedData.download_count} recorded. Report status: ${updatedData.day_closed ? 'Day Shift Completed' : 'Active Shift'}`);
+        }
+      } else {
+        Alert.alert('PDF Report Ready', `Download #${updatedData.download_count}/2 recorded.\n${updatedData.day_closed ? '🟢 Day Shift Complete! Ready for Next Business Day.' : 'Active Shift recorded.'}`);
+      }
+    } catch (err: any) {
+      Alert.alert('Download Error', err?.message || 'Failed to record report download.');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }, []);
+
+  const handleEmailReportToAdmins = useCallback(async () => {
+    setIsSendingEmail(true);
+    try {
+      const res = await adminService.emailTodayReportToAdmins();
+      Alert.alert(
+        '📧 Email Dispatched!',
+        `Today's Sales & Stock Report sent to admin email(s):\n• ${res.admin_emails_notified.join('\n• ')}`
+      );
+    } catch (err: any) {
+      Alert.alert('Email Error', err?.message || 'Failed to send report email.');
+    } finally {
+      setIsSendingEmail(false);
+    }
+  }, []);
 
   const loadMetrics = useCallback(async () => {
     try {
@@ -175,6 +294,20 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           <Text style={styles.sectionTitle}>Quick Management Actions</Text>
           <View style={styles.actionsRow}>
             <TouchableOpacity
+              style={[
+                styles.actionButton,
+                { backgroundColor: '#FFF3E0', borderColor: '#FFE0B2', borderWidth: 1.5 },
+              ]}
+              onPress={handleOpenTodayReportModal}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="wb-sunny" size={24} color="#E65100" />
+              <Text style={[styles.actionButtonText, { color: '#E65100', fontFamily: 'Inter-Bold' }]}>
+                Today's Report
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={styles.actionButton}
               onPress={() => navigation.navigate('UserManagement')}
               activeOpacity={0.8}
@@ -290,6 +423,142 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           </View>
         </View>
       </ScrollView>
+
+      {/* TODAY'S SALES & STOCK REPORT MODAL */}
+      <Modal visible={isTodayReportModalVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.reportModalCard}>
+            {/* Header */}
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                <MaterialIcons name="wb-sunny" size={24} color="#E65100" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalHeaderTitle}>Today's Sales & Stock Report</Text>
+                  <Text style={styles.modalHeaderSubtitle}>
+                    Real-time daily operations & inventory outflow summary
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setIsTodayReportModalVisible(false)} style={{ padding: 4 }}>
+                <MaterialIcons name="close" size={24} color={Colors.onSurface} />
+              </TouchableOpacity>
+            </View>
+
+            {isLoadingReport ? (
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+                <Text style={{ marginTop: 12, ...Typography.bodyMd, color: Colors.onSurfaceVariant }}>
+                  Calculating today's live sales & stock outflow...
+                </Text>
+              </View>
+            ) : todayReport ? (
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8 }}>
+                {/* 4 Metric Badges */}
+                <View style={styles.reportGrid}>
+                  <View style={[styles.reportMetricCard, { backgroundColor: '#FFF3E0', borderColor: '#FFE0B2' }]}>
+                    <MaterialIcons name="monetization-on" size={20} color="#E65100" />
+                    <Text style={styles.reportMetricLabel}>TODAY'S REVENUE</Text>
+                    <Text style={[styles.reportMetricValue, { color: '#E65100' }]}>
+                      {formatCurrency(todayReport.today_revenue)}
+                    </Text>
+                  </View>
+
+                  <View style={[styles.reportMetricCard, { backgroundColor: '#E3F2FD', borderColor: '#BBDEFB' }]}>
+                    <MaterialIcons name="shopping-bag" size={20} color="#1565C0" />
+                    <Text style={styles.reportMetricLabel}>TODAY'S ORDERS</Text>
+                    <Text style={[styles.reportMetricValue, { color: '#1565C0' }]}>
+                      {todayReport.today_orders} Orders
+                    </Text>
+                  </View>
+
+                  <View style={[styles.reportMetricCard, { backgroundColor: '#F3E5F5', borderColor: '#E1BEE7' }]}>
+                    <MaterialIcons name="local-shipping" size={20} color="#6A1B9A" />
+                    <Text style={styles.reportMetricLabel}>ITEMS OUTFLOW</Text>
+                    <Text style={[styles.reportMetricValue, { color: '#6A1B9A' }]}>
+                      {todayReport.today_items_sold} Items
+                    </Text>
+                  </View>
+
+                  <View style={[styles.reportMetricCard, { backgroundColor: '#E8F5E9', borderColor: '#C8E6C9' }]}>
+                    <MaterialIcons name="inventory-2" size={20} color="#2E7D32" />
+                    <Text style={styles.reportMetricLabel}>REMAINING STOCK</Text>
+                    <Text style={[styles.reportMetricValue, { color: '#2E7D32' }]}>
+                      {todayReport.remaining_stock} Items
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Download Counter & Automated 12:00 AM Status */}
+                <View style={styles.shiftStatusCard}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <MaterialIcons name="download" size={20} color="#1565C0" />
+                      <Text style={styles.shiftStatusTitle}>
+                        Downloaded Today: {todayReport.download_count} Times (Unlimited)
+                      </Text>
+                    </View>
+                    <View style={[styles.shiftStatusBadge, { backgroundColor: '#E8F5E9' }]}>
+                      <Text style={[styles.shiftStatusBadgeText, { color: '#2E7D32' }]}>
+                        ⏰ Auto 12:00 AM Midnight Email Active
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* PDF Download & Email Buttons */}
+                <View style={{ flexDirection: 'row', gap: 10, marginVertical: 12 }}>
+                  <TouchableOpacity
+                    style={[styles.reportCtaBtn, { flex: 1, backgroundColor: Colors.primary }]}
+                    onPress={handleDownloadPdfReport}
+                    disabled={isDownloadingPdf}
+                    activeOpacity={0.8}
+                  >
+                    <MaterialIcons name="picture-as-pdf" size={18} color="#ffffff" />
+                    <Text style={styles.reportCtaText}>
+                      {isDownloadingPdf ? 'Generating...' : 'Download PDF Report'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.reportCtaBtn, { flex: 1, backgroundColor: '#2E7D32' }]}
+                    onPress={handleEmailReportToAdmins}
+                    disabled={isSendingEmail}
+                    activeOpacity={0.8}
+                  >
+                    <MaterialIcons name="email" size={18} color="#ffffff" />
+                    <Text style={styles.reportCtaText}>
+                      {isSendingEmail ? 'Dispatching...' : 'Email to All Admins'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Today's Orders Breakdown Table */}
+                <Text style={styles.ordersBreakdownTitle}>Today's Orders Breakdown</Text>
+                {todayReport.today_orders_list && todayReport.today_orders_list.length > 0 ? (
+                  todayReport.today_orders_list.map((o) => (
+                    <View key={o.id} style={styles.reportOrderRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.reportOrderNum}>
+                          #{o.order_number} • {o.customer_name} ({o.created_at})
+                        </Text>
+                        <Text style={styles.reportOrderItems} numberOfLines={1}>
+                          {o.items_summary}
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={styles.reportOrderTotal}>{formatCurrency(o.total)}</Text>
+                        <Text style={styles.reportOrderStatus}>{o.order_status}</Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.noOrdersText}>No orders recorded yet today.</Text>
+                )}
+              </ScrollView>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
 
       <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />
     </SafeAreaView>
@@ -517,6 +786,161 @@ const styles = StyleSheet.create({
     ...Typography.bodyMd,
     fontSize: 13,
     color: Colors.onSurfaceVariant,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.md,
+  },
+  reportModalCard: {
+    backgroundColor: Colors.surfaceContainerLowest,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.md,
+    width: '100%',
+    maxWidth: 680,
+    maxHeight: '90%',
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    shadowColor: Colors.shadowColor,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: Spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.surfaceContainerHigh,
+    marginBottom: Spacing.xs,
+  },
+  modalHeaderTitle: {
+    ...Typography.headlineLg,
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+  },
+  modalHeaderSubtitle: {
+    ...Typography.bodyMd,
+    fontSize: 11,
+    color: Colors.onSurfaceVariant,
+  },
+  reportGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginVertical: 8,
+  },
+  reportMetricCard: {
+    flex: 1,
+    minWidth: 130,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xs,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  reportMetricLabel: {
+    ...Typography.labelLg,
+    fontSize: 9,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurfaceVariant,
+  },
+  reportMetricValue: {
+    ...Typography.headlineLg,
+    fontSize: 15,
+    fontFamily: 'Inter-Bold',
+  },
+  shiftStatusCard: {
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    marginVertical: 4,
+  },
+  shiftStatusTitle: {
+    ...Typography.titleLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+  },
+  shiftStatusBadge: {
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  shiftStatusBadgeText: {
+    ...Typography.labelLg,
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+  },
+  reportCtaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40,
+    borderRadius: BorderRadius.lg,
+    gap: 6,
+  },
+  reportCtaText: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
+  },
+  ordersBreakdownTitle: {
+    ...Typography.titleLg,
+    fontSize: 14,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  reportOrderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xs,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+  },
+  reportOrderNum: {
+    ...Typography.titleLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+  },
+  reportOrderItems: {
+    ...Typography.bodyMd,
+    fontSize: 11,
+    color: Colors.onSurfaceVariant,
+  },
+  reportOrderTotal: {
+    ...Typography.titleLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+  },
+  reportOrderStatus: {
+    ...Typography.labelLg,
+    fontSize: 9,
+    fontFamily: 'Inter-Bold',
+    color: Colors.tertiary,
+  },
+  noOrdersText: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    color: Colors.tertiary,
+    fontStyle: 'italic',
+    paddingVertical: 8,
   },
 });
 

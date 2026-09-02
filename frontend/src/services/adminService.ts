@@ -224,6 +224,28 @@ export interface AdminCategoryUpdateInput {
   is_active?: boolean;
 }
 
+export interface TodayReportOrderItem {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  total: number;
+  order_status: string;
+  payment_status: string;
+  items_summary: string;
+  created_at: string;
+}
+
+export interface TodayReportData {
+  date: string;
+  today_revenue: number;
+  today_orders: number;
+  today_items_sold: number;
+  remaining_stock: number;
+  download_count: number;
+  day_closed: boolean;
+  today_orders_list: TodayReportOrderItem[];
+}
+
 export interface InventorySummaryMetrics {
   totalProducts: number;
   totalStockUnits: number;
@@ -1264,6 +1286,24 @@ export class AdminService {
       razorpayPaymentId: ord.payment_status === 'Pending' ? null : (ord.razorpay_payment_id || ord.razorpayPaymentId || null),
       paymentCompletedAt: ord.payment_completed_at || ord.paymentCompletedAt || null,
       items: mappedItems,
+    };
+  }
+
+  async getTodayReport(): Promise<TodayReportData> {
+    const { data: res } = await apiClient.get('/admin/reports/today');
+    return res?.data || res;
+  }
+
+  async recordTodayReportDownload(): Promise<TodayReportData> {
+    const { data: res } = await apiClient.post('/admin/reports/today/download');
+    return res?.data || res;
+  }
+
+  async emailTodayReportToAdmins(): Promise<{ message: string; admin_emails_notified: string[] }> {
+    const { data: res } = await apiClient.post('/admin/reports/today/email');
+    return {
+      message: res?.message || 'Report dispatched successfully',
+      admin_emails_notified: res?.data?.admin_emails_notified || [],
     };
   }
 }

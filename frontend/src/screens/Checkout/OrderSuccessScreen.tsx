@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
   ImageSourcePropType,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,6 +21,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { LOCAL_PRODUCT_IMAGES, resolveProductImage } from '@/constants/productImages';
 import { formatCurrency } from '@/utils/currency';
 import { orderService } from '@/services/orderService';
+import { downloadCustomerOrderInvoicePdf } from '@/utils/invoiceGenerator';
 
 type OrderSuccessScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -52,6 +54,21 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
       });
     }
   }, [orderId, orderItems.length]);
+
+  const handleDownloadInvoice = useCallback(() => {
+    downloadCustomerOrderInvoicePdf({
+      orderNumber: (orderNumber || '0000').replace('#', ''),
+      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      customerName: 'Customer',
+      shippingAddress: shippingAddress,
+      paymentMethod: paymentId ? 'Razorpay Online Payment (UPI / Card)' : 'Online Payment',
+      paymentId: paymentId || null,
+      paymentStatus: paymentStatus || 'Paid Online',
+      items: orderItems,
+      subtotal: amountPaid || 0,
+      total: amountPaid || 0,
+    });
+  }, [orderNumber, shippingAddress, paymentId, paymentStatus, orderItems, amountPaid]);
 
   const handleContinueShopping = useCallback(() => {
     navigation.navigate('Home');
@@ -222,6 +239,15 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
 
           {/* Actions */}
           <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={styles.downloadInvoiceCta}
+              onPress={handleDownloadInvoice}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="picture-as-pdf" size={20} color="#ffffff" />
+              <Text style={styles.downloadInvoiceCtaText}>Download Official Tax Invoice (PDF)</Text>
+            </TouchableOpacity>
+
             <PrimaryButton
               title="View Order History"
               onPress={handleViewOrders}
@@ -483,6 +509,28 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: Spacing.lg,
     gap: Spacing.sm,
+  },
+  downloadInvoiceCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2E7D32',
+    paddingVertical: Spacing.sm + 2,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    gap: 8,
+    width: '100%',
+    shadowColor: Colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  downloadInvoiceCtaText: {
+    ...Typography.labelLg,
+    fontSize: 14,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
   },
   actionCta: {
     width: '100%',

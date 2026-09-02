@@ -24,6 +24,7 @@ import { useNotificationStore } from '@/store';
 import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
+import { downloadCustomerOrderInvoicePdf } from '@/utils/invoiceGenerator';
 
 type OrderDetailsScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -56,6 +57,25 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
   useEffect(() => {
     fetchDetails();
   }, [fetchDetails]);
+
+  const handleDownloadInvoice = useCallback(() => {
+    if (!order) return;
+    downloadCustomerOrderInvoicePdf({
+      orderNumber: (order.orderNumber || '0000').replace('#', ''),
+      date: order.date || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      customerName: 'Valued Customer',
+      shippingAddress: order.shippingAddress || 'Customer Delivery Address',
+      paymentMethod: order.paymentMethod || 'Razorpay / Online Payment',
+      paymentId: order.razorpayPaymentId || null,
+      paymentStatus: order.paymentStatus || 'Paid Online',
+      items: order.items || [],
+      subtotal: order.subtotal || order.totalPrice,
+      tax: order.tax || 0,
+      shipping: order.shippingFee || 0,
+      discount: order.discount || 0,
+      total: order.totalPrice,
+    });
+  }, [order]);
 
   const isCancellable = useMemo(() => {
     if (!order) return false;
@@ -343,6 +363,30 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
             <Text style={styles.grandTotalValue}>{formatCurrency(order.totalPrice)}</Text>
           </View>
         </View>
+
+        {/* Customer Download Invoice CTA Button */}
+        {order && (
+          <View style={styles.cancelContainer}>
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#2E7D32',
+                paddingVertical: 12,
+                borderRadius: 12,
+                gap: 8,
+              }}
+              onPress={handleDownloadInvoice}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="picture-as-pdf" size={20} color="#ffffff" />
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
+                Download Official Tax Invoice (PDF)
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Cancel Order Action Button */}
         {isCancellable && (
