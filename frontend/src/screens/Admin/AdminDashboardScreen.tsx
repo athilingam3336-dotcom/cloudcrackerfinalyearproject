@@ -324,9 +324,13 @@ const styles = StyleSheet.create({
   statsGrid: {
     paddingHorizontal: Spacing.marginMobile,
     marginTop: Spacing.md,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.sm,
   },
   statCard: {
+    flex: 1,
+    minWidth: 145,
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.xl,
     padding: Spacing.md,
