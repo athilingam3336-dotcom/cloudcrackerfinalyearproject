@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -44,6 +44,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   navigation,
   route,
 }) => {
+  const flatListRef = useRef<FlatList>(null);
   const categoryIdParam = route.params?.categoryId;
   const initialQuery = route.params?.query || '';
 
@@ -63,45 +64,13 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const numColumns = useMemo(() => getNumColumns(screenWidth), [screenWidth]);
 
-  // Load categories from API / cache
-  React.useEffect(() => {
-    let isMounted = true;
-    productService.getCategories().then((data) => {
-      if (isMounted && data.length > 0) {
-        setCategories(data);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Fetch products
-  React.useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
-    const apiSearch =
-      searchQuery.toLowerCase() === 'special edition' ||
-      searchQuery.toLowerCase() === 'grand finale' ||
-      searchQuery.toLowerCase() === 'new arrival'
-        ? undefined
-        : searchQuery;
-
-    productService.getProducts(undefined, apiSearch).then((data) => {
-      if (isMounted) {
-        if (data && data.length > 0) {
-          setProducts(data);
-        }
-        setIsLoading(false);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, [searchQuery]);
-
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 8;
+
+  const handlePageChange = useCallback((newPage: number) => {
+    setCurrentPage(newPage);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
 
   // Reset page on search or filter change
   React.useEffect(() => {
@@ -502,7 +471,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
       <View style={styles.paginationContainer}>
         <TouchableOpacity
           style={[styles.pageButton, currentPageSafe === 1 && styles.disabledPageButton]}
-          onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          onPress={() => handlePageChange(Math.max(1, currentPageSafe - 1))}
           disabled={currentPageSafe === 1}
         >
           <MaterialIcons name="chevron-left" size={20} color={Colors.onSurface} />
@@ -512,7 +481,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           <TouchableOpacity
             key={page}
             style={[styles.pageButton, currentPageSafe === page && styles.activePageButton]}
-            onPress={() => setCurrentPage(page)}
+            onPress={() => handlePageChange(page)}
           >
             <Text
               style={[
@@ -527,14 +496,14 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
 
         <TouchableOpacity
           style={[styles.pageButton, currentPageSafe === totalPages && styles.disabledPageButton]}
-          onPress={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          onPress={() => handlePageChange(Math.min(totalPages, currentPageSafe + 1))}
           disabled={currentPageSafe === totalPages}
         >
           <MaterialIcons name="chevron-right" size={20} color={Colors.onSurface} />
         </TouchableOpacity>
       </View>
     );
-  }, [currentPageSafe, totalPages]);
+  }, [currentPageSafe, totalPages, handlePageChange]);
 
   const renderEmptyState = useMemo(() => {
     if (isLoading) return null;
@@ -576,6 +545,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={paginatedProducts}
           key={numColumns}
           numColumns={numColumns}

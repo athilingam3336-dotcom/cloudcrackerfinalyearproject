@@ -36,6 +36,8 @@ import { paymentService } from '@/services/paymentService';
 import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } from '@/store';
 import {
   MOCK_PRODUCTS,
+  MOCK_FEATURED_PRODUCTS,
+  MOCK_BEST_SELLERS,
   MOCK_CATEGORIES,
   MOCK_BANNERS,
   MOCK_FLASH_SALE,
@@ -361,6 +363,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return [];
   }, [products]);
 
+  const featuredProducts: ProductItem[] = useMemo(() => {
+    const featured = products.filter(
+      (p) =>
+        p.badge?.toLowerCase().includes('featured') ||
+        p.badge?.toLowerCase().includes('top') ||
+        p.badge?.toLowerCase().includes('sky') ||
+        p.rating >= 4.9
+    );
+    return featured.length >= 3 ? featured.slice(0, 6) : MOCK_FEATURED_PRODUCTS;
+  }, [products]);
+
+  const bestSellerProducts: ProductItem[] = useMemo(() => {
+    const bestSellers = products.filter(
+      (p) =>
+        p.badge?.toLowerCase().includes('bestseller') ||
+        p.badge?.toLowerCase().includes('popular') ||
+        p.badge?.toLowerCase().includes('trending') ||
+        p.badge?.toLowerCase().includes('hot') ||
+        (p.reviewCount && p.reviewCount >= 100)
+    );
+    return bestSellers.length >= 3 ? bestSellers.slice(0, 6) : MOCK_BEST_SELLERS;
+  }, [products]);
+
   // List Header Component
   const renderHeader = useMemo(() => {
     return (
@@ -495,11 +520,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             title="Featured Products"
             subtitle="Handpicked pyrotechnics for maximum celebration."
             actionText="See All"
-            onActionPress={() => navigation.navigate('ProductListing')}
+            onActionPress={() => navigation.navigate('ProductListing', { query: 'featured' })}
           />
           <FlatList
             horizontal
-            data={products}
+            data={featuredProducts}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.horizontalListContent}
@@ -513,11 +538,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             title="Best Sellers"
             subtitle="Top rated pyrotechnics chosen by our community."
             actionText="See All"
-            onActionPress={() => navigation.navigate('ProductListing')}
+            onActionPress={() => navigation.navigate('ProductListing', { query: 'bestseller' })}
           />
           <FlatList
             horizontal
-            data={products}
+            data={bestSellerProducts}
             keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.horizontalListContent}
@@ -534,6 +559,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     );
   }, [
     products,
+    featuredProducts,
+    bestSellerProducts,
     searchQuery,
     selectedCategory,
     navigation,
