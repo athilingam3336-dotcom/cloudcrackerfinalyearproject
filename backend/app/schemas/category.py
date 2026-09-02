@@ -25,6 +25,7 @@ class CategoryResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     status: str
+    item_count: Optional[int] = 0
 
     @model_validator(mode="before")
     @classmethod

@@ -50,7 +50,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
 
   React.useEffect(() => {
     let isMounted = true;
-    productService.getCategories().then((data) => {
+    productService.getCategories(true).then((data) => {
       if (isMounted) {
         setCategories(data);
         setIsLoading(false);
@@ -137,32 +137,6 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
           placeholder="Search categories (e.g. rockets, sparklers)..."
         />
 
-        {/* Hero Background Section matching Stitch design */}
-        <View style={styles.heroContainer}>
-          <TouchableOpacity
-            style={styles.inlineBackRow}
-            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
-            <Text style={styles.inlineBackText}>Back</Text>
-          </TouchableOpacity>
-          <ImageBackground
-            source={LOCAL_PRODUCT_IMAGES.GIFT_BOX}
-            style={styles.heroBackground}
-            imageStyle={{ borderRadius: BorderRadius.xl }}
-            resizeMode="cover"
-          >
-            <View style={styles.heroOverlay} />
-            <View style={styles.heroContent}>
-              <Text style={styles.heroTitle}>Shop by Category</Text>
-              <Text style={styles.heroSubtitle}>
-                Find the perfect spark for your celebration
-              </Text>
-            </View>
-          </ImageBackground>
-        </View>
-
         {/* Filter Pills */}
         <View style={styles.filterBar}>
           <TouchableOpacity
@@ -212,29 +186,6 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
     );
   }, [searchQuery, selectedFilter, navigation]);
 
-  // List Footer Component (CloudCrackers Elite Loyalty Promo)
-  const renderFooter = useMemo(() => {
-    return (
-      <View style={styles.footerWrapper}>
-        <View style={styles.eliteCard}>
-          <View style={styles.eliteTextContent}>
-            <Text style={styles.eliteTitle}>Meera Crackers Elite</Text>
-            <Text style={styles.eliteSubtitle}>
-              Join our loyalty program to unlock exclusive categories, wholesale pricing, and
-              early access to new seasonal collections.
-            </Text>
-          </View>
-          <PrimaryButton
-            title="Learn More"
-            variant="secondary"
-            onPress={handleEliteProgramPress}
-            style={styles.eliteCta}
-          />
-        </View>
-      </View>
-    );
-  }, [handleEliteProgramPress]);
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <FlatList
@@ -244,7 +195,6 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
         keyExtractor={(item) => item.id}
         renderItem={renderCategoryItem}
         ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

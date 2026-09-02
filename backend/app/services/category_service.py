@@ -76,8 +76,31 @@ class CategoryService:
         category.updated_by = user_id
         return await self.category_repo.soft_delete(category)
 
-    async def list_categories(self, include_inactive: bool = False) -> List[Category]:
-        """Lists categories, filtering by active status if specified."""
+    async def list_categories(self, include_inactive: bool = False) -> List[dict]:
+        """Lists categories with real active product counts populated."""
+        from app.models.product import Product
+
         if include_inactive:
-            return await self.category_repo.list_all_non_deleted()
-        return await self.category_repo.list_active()
+            categories = await self.category_repo.list_all_non_deleted()
+        else:
+            categories = await self.category_repo.list_active()
+
+        results = []
+        for cat in categories:
+            cat_dict = cat.model_dump()
+            cat_dict["id"] = str(cat.id)
+            # Count active products associated with this category ID or category name
+            count = await Product.find(
+                {
+                    "$or": [
+                        {"category_id": str(cat.id)},
+                        {"category_id": cat.name},
+                        {"category": cat.name},
+                    ],
+                    "status": {"$ne": "deleted"},
+                    "is_active": True,
+                }
+            ).count()
+            cat_dict["item_count"] = count
+            results.append(cat_dict)
+        return results

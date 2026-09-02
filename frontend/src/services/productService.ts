@@ -240,14 +240,39 @@ export class ProductService {
 
     this.pendingCategoriesRequest = (async () => {
       try {
-        const { data: res } = await apiClient.get('/categories');
-        const payload = res.data !== undefined ? res.data : res;
+        const [res, products] = await Promise.all([
+          apiClient.get('/categories'),
+          this.getProducts().catch(() => []),
+        ]);
+        const payload = res.data !== undefined ? res.data?.data || res.data : res;
         const items = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.categories)
           ? payload.categories
           : [];
-        const mapped = items.map((c: any) => this.mapCategoryToUi(c));
+
+        const mapped = items.map((c: any) => {
+          const categoryObj = this.mapCategoryToUi(c);
+          const realProductCount = products.filter(
+            (p) =>
+              (p.category && p.category.toLowerCase() === categoryObj.name.toLowerCase()) ||
+              p.category === categoryObj.id ||
+              p.category === (c.id || c._id)
+          ).length;
+
+          const finalCount =
+            typeof c.item_count === 'number' && c.item_count > 0
+              ? c.item_count
+              : typeof c.itemCount === 'number' && c.itemCount > 0
+              ? c.itemCount
+              : realProductCount;
+
+          return {
+            ...categoryObj,
+            itemCount: finalCount,
+          };
+        });
+
         const finalCategories = mapped.length > 0 ? mapped : MOCK_CATEGORIES;
         const cacheEntry = { data: finalCategories, timestamp: Date.now() };
         this.categoriesCache = cacheEntry;

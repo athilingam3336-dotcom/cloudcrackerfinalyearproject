@@ -363,25 +363,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           userName={user?.name ? user.name.split(' ')[0] : 'Explorer'}
         />
 
-        {/* Wide Full-Width Top Bar with Sparkler Mascots */}
+        {/* Wide Full-Width Top Bar with Quick Contact Actions */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.topWideBarScroll}
           contentContainerStyle={styles.topWideBarScrollContent}
         >
-          <View style={styles.topBarLeftItem}>
-            <Image
-              source={LOCAL_PRODUCT_IMAGES.KID_BOY_SPARKLER}
-              style={styles.topBarMascot}
-              resizeMode="contain"
-            />
-            <View style={styles.badgePill}>
-              <MaterialIcons name="schedule" size={13} color="#B30000" />
-              <Text style={styles.badgePillText}>{CLIENT_INFO.allDaysAvailable.toUpperCase()}</Text>
-            </View>
-          </View>
-
           <View style={styles.topActionsRow}>
             <TouchableOpacity
               style={styles.topActionChip}
@@ -409,12 +397,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <MaterialIcons name="location-on" size={15} color="#B45309" />
               <Text style={styles.topActionMapText}>Map Location</Text>
             </TouchableOpacity>
-
-            <Image
-              source={LOCAL_PRODUCT_IMAGES.KID_GIRL_SPARKLER}
-              style={styles.topBarMascot}
-              resizeMode="contain"
-            />
           </View>
         </ScrollView>
 
