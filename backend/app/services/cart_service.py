@@ -101,13 +101,14 @@ class CartService:
         return await self.cart_repo.update(cart_item, update_data)
 
     async def delete_cart_item(self, user_id: str, cart_id: str) -> None:
-        """Deletes a cart item."""
+        """Deletes a cart item safely and idempotently."""
         cart_item = await self.cart_repo.get_by_id(cart_id)
         if not cart_item or str(cart_item.user_id) != user_id:
             # Fallback check if cart_id was passed as product_id
             cart_item = await self.cart_repo.get_user_cart_item(user_id, cart_id)
         if not cart_item or str(cart_item.user_id) != user_id:
-            raise NotFoundException(message="Cart item not found.")
+            # Item already deleted or not in DB - return success (idempotent)
+            return
         await self.cart_repo.delete(cart_item)
 
     async def clear_cart(self, user_id: str) -> None:

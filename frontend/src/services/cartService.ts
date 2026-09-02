@@ -81,8 +81,13 @@ export class CartService {
     if (ENV.ENABLE_MOCK_API) {
       return true;
     }
-    await apiClient.delete(`/cart/${productId}`);
-    return true;
+    try {
+      await apiClient.delete(`/cart/${productId}`);
+      return true;
+    } catch (err: any) {
+      console.warn(`[cartService] removeFromCartApi (${productId}):`, err?.message || err);
+      return true;
+    }
   }
 
   async clearCartApi(): Promise<{ success: boolean }> {

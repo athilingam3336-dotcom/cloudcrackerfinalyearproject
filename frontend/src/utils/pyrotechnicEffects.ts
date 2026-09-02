@@ -55,8 +55,8 @@ export function detectPyrotechnicType(title: string = '', category: string = '')
   return 'aerial';
 }
 
-// Synthesizer Web Audio API for Pyrotechnic Sound Effects (Zero External Files, 100% Offline Instant Sound)
-export function playPyrotechnicSound(type: PyrotechnicType) {
+// Signature Diwali Happiness Whistling Rocket + Festive Burst Sound Synthesizer
+export function playDiwaliHappinessRocketSound() {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return;
 
   try {
@@ -70,104 +70,72 @@ export function playPyrotechnicSound(type: PyrotechnicType) {
 
     const now = ctx.currentTime;
 
-    if (type === 'rocket') {
-      // Rocket Swoosh + Launch Sweep
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(150, now);
-      osc.frequency.exponentialRampToValueAtTime(1100, now + 0.35);
+    // 1. High-Energy Diwali Whistling Rocket Ascending Sweep (Visil / Pwhiiiish!)
+    const whistleOsc = ctx.createOscillator();
+    const whistleGain = ctx.createGain();
 
-      gain.gain.setValueAtTime(0.25, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    // Whistle vibrato modulation
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.frequency.setValueAtTime(35, now);
+    lfoGain.gain.setValueAtTime(60, now);
+    lfo.connect(whistleOsc.frequency);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.4);
+    whistleOsc.type = 'sine';
+    whistleOsc.frequency.setValueAtTime(550, now);
+    whistleOsc.frequency.exponentialRampToValueAtTime(2200, now + 0.35);
 
-      // Pop sound at burst
-      setTimeout(() => {
-        try {
-          const popOsc = ctx.createOscillator();
-          const popGain = ctx.createGain();
-          popOsc.type = 'triangle';
-          popOsc.frequency.setValueAtTime(450, ctx.currentTime);
-          popOsc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.15);
-          popGain.gain.setValueAtTime(0.3, ctx.currentTime);
-          popGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-          popOsc.connect(popGain);
-          popGain.connect(ctx.destination);
-          popOsc.start();
-          popOsc.stop(ctx.currentTime + 0.15);
-        } catch {}
-      }, 350);
-    } else if (type === 'bomb') {
-      // Boom Bass Blast + White Noise Crackle
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+    whistleGain.gain.setValueAtTime(0.28, now);
+    whistleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
 
-      gain.gain.setValueAtTime(0.5, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    whistleOsc.connect(whistleGain);
+    whistleGain.connect(ctx.destination);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.35);
-    } else if (type === 'sparkler') {
-      // Sparkler Sparkling Crackle Tones
-      for (let i = 0; i < 4; i++) {
-        setTimeout(() => {
-          try {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1800 + i * 400, ctx.currentTime);
-            gain.gain.setValueAtTime(0.15, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.08);
-          } catch {}
-        }, i * 60);
-      }
-    } else if (type === 'chakkar') {
-      // Whistling Spinner Oscillating Sound
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, now);
-      osc.frequency.linearRampToValueAtTime(1200, now + 0.25);
-      osc.frequency.linearRampToValueAtTime(500, now + 0.4);
+    lfo.start(now);
+    whistleOsc.start(now);
+    lfo.stop(now + 0.38);
+    whistleOsc.stop(now + 0.38);
 
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    // 2. Joyful Diwali Explosion Burst (Boom! ✨🎆) at peak
+    setTimeout(() => {
+      try {
+        const burstCtx = new AudioCtxClass();
+        const bNow = burstCtx.currentTime;
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.4);
-    } else {
-      // Multi-shell Aerial Burst
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(300, now);
-      osc.frequency.exponentialRampToValueAtTime(60, now + 0.25);
+        // Sub-bass Boom
+        const boomOsc = burstCtx.createOscillator();
+        const boomGain = burstCtx.createGain();
+        boomOsc.type = 'triangle';
+        boomOsc.frequency.setValueAtTime(240, bNow);
+        boomOsc.frequency.exponentialRampToValueAtTime(45, bNow + 0.25);
+        boomGain.gain.setValueAtTime(0.4, bNow);
+        boomGain.gain.exponentialRampToValueAtTime(0.001, bNow + 0.28);
 
-      gain.gain.setValueAtTime(0.25, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        boomOsc.connect(boomGain);
+        boomGain.connect(burstCtx.destination);
+        boomOsc.start(bNow);
+        boomOsc.stop(bNow + 0.28);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.3);
-    }
+        // Golden Sparkle Chimes
+        for (let i = 0; i < 3; i++) {
+          const sparkOsc = burstCtx.createOscillator();
+          const sparkGain = burstCtx.createGain();
+          sparkOsc.type = 'sine';
+          sparkOsc.frequency.setValueAtTime(1400 + i * 350, bNow + i * 0.04);
+          sparkGain.gain.setValueAtTime(0.12, bNow + i * 0.04);
+          sparkGain.gain.exponentialRampToValueAtTime(0.001, bNow + i * 0.04 + 0.1);
+          sparkOsc.connect(sparkGain);
+          sparkGain.connect(burstCtx.destination);
+          sparkOsc.start(bNow + i * 0.04);
+          sparkOsc.stop(bNow + i * 0.04 + 0.1);
+        }
+      } catch {}
+    }, 320);
   } catch {}
+}
+
+export function playPyrotechnicSound(type?: PyrotechnicType) {
+  playDiwaliHappinessRocketSound();
 }
 
 export function triggerPyrotechnicCartEffect(

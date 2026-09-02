@@ -95,15 +95,16 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   removeFromCart: async (productId) => {
     const previousItems = get().items;
-    // Optimistic Update: Immediately remove item from memory (0ms)
-    set({ items: previousItems.filter((i) => i.product.id !== productId) });
+    // Permanently remove item from local cart state (0ms wait)
+    const updatedItems = previousItems.filter((i) => i.product.id !== productId);
+    set({ items: updatedItems });
 
     try {
       await cartService.removeFromCartApi(productId);
       return true;
     } catch (error) {
-      set({ items: previousItems });
-      throw error;
+      console.warn('removeFromCart API sync warning:', error);
+      return true;
     }
   },
 
@@ -114,28 +115,21 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     const newQty = currentItem.quantity + delta;
 
-    // Optimistic Update: Immediately reflect new quantity and totals (0ms)
-    let updatedItems: CartItem[];
     if (newQty <= 0) {
-      updatedItems = previousItems.filter((i) => i.product.id !== productId);
-    } else {
-      updatedItems = previousItems.map((i) =>
-        i.product.id === productId ? { ...i, quantity: newQty } : i
-      );
+      return get().removeFromCart(productId);
     }
+
+    const updatedItems = previousItems.map((i) =>
+      i.product.id === productId ? { ...i, quantity: newQty } : i
+    );
     set({ items: updatedItems });
 
     try {
-      if (newQty <= 0) {
-        await cartService.removeFromCartApi(productId);
-      } else {
-        await cartService.updateQuantityApi(productId, newQty);
-      }
+      await cartService.updateQuantityApi(productId, newQty);
       return true;
     } catch (error) {
-      // Revert to previous items if backend call fails
-      set({ items: previousItems });
-      throw error;
+      console.warn('updateQuantity API sync warning:', error);
+      return true;
     }
   },
 
