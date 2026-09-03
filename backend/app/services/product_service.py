@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from fastapi import UploadFile
 
@@ -72,7 +73,6 @@ class ProductService:
 
         images_list = [image_url] if image_url else []
 
-        from datetime import timedelta
         flash_hours = getattr(data, "flash_sale_hours", 4.0) or 4.0
         flash_ends_at = datetime.utcnow() + timedelta(hours=flash_hours) if data.is_flash_sale else None
 
