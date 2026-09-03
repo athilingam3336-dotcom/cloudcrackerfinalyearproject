@@ -642,46 +642,32 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
             placeholder="Search products by title or description..."
           />
 
-          {/* Category & Badge Filter Chips */}
+          {/* Main Category Filter Chips (Row 1) */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterRow}
           >
-            {[
-              { id: 'All', label: 'All' },
-              { id: 'flash_sale', label: '⚡ Flash Sale' },
-              { id: 'featured', label: '✨ Featured' },
-              { id: 'bestseller', label: '🔥 Bestsellers' },
-            ].map((f) => {
-              const isSel = selectedCategory === f.id;
-              return (
-                <TouchableOpacity
-                  key={f.id}
-                  style={[
-                    styles.filterChip,
-                    isSel && styles.activeFilterChip,
-                    f.id === 'flash_sale' && isSel && { backgroundColor: '#B30000', borderColor: '#B30000' },
-                    f.id === 'featured' && isSel && { backgroundColor: '#D97706', borderColor: '#D97706' },
-                    f.id === 'bestseller' && isSel && { backgroundColor: '#2E7D32', borderColor: '#2E7D32' },
-                  ]}
-                  onPress={() => {
-                    setSelectedCategory(f.id);
-                    setPage(1);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      isSel && styles.activeFilterChipText,
-                    ]}
-                  >
-                    {f.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            <TouchableOpacity
+              style={[
+                styles.filterChip,
+                selectedCategory === 'All' && styles.activeFilterChip,
+              ]}
+              onPress={() => {
+                setSelectedCategory('All');
+                setPage(1);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedCategory === 'All' && styles.activeFilterChipText,
+                ]}
+              >
+                All
+              </Text>
+            </TouchableOpacity>
 
             {categories.map((cat) => (
               <TouchableOpacity
@@ -707,6 +693,41 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               </TouchableOpacity>
             ))}
           </ScrollView>
+
+          {/* Special Badge Filter Chips (Row 2 - Dedicated Below) */}
+          <View style={styles.badgeFilterRow}>
+            {[
+              { id: 'flash_sale', label: '⚡ Flash Sale', color: '#B30000' },
+              { id: 'featured', label: '✨ Featured', color: '#D97706' },
+              { id: 'bestseller', label: '🔥 Bestsellers', color: '#2E7D32' },
+            ].map((f) => {
+              const isSel = selectedCategory === f.id;
+              return (
+                <TouchableOpacity
+                  key={f.id}
+                  style={[
+                    styles.filterChip,
+                    styles.specialBadgeChip,
+                    isSel && { backgroundColor: f.color, borderColor: f.color },
+                  ]}
+                  onPress={() => {
+                    setSelectedCategory(isSel ? 'All' : f.id);
+                    setPage(1);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isSel && styles.activeFilterChipText,
+                    ]}
+                  >
+                    {f.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </View>
     );
@@ -1302,6 +1323,16 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
     paddingRight: Spacing.marginMobile,
+  },
+  badgeFilterRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+    flexWrap: 'wrap',
+  },
+  specialBadgeChip: {
+    borderRadius: BorderRadius.lg,
   },
   filterChip: {
     paddingHorizontal: Spacing.md,
