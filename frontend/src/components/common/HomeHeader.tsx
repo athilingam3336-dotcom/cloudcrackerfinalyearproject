@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Linking, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { sanitizeRemoteImageUrl, LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
+import { CLIENT_INFO } from '@/constants/clientInfo';
 
 interface HomeHeaderProps {
   onNotificationPress: () => void;
@@ -33,7 +34,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
     const activeUserName = userName || (user?.name ? user.name.split(' ')[0] : 'Explorer');
     const activeAvatar = sanitizeRemoteImageUrl(avatarUrl || user?.avatarUrl);
     const { width } = useWindowDimensions();
-    const isSmallScreen = width < 520;
+    const isSmallScreen = width < 640;
 
     return (
       <View style={styles.header}>
@@ -72,7 +73,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
               <Text
                 style={[
                   styles.brandTitle,
-                  isSmallScreen && { fontSize: 20, lineHeight: 25 },
+                  isSmallScreen && { fontSize: 18, lineHeight: 22 },
                 ]}
                 numberOfLines={1}
               >
@@ -87,6 +88,38 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
         </View>
 
         <View style={styles.rightSection}>
+          {/* Quick Contact Action Pills (Phone, Email, Map) - Placed to the Left of Bell Icon */}
+          {!isSmallScreen && (
+            <View style={styles.headerContactPillsRow}>
+              <TouchableOpacity
+                style={styles.headerContactChip}
+                onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="call" size={14} color="#B30000" />
+                <Text style={styles.headerContactChipText}>{CLIENT_INFO.primaryPhone}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.headerContactChip}
+                onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="email" size={14} color="#B30000" />
+                <Text style={styles.headerContactChipText}>Email Us</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.headerContactChip, styles.headerMapChip]}
+                onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="location-on" size={14} color="#B45309" />
+                <Text style={styles.headerMapChipText}>Map Location</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <TouchableOpacity
             style={styles.iconCircleButton}
             onPress={onNotificationPress}
@@ -180,23 +213,23 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
   brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 6,
   },
   brandTitle: {
     fontSize: 26,
     lineHeight: 32,
-    fontFamily: Platform.OS === 'web' ? "'Cinzel', 'Outfit', 'Playfair Display', Georgia, serif" : 'Cinzel-Bold',
+    fontFamily: Platform.OS === 'web' ? "'Cinzel Decorative', 'Cinzel', 'Playfair Display', Georgia, serif" : 'Cinzel-ExtraBold',
     fontWeight: '900',
     color: '#A81818',
-    letterSpacing: 0.8,
-    textAlign: 'center',
+    letterSpacing: 1.0,
+    textAlign: 'left',
   },
   sparkleIcon: {
     marginTop: -2,
@@ -208,7 +241,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#64748B',
     marginTop: 2,
-    textAlign: 'center',
+    textAlign: 'left',
     letterSpacing: 0.2,
   },
   greetingUserName: {
@@ -222,6 +255,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.xs,
     flexShrink: 0,
+  },
+  headerContactPillsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginRight: 6,
+  },
+  headerContactChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF5F5',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+  },
+  headerContactChipText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: '#B30000',
+  },
+  headerMapChip: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  headerMapChipText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: '#B45309',
   },
   iconCircleButton: {
     width: 40,

@@ -102,7 +102,20 @@ export default function App() {
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      // 1. Ensure responsive viewport meta tag for mobile browsers (Chrome, Safari iOS, Samsung Internet, Firefox)
+      // 1. Enforce browser tab title to Meera Crackers across all navigation route changes
+      const brandDocTitle = 'Meera Crackers - Premium Fireworks & Pyrotechnics Store';
+      document.title = brandDocTitle;
+      const titleObserver = new MutationObserver(() => {
+        if (document.title !== brandDocTitle) {
+          document.title = brandDocTitle;
+        }
+      });
+      const titleNode = document.querySelector('title');
+      if (titleNode) {
+        titleObserver.observe(titleNode, { childList: true, characterData: true, subtree: true });
+      }
+
+      // 2. Ensure responsive viewport meta tag for mobile browsers (Chrome, Safari iOS, Samsung Internet, Firefox)
       let metaViewport = document.querySelector('meta[name="viewport"]');
       if (!metaViewport) {
         metaViewport = document.createElement('meta');
@@ -114,14 +127,14 @@ export default function App() {
         'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
       );
 
-      // 2. Load custom Web typography
+      // 3. Load custom Web typography
       const fontId = 'google-fonts-stylish-crackers';
       if (!document.getElementById(fontId)) {
         const link = document.createElement('link');
         link.id = fontId;
         link.rel = 'stylesheet';
         link.href =
-          'https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Outfit:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&family=Poppins:wght@500;600;700&display=swap';
+          'https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@700;800;900&family=Outfit:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&family=Poppins:wght@500;600;700;800&display=swap';
         document.head.appendChild(link);
       }
 

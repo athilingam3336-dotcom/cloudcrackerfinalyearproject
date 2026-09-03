@@ -9,7 +9,9 @@ import {
   Platform,
   Dimensions,
   Linking,
+  Image,
 } from 'react-native';
+import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -317,7 +319,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                   Light up the sky with Meera Crackers World.
                 </Text>
                 <View style={styles.heroImageCard}>
-                  <MaterialIcons name="local-fire-department" size={80} color={Colors.primary} />
+                  <Image
+                    source={LOCAL_PRODUCT_IMAGES.LOGO}
+                    style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 12 }}
+                    resizeMode="contain"
+                  />
                   <Text style={styles.quoteText}>
                     "Happy & Safety Guarantee for all your celebrations."
                   </Text>

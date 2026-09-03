@@ -9,7 +9,9 @@ import {
   Platform,
   Dimensions,
   Linking,
+  Image,
 } from 'react-native';
+import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -264,10 +266,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           <View style={styles.cardContainer}>
             {/* Branding Header */}
             <View style={styles.brandHeader}>
-              <View style={styles.logoBox}>
-                <MaterialIcons name="save-as" size={28} color={Colors.onPrimary} />
-              </View>
-              <Text style={styles.brandTitle}>Meera Crackers</Text>
+              <Image
+                source={LOCAL_PRODUCT_IMAGES.LOGO}
+                style={styles.authLogoImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.brandTitle}>MEERA CRACKERS</Text>
               <Text style={styles.brandSubtitle}>
                 Ignite your celebration with Meera Crackers World.
               </Text>
@@ -424,19 +428,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.sm,
   },
-  logoBox: {
-    width: 42,
-    height: 42,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+  authLogoImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     marginBottom: Spacing.xs,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
   },
   brandTitle: {
     ...Typography.headlineLg,

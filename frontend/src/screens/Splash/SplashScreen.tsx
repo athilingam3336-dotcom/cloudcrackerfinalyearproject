@@ -2,11 +2,13 @@ import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   Animated,
   Easing,
   Dimensions,
 } from 'react-native';
+import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -204,18 +206,12 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           />
           <View style={styles.innerGlow} />
 
-          {/* Central Firework Icons */}
+          {/* Central Firework Shop Logo Image */}
           <View style={styles.iconCenter}>
-            <MaterialIcons
-              name="flare"
-              size={80}
-              color={Colors.primary}
-            />
-            <MaterialIcons
-              name="auto-awesome"
-              size={32}
-              color={Colors.secondaryContainer}
-              style={styles.accentIcon}
+            <Image
+              source={LOCAL_PRODUCT_IMAGES.LOGO}
+              style={styles.splashShopLogo}
+              resizeMode="contain"
             />
           </View>
         </Animated.View>
@@ -315,8 +311,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  accentIcon: {
-    position: 'absolute',
+  splashShopLogo: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   brandTitle: {
     ...Typography.displayLg,

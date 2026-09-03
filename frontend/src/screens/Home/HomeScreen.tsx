@@ -363,42 +363,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           userName={user?.name ? user.name.split(' ')[0] : 'Explorer'}
         />
 
-        {/* Wide Full-Width Top Bar with Quick Contact Actions */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.topWideBarScroll}
-          contentContainerStyle={styles.topWideBarScrollContent}
-        >
-          <View style={styles.topActionsRow}>
-            <TouchableOpacity
-              style={styles.topActionChip}
-              onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="call" size={15} color="#B30000" />
-              <Text style={styles.topActionChipText}>{CLIENT_INFO.primaryPhone}</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.topActionChip}
-              onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="email" size={15} color="#B30000" />
-              <Text style={styles.topActionChipText}>Email Us</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.topActionChip, styles.topActionMapChip]}
-              onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="location-on" size={15} color="#B45309" />
-              <Text style={styles.topActionMapText}>Map Location</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
 
         {/* Search Bar */}
         <SearchBar
