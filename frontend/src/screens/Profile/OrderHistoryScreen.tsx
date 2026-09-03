@@ -30,6 +30,7 @@ import { resolveProductImage } from '@/constants/productImages';
 import { formatCurrency } from '@/utils/currency';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useProductStore } from '@/store/productStore';
 
 type OrderHistoryScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -324,7 +325,10 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
-          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('UserProfile'))}
+          onBackPress={() => {
+            useProductStore.getState().setLastProfileScreen(null);
+            navigation.navigate('UserProfile');
+          }}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
@@ -334,7 +338,10 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
         <View style={styles.titleSection}>
           <TouchableOpacity
             style={styles.inlineBackRow}
-            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('UserProfile'))}
+            onPress={() => {
+              useProductStore.getState().setLastProfileScreen(null);
+              navigation.navigate('UserProfile');
+            }}
             activeOpacity={0.7}
           >
             <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />

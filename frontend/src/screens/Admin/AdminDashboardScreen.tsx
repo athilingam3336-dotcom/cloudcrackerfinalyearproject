@@ -26,6 +26,7 @@ import { useNotificationStore } from '@/store';
 import { formatCurrency } from '@/utils/currency';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useProductStore } from '@/store/productStore';
 
 type AdminDashboardScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -279,7 +280,10 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeHeader
-        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+        onBackPress={() => {
+          useProductStore.getState().setLastProfileScreen(null);
+          navigation.navigate('UserProfile');
+        }}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}

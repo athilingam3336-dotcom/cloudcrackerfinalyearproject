@@ -46,6 +46,7 @@ export interface SelectedProductImage {
 }
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useProductStore } from '@/store/productStore';
 
 type ProductManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -605,7 +606,10 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
-          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('AdminDashboard'))}
+          onBackPress={() => {
+            useProductStore.getState().setLastProfileScreen(null);
+            navigation.navigate('UserProfile');
+          }}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}

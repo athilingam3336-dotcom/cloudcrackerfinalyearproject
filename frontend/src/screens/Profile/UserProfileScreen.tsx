@@ -23,6 +23,8 @@ import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { RootStackParamList } from '@/navigation/types';
 import { tokenStorage } from '@/storage/tokenStorage';
 import { useAuthStore } from '@/store/authStore';
+import { useProductStore } from '@/store/productStore';
+import { useNotificationStore } from '@/store';
 import { profileService } from '@/services/profileService';
 import { aboutService, AboutData } from '@/services/aboutService';
 import { sanitizeRemoteImageUrl } from '@/constants/productImages';
@@ -42,6 +44,10 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const [isAboutModalVisible, setIsAboutModalVisible] = useState(false);
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
+
+  React.useEffect(() => {
+    useProductStore.getState().setLastProfileScreen(null);
+  }, []);
 
   React.useEffect(() => {
     (async () => {

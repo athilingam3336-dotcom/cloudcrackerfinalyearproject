@@ -35,6 +35,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useProductStore } from '@/store/productStore';
 
 type CouponManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -446,7 +447,10 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
-          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('AdminDashboard'))}
+          onBackPress={() => {
+            useProductStore.getState().setLastProfileScreen(null);
+            navigation.navigate('UserProfile');
+          }}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}

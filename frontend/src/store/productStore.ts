@@ -18,7 +18,10 @@ export interface ProductState {
 
   listingState: ListingState;
 
+  lastProfileScreen: { routeName: string; params?: any } | null;
+
   // Actions
+  setLastProfileScreen: (screen: { routeName: string; params?: any } | null) => void;
   setListingState: (state: Partial<ListingState>) => void;
   resetListingState: () => void;
   setProducts: (products: ProductItem[]) => void;
@@ -47,6 +50,9 @@ export const useProductStore = create<ProductState>((set) => ({
   isLoading: false,
 
   listingState: initialListingState,
+  lastProfileScreen: null,
+
+  setLastProfileScreen: (screen) => set({ lastProfileScreen: screen }),
 
   setListingState: (newState) =>
     set((state) => ({

@@ -33,6 +33,7 @@ import { useNotificationStore } from '@/store';
 import { RootStackParamList } from '@/navigation/types';
 import { resolveProductImage } from '@/constants/productImages';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useProductStore } from '@/store/productStore';
 
 type CategoryManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -324,7 +325,10 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
     return (
       <View style={styles.headerWrapper}>
         <HomeHeader
-          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('AdminDashboard'))}
+          onBackPress={() => {
+            useProductStore.getState().setLastProfileScreen(null);
+            navigation.navigate('UserProfile');
+          }}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
