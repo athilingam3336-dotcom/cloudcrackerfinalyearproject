@@ -48,13 +48,19 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             >
               <MaterialIcons name="arrow-back" size={22} color={Colors.primary} />
             </TouchableOpacity>
-          ) : !isSmallScreen ? (
-            <Image
-              source={LOCAL_PRODUCT_IMAGES.KID_BOY_SPARKLER}
-              style={styles.headerMascotLeft}
-              resizeMode="contain"
-            />
-          ) : null}
+          ) : (
+            <TouchableOpacity
+              onPress={onLogoPress}
+              activeOpacity={onLogoPress ? 0.7 : 1}
+              disabled={!onLogoPress}
+            >
+              <Image
+                source={LOCAL_PRODUCT_IMAGES.LOGO}
+                style={styles.headerShopLogo}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={styles.titleContainer}
@@ -70,7 +76,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
                 ]}
                 numberOfLines={1}
               >
-                Meera Crackers
+                MEERA CRACKERS
               </Text>
               <MaterialIcons name="auto-awesome" size={14} color="#D97706" style={styles.sparkleIcon} />
             </View>
@@ -78,14 +84,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
               Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
             </Text>
           </TouchableOpacity>
-
-          {!onBackPress && !isSmallScreen && (
-            <Image
-              source={LOCAL_PRODUCT_IMAGES.KID_GIRL_SPARKLER}
-              style={styles.headerMascotRight}
-              resizeMode="contain"
-            />
-          )}
         </View>
 
         <View style={styles.rightSection}>
@@ -175,15 +173,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 4,
   },
-  headerMascotLeft: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  headerMascotRight: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  headerShopLogo: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   titleContainer: {
     flex: 1,

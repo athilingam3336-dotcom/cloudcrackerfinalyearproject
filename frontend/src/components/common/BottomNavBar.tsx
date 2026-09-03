@@ -15,7 +15,7 @@ interface BottomNavBarProps {
 
 const TABS: { id: TabRoute; label: string; icon: keyof typeof MaterialIcons.glyphMap; image?: any }[] = [
   { id: 'Home', label: 'Home', icon: 'home' },
-  { id: 'Categories', label: 'Categories', icon: 'grid-view', image: LOCAL_PRODUCT_IMAGES.ROCKETS },
+  { id: 'Categories', label: 'Categories', icon: 'grid-view' },
   { id: 'Cart', label: 'Cart', icon: 'shopping-cart' },
   { id: 'Wishlist', label: 'Wishlist', icon: 'favorite' },
   { id: 'Profile', label: 'Profile', icon: 'person' },

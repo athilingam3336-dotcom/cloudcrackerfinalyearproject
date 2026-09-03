@@ -32,6 +32,7 @@ export const LOCAL_PRODUCT_IMAGES = {
   FESTIVE_KIDS_FIREWORKS: require('../../assets/diwali_kids_fireworks.png'),
   KID_BOY_SPARKLER: require('../../assets/kid_sparkler_mascot.png'),
   KID_GIRL_SPARKLER: require('../../assets/girl_sparkler_mascot.png'),
+  LOGO: require('../../assets/logo.png'),
 };
 
 /**

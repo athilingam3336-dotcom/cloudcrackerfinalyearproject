@@ -353,17 +353,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
                 disabled={isGoogleLoading || isLoading}
               >
                 <MaterialIcons name="g-mobiledata" size={28} color="#4285F4" />
-                <Text style={styles.socialText}>Google</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.socialButton, styles.instagramBtn]}
-                activeOpacity={0.8}
-                onPress={handleInstagramLoginClick}
-                disabled={isLoading}
-              >
-                <MaterialIcons name="camera-alt" size={20} color="#E1306C" />
-                <Text style={[styles.socialText, { color: '#E1306C', fontFamily: 'Inter-SemiBold' }]}>Instagram</Text>
+                <Text style={styles.socialText}>Continue with Google</Text>
               </TouchableOpacity>
             </View>
 
@@ -395,14 +385,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
         onClose={() => setShowGoogleModal(false)}
         onSelectAccount={handleGoogleAccountSelect}
         isLoading={isGoogleLoading}
-      />
-
-      {/* Instagram Account Selector Modal */}
-      <InstagramAccountChooserModal
-        visible={showInstagramModal}
-        onClose={() => setShowInstagramModal(false)}
-        onSelectAccount={handleInstagramAccountSelect}
-        isLoading={isInstagramLoading}
       />
     </SafeAreaView>
   );
