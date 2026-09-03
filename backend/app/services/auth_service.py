@@ -476,6 +476,11 @@ class AuthService:
 
         logger.info(f"EMAIL OTP GENERATED FOR {clean_email}: {otp_code}")
 
+        # Dispatch real SMTP email (if SMTP credentials configured)
+        import asyncio
+        from app.services.email_service import EmailService
+        asyncio.create_task(EmailService.send_otp_email(clean_email, otp_code))
+
         return {
             "email": clean_email,
             "message": f"Verification OTP sent successfully to {clean_email}. Please check your inbox.",

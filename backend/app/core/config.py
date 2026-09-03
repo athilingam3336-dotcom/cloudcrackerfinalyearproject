@@ -81,6 +81,13 @@ class Settings(BaseSettings):
     INSTAGRAM_CLIENT_SECRET: Optional[str] = None
     INSTAGRAM_REDIRECT_URI: Optional[str] = "https://cloudcrackerfinalyearproject-1.onrender.com"
 
+    # SMTP Email Settings
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: Optional[str] = os.getenv("SMTP_USER", None)
+    SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD", None)
+    SMTP_FROM: Optional[str] = os.getenv("SMTP_FROM", None)
+
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [
         "https://cloudcrackerfinalyearproject.onrender.com",
