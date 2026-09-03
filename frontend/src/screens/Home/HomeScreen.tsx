@@ -46,6 +46,7 @@ import {
   BannerItem,
 } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -54,6 +55,7 @@ const IS_DESKTOP_OR_TABLET = SCREEN_WIDTH >= 768;
 const NUM_COLUMNS = IS_DESKTOP_OR_TABLET ? 4 : 2;
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -189,15 +191,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [navigation]
   );
 
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
+
 
 
 
@@ -296,19 +290,62 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [wishlistItems, handleProductPress, handleAddToCart, handleToggleWishlist]
   );
 
+  // Dynamic Live Countdown Timer for Flash Sale
+  const [timerSeconds, setTimerSeconds] = useState(14400); // default 4 hours (14400s)
+
+  React.useEffect(() => {
+    const activeFlashItems = products.filter(
+      (p: any) => Boolean(p.isFlashSale || p.is_flash_sale)
+    );
+
+    if (activeFlashItems.length > 0) {
+      const minSeconds = activeFlashItems.map((p: any) => {
+        if (typeof p.endsInSeconds === 'number' && p.endsInSeconds > 0) {
+          return p.endsInSeconds;
+        }
+        const hrs = parseFloat(p.flashSaleHours || p.flash_sale_hours || 4);
+        return Math.max(60, Math.floor(hrs * 3600));
+      });
+      const targetSeconds = Math.min(...minSeconds);
+      setTimerSeconds(targetSeconds);
+    }
+  }, [products]);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formattedTimer = useMemo(() => {
+    const hrs = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0');
+    const secs = String(timerSeconds % 60).padStart(2, '0');
+    return `${hrs}h : ${mins}m : ${secs}s`;
+  }, [timerSeconds]);
+
   const flashSaleData: FlashSaleItem[] = useMemo(() => {
+    const explicitFlashSales = products.filter(
+      (p: any) => Boolean(p.isFlashSale || p.is_flash_sale)
+    );
     const discounted = products.filter(
-      (p) =>
+      (p: any) =>
         p.badge?.toLowerCase().includes('sale') ||
         p.badge?.toLowerCase().includes('off') ||
         (p.originalPrice && p.originalPrice > p.price)
     );
-    const sourceProducts = discounted.length > 0 ? discounted : products.slice(0, 4);
+    const sourceProducts =
+      explicitFlashSales.length > 0
+        ? explicitFlashSales
+        : discounted.length > 0
+        ? discounted
+        : products.slice(0, 4);
 
     if (sourceProducts.length > 0) {
-      return sourceProducts.map((p) => ({
+      return sourceProducts.map((p: any) => ({
         id: p.id,
-        title: p.title,
+        title: p.title || p.name,
         subtitle: p.subtitle || 'Flash Sale Special',
         category: p.category || 'Fireworks',
         price: p.price,
@@ -317,15 +354,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
           : 20,
         badge: p.badge || 'FLASH SALE',
-        rating: p.rating,
-        reviewCount: p.reviewCount,
-        endsInSeconds: 7200,
-        stockLeft: 45,
+        rating: p.rating || 5.0,
+        reviewCount: p.reviewCount || 0,
+        endsInSeconds: timerSeconds,
+        stockLeft: p.stock !== undefined ? p.stock : 45,
         imageUrl: p.imageUrl,
       }));
     }
     return [];
-  }, [products]);
+  }, [products, timerSeconds]);
 
   const featuredProducts: ProductItem[] = useMemo(() => {
     const featured = products.filter(
@@ -412,7 +449,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </View>
             <View style={styles.timerBadge}>
               <MaterialIcons name="timer" size={14} color="#ffffff" />
-              <Text style={styles.timerText}>01h : 45m : 30s</Text>
+              <Text style={styles.timerText}>{formattedTimer}</Text>
             </View>
           </View>
           <FlatList

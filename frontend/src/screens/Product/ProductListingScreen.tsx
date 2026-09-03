@@ -23,6 +23,7 @@ import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
 import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore, useProductStore } from '@/store';
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { ProductItem, CategoryItem, MOCK_CATEGORIES, MOCK_PRODUCTS } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 
@@ -45,7 +46,9 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   route,
 }) => {
   const flatListRef = useRef<FlatList>(null);
-  const categoryIdParam = route.params?.categoryId || 'all';
+  const { handleTabPress } = useSmartTabNavigation();
+  const savedCategoryId = useProductStore.getState().listingState.categoryId;
+  const categoryIdParam = route.params?.categoryId || (savedCategoryId && savedCategoryId !== 'all' ? savedCategoryId : 'all');
   const initialQuery = route.params?.query || '';
 
   const listingState = useProductStore((state) => state.listingState);
@@ -394,16 +397,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     [navigation]
   );
 
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
+
 
   // Render individual product item in grid
   const renderProductItem: ListRenderItem<ProductItem> = useCallback(

@@ -27,6 +27,7 @@ import { useNotificationStore, useCategoryStore } from '@/store';
 import { CategoryItem } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 
 type CategoriesScreenProps = NativeStackScreenProps<RootStackParamList, 'Categories'>;
 
@@ -38,6 +39,7 @@ const getNumColumns = (width: number) => {
 };
 
 export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const storeSearchQuery = useCategoryStore((state) => state.searchQuery);
   const storeSelectedFilter = useCategoryStore((state) => state.selectedFilter);
   const storeCategories = useCategoryStore((state) => state.categories);
@@ -147,15 +149,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
     [navigation]
   );
 
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
+
 
   const handleEliteProgramPress = useCallback(() => {
     Alert.alert(

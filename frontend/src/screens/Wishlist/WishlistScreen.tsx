@@ -24,6 +24,8 @@ import { ProductItem } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 import { useWishlistStore, useCartStore, useNotificationStore } from '@/store';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type WishlistScreenProps = NativeStackScreenProps<RootStackParamList, 'Wishlist'>;
 
 const getNumColumns = (width: number) => {
@@ -33,6 +35,7 @@ const getNumColumns = (width: number) => {
 };
 
 export const WishlistScreen: React.FC<WishlistScreenProps> = ({ navigation }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const { wishlistItems, removeFromWishlist, fetchWishlist } = useWishlistStore();
   const addToCart = useCartStore((state) => state.addToCart);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
@@ -67,15 +70,7 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({ navigation }) =>
     }
   }, [wishlistItems, addToCart, navigation]);
 
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
+
 
   const renderWishlistItem: ListRenderItem<ProductItem> = useCallback(
     ({ item }) => (

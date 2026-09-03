@@ -55,6 +55,12 @@ async def create_product(
         is_featured = str(form.get("is_featured", "false")).lower() in ("true", "1")
         is_bestseller = str(form.get("is_bestseller", "false")).lower() in ("true", "1")
         is_flash_sale = str(form.get("is_flash_sale", "false")).lower() in ("true", "1")
+        flash_sale_hours_raw = form.get("flash_sale_hours", "4.0")
+        try:
+            flash_sale_hours = float(flash_sale_hours_raw)
+        except (ValueError, TypeError):
+            flash_sale_hours = 4.0
+
         is_recommended = str(form.get("is_recommended", "false")).lower() in ("true", "1")
         time_of_day = str(form.get("time_of_day", "both")).lower()
 
@@ -92,6 +98,7 @@ async def create_product(
                 is_featured=is_featured,
                 is_bestseller=is_bestseller,
                 is_flash_sale=is_flash_sale,
+                flash_sale_hours=flash_sale_hours,
                 is_recommended=is_recommended,
                 time_of_day=time_of_day,
             )
@@ -167,6 +174,11 @@ async def update_product(
                 "true",
                 "1",
             )
+        if "flash_sale_hours" in form:
+            try:
+                update_kwargs["flash_sale_hours"] = float(form.get("flash_sale_hours"))
+            except (ValueError, TypeError):
+                update_kwargs["flash_sale_hours"] = 4.0
         if "is_recommended" in form:
             update_kwargs["is_recommended"] = str(
                 form.get("is_recommended")

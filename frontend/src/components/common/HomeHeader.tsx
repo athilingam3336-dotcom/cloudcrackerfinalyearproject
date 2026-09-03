@@ -38,8 +38,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
 
     return (
       <View style={styles.header}>
+        {/* Left Section: Back Button & Quick Contact Actions */}
         <View style={styles.leftSection}>
-          {onBackPress ? (
+          {onBackPress && (
             <TouchableOpacity
               style={styles.backCircleButton}
               onPress={onBackPress}
@@ -49,46 +50,8 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             >
               <MaterialIcons name="arrow-back" size={22} color={Colors.primary} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={onLogoPress}
-              activeOpacity={onLogoPress ? 0.7 : 1}
-              disabled={!onLogoPress}
-            >
-              <Image
-                source={LOCAL_PRODUCT_IMAGES.LOGO}
-                style={styles.headerShopLogo}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            style={styles.titleContainer}
-            onPress={onLogoPress}
-            activeOpacity={onLogoPress ? 0.7 : 1}
-            disabled={!onLogoPress}
-          >
-            <View style={styles.brandTitleRow}>
-              <Text
-                style={[
-                  styles.brandTitle,
-                  isSmallScreen && { fontSize: 18, lineHeight: 22 },
-                ]}
-                numberOfLines={1}
-              >
-                MEERA CRACKERS
-              </Text>
-              <MaterialIcons name="auto-awesome" size={14} color="#D97706" style={styles.sparkleIcon} />
-            </View>
-            <Text style={styles.greetingText} numberOfLines={1}>
-              Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.rightSection}>
-          {/* Quick Contact Action Pills (Phone, Email, Map) - Placed to the Left of Bell Icon */}
           {!isSmallScreen && (
             <View style={styles.headerContactPillsRow}>
               <TouchableOpacity
@@ -119,7 +82,43 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
               </TouchableOpacity>
             </View>
           )}
+        </View>
 
+        {/* Center Section: Grand Brand Emblem Logo & Title */}
+        <View style={styles.centerSection}>
+          <TouchableOpacity
+            style={styles.centerBrandTouch}
+            onPress={onLogoPress}
+            activeOpacity={onLogoPress ? 0.7 : 1}
+            disabled={!onLogoPress}
+          >
+            <Image
+              source={LOCAL_PRODUCT_IMAGES.LOGO}
+              style={styles.headerShopLogo}
+              resizeMode="contain"
+            />
+            <View style={styles.titleContainer}>
+              <View style={styles.brandTitleRow}>
+                <Text
+                  style={[
+                    styles.brandTitle,
+                    isSmallScreen && { fontSize: 18, lineHeight: 22 },
+                  ]}
+                  numberOfLines={1}
+                >
+                  MEERA CRACKERS
+                </Text>
+                <MaterialIcons name="auto-awesome" size={15} color="#D97706" style={styles.sparkleIcon} />
+              </View>
+              <Text style={styles.greetingText} numberOfLines={1}>
+                Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Right Section: Action Buttons */}
+        <View style={styles.rightSection}>
           <TouchableOpacity
             style={styles.iconCircleButton}
             onPress={onNotificationPress}
@@ -186,16 +185,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.marginMobile,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.xs,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.surfaceContainerHigh,
+    minHeight: 74,
   },
   leftSection: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    justifyContent: 'flex-start',
+  },
+  centerSection: {
+    flex: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerBrandTouch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
   backCircleButton: {
     width: 38,
@@ -204,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 4,
+    marginRight: 6,
   },
   headerShopLogo: {
     width: 64,
@@ -212,14 +223,13 @@ const styles = StyleSheet.create({
     borderRadius: 32,
   },
   titleContainer: {
-    flex: 1,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'center',
   },
   brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     gap: 6,
   },
   brandTitle: {
@@ -229,7 +239,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#A81818',
     letterSpacing: 1.0,
-    textAlign: 'left',
+    textAlign: 'center',
   },
   sparkleIcon: {
     marginTop: -2,
@@ -241,7 +251,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#64748B',
     marginTop: 2,
-    textAlign: 'left',
+    textAlign: 'center',
     letterSpacing: 0.2,
   },
   greetingUserName: {
@@ -251,8 +261,10 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   rightSection: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: Spacing.xs,
     flexShrink: 0,
   },

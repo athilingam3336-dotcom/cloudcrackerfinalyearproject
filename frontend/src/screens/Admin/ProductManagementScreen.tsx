@@ -80,6 +80,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [formIsFeatured, setFormIsFeatured] = useState(false);
   const [formIsBestseller, setFormIsBestseller] = useState(false);
   const [formIsFlashSale, setFormIsFlashSale] = useState(false);
+  const [formFlashSaleHours, setFormFlashSaleHours] = useState('4');
   const [formIsRecommended, setFormIsRecommended] = useState(false);
   const [formTimeOfDay, setFormTimeOfDay] = useState<'morning' | 'night' | 'both'>('both');
 
@@ -256,6 +257,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     setFormIsFeatured(false);
     setFormIsBestseller(false);
     setFormIsFlashSale(false);
+    setFormFlashSaleHours('4');
     setFormIsRecommended(false);
     setFormTimeOfDay('both');
     setSelectedImage(null);
@@ -277,6 +279,11 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       setFormIsFeatured(Boolean(product.isFeatured));
       setFormIsBestseller(Boolean(product.isBestseller));
       setFormIsFlashSale(Boolean(product.isFlashSale));
+      setFormFlashSaleHours(
+        (product as any).flashSaleHours || (product as any).flash_sale_hours
+          ? String((product as any).flashSaleHours || (product as any).flash_sale_hours)
+          : '4'
+      );
       setFormIsRecommended(Boolean(product.isRecommended));
       setFormTimeOfDay(product.timeOfDay || 'both');
       setSelectedImage(null);
@@ -348,6 +355,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           is_featured: formIsFeatured,
           is_bestseller: formIsBestseller,
           is_flash_sale: formIsFlashSale,
+          flash_sale_hours: formIsFlashSale ? (parseFloat(formFlashSaleHours) || 4) : undefined,
           is_recommended: formIsRecommended,
           time_of_day: formTimeOfDay,
         });
@@ -365,6 +373,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           is_featured: formIsFeatured,
           is_bestseller: formIsBestseller,
           is_flash_sale: formIsFlashSale,
+          flash_sale_hours: formIsFlashSale ? (parseFloat(formFlashSaleHours) || 4) : 4,
           is_recommended: formIsRecommended,
           time_of_day: formTimeOfDay,
         });
@@ -1082,6 +1091,69 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                   thumbColor={formIsFlashSale ? Colors.primary : '#f4f3f4'}
                 />
               </View>
+
+              {formIsFlashSale && (
+                <View
+                  style={{
+                    backgroundColor: Colors.primaryContainer,
+                    padding: 12,
+                    borderRadius: BorderRadius.lg,
+                    marginTop: 8,
+                    borderWidth: 1,
+                    borderColor: Colors.primary,
+                  }}
+                >
+                  <Text
+                    style={{
+                      ...Typography.labelLg,
+                      fontSize: 12,
+                      fontFamily: 'Inter-Bold',
+                      color: Colors.primary,
+                      marginBottom: 6,
+                    }}
+                  >
+                    ⚡ Flash Sale Duration (Hours)
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {['1', '2', '4', '6', '12', '24', '48'].map((hr) => {
+                      const isSel = formFlashSaleHours === hr;
+                      return (
+                        <TouchableOpacity
+                          key={hr}
+                          style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: BorderRadius.full,
+                            backgroundColor: isSel ? Colors.primary : Colors.surfaceContainerLowest,
+                            borderWidth: 1,
+                            borderColor: isSel ? Colors.primary : Colors.surfaceContainerHigh,
+                          }}
+                          onPress={() => setFormFlashSaleHours(hr)}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            style={{
+                              ...Typography.labelLg,
+                              fontSize: 11,
+                              fontFamily: isSel ? 'Inter-Bold' : 'Inter-Medium',
+                              color: isSel ? '#ffffff' : Colors.onSurface,
+                            }}
+                          >
+                            {hr} Hours
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  <CustomInput
+                    label="Custom Duration (Hours)"
+                    value={formFlashSaleHours}
+                    onChangeText={setFormFlashSaleHours}
+                    keyboardType="numeric"
+                    placeholder="e.g. 3.5"
+                  />
+                </View>
+              )}
             </View>
 
             <View style={styles.modalActions}>

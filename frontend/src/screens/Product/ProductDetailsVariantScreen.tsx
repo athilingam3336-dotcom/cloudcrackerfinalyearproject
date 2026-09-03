@@ -26,6 +26,8 @@ import { formatCurrency } from '@/utils/currency';
 
 import { LOCAL_PRODUCT_IMAGES, resolveProductImage } from '@/constants/productImages';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type ProductDetailsVariantScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'ProductDetailsVariant'
@@ -86,6 +88,7 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
   navigation,
   route,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const productIdParam = route.params?.productId;
 
   const [product, setProduct] = useState<ProductItem | null>(null);
@@ -199,16 +202,7 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
     }
   }, [isAuthenticated, product, toggleWishlist, navigation]);
 
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
+
 
   if (isLoading || !product) {
     return (

@@ -27,6 +27,8 @@ import { profileService } from '@/services/profileService';
 import { aboutService, AboutData } from '@/services/aboutService';
 import { sanitizeRemoteImageUrl } from '@/constants/productImages';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type UserProfileScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'UserProfile'
@@ -35,6 +37,7 @@ type UserProfileScreenProps = NativeStackScreenProps<
 export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const user = useAuthStore((state) => state.user);
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const [isAboutModalVisible, setIsAboutModalVisible] = useState(false);
@@ -96,16 +99,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
     }
   }, [navigation]);
 
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
+
 
   const isAdmin = user?.role === 'admin';
 

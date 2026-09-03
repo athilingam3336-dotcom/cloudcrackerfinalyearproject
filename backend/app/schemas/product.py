@@ -16,6 +16,7 @@ class ProductCreate(BaseModel):
     is_featured: bool = False
     is_bestseller: bool = False
     is_flash_sale: bool = False
+    flash_sale_hours: Optional[float] = 4.0
     is_recommended: bool = False
     time_of_day: Optional[str] = "both"
 
@@ -45,6 +46,7 @@ class ProductUpdate(BaseModel):
     is_featured: Optional[bool] = None
     is_bestseller: Optional[bool] = None
     is_flash_sale: Optional[bool] = None
+    flash_sale_hours: Optional[float] = None
     is_recommended: Optional[bool] = None
     is_active: Optional[bool] = None
     time_of_day: Optional[str] = None
@@ -73,7 +75,6 @@ class ProductResponse(BaseModel):
     original_price: Optional[float] = None
     discount_price: Optional[float] = None
     category_id: str
-    category: Optional[str] = None
     stock: int
     image_url: Optional[str] = None
     images: List[str] = Field(default_factory=list)
@@ -85,12 +86,14 @@ class ProductResponse(BaseModel):
     is_featured: bool = False
     is_bestseller: bool = False
     is_flash_sale: bool = False
+    flash_sale_hours: Optional[float] = 4.0
+    flash_sale_ends_at: Optional[datetime] = None
+    ends_in_seconds: Optional[int] = None
     is_recommended: bool = False
     is_active: bool = True
     time_of_day: Optional[str] = "both"
     created_at: datetime
     updated_at: datetime
-    status: str = "active"
 
     @model_validator(mode="before")
     @classmethod
@@ -111,6 +114,15 @@ class ProductResponse(BaseModel):
                 dict_data["image_url"] = dict_data["images"][0]
             elif dict_data.get("image_url") and not dict_data.get("images"):
                 dict_data["images"] = [dict_data["image_url"]]
+            
+            # Compute ends_in_seconds for flash sales
+            hours = dict_data.get("flash_sale_hours") or 4.0
+            dict_data["flash_sale_hours"] = float(hours)
+            ends_at = dict_data.get("flash_sale_ends_at")
+            if ends_at and isinstance(ends_at, datetime):
+                dict_data["ends_in_seconds"] = max(0, int((ends_at - datetime.utcnow()).total_seconds()))
+            else:
+                dict_data["ends_in_seconds"] = int(float(hours) * 3600)
             return dict_data
         elif hasattr(data, "id"):
             # Beanie document
@@ -123,6 +135,14 @@ class ProductResponse(BaseModel):
             data_dict["image_url"] = img_url
             if img_url and not data_dict.get("images"):
                 data_dict["images"] = [img_url]
+
+            hours = data_dict.get("flash_sale_hours") or 4.0
+            data_dict["flash_sale_hours"] = float(hours)
+            ends_at = getattr(data, "flash_sale_ends_at", None)
+            if ends_at and isinstance(ends_at, datetime):
+                data_dict["ends_in_seconds"] = max(0, int((ends_at - datetime.utcnow()).total_seconds()))
+            else:
+                data_dict["ends_in_seconds"] = int(float(hours) * 3600)
             return data_dict
         return data
 

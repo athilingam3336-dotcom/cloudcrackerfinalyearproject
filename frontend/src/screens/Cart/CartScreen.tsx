@@ -25,9 +25,12 @@ import { cartService } from '@/services/cartService';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type CartScreenProps = NativeStackScreenProps<RootStackParamList, 'Cart'>;
 
 export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 700;
 
@@ -81,15 +84,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
     navigation.navigate('Checkout');
   }, [navigation]);
 
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
+
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>

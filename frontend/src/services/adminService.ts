@@ -159,6 +159,7 @@ export interface AdminProductCreateInput {
   is_featured?: boolean;
   is_bestseller?: boolean;
   is_flash_sale?: boolean;
+  flash_sale_hours?: number;
   is_recommended?: boolean;
   time_of_day?: 'morning' | 'night' | 'both' | string;
 }
@@ -176,6 +177,7 @@ export interface AdminProductUpdateInput {
   is_featured?: boolean;
   is_bestseller?: boolean;
   is_flash_sale?: boolean;
+  flash_sale_hours?: number;
   is_recommended?: boolean;
   is_active?: boolean;
   time_of_day?: 'morning' | 'night' | 'both' | string;
@@ -197,6 +199,7 @@ export interface AdminProductItemUI {
   isFeatured: boolean;
   isBestseller: boolean;
   isFlashSale: boolean;
+  flashSaleHours?: number;
   isRecommended: boolean;
   isActive: boolean;
   timeOfDay?: 'morning' | 'night' | 'both';
@@ -1215,6 +1218,7 @@ export class AdminService {
       isFeatured: Boolean(p.is_featured || p.isFeatured),
       isBestseller: Boolean(p.is_bestseller || p.isBestseller),
       isFlashSale: Boolean(p.is_flash_sale || p.isFlashSale),
+      flashSaleHours: p.flash_sale_hours !== undefined ? p.flash_sale_hours : (p.flashSaleHours !== undefined ? p.flashSaleHours : 4),
       isRecommended: Boolean(p.is_recommended || p.isRecommended),
       isActive: p.is_active !== undefined ? Boolean(p.is_active) : (p.status !== 'deleted'),
       timeOfDay: (p.time_of_day || p.timeOfDay || 'both') as any,

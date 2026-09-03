@@ -23,6 +23,8 @@ class Product(Document):
     is_featured: bool = False
     is_bestseller: bool = False
     is_flash_sale: bool = False
+    flash_sale_hours: Optional[float] = 4.0
+    flash_sale_ends_at: Optional[datetime] = None
     is_recommended: bool = False
     is_active: bool = True
     time_of_day: str = "both"  # "morning", "night", "both"

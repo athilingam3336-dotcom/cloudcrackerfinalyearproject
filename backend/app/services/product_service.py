@@ -72,6 +72,10 @@ class ProductService:
 
         images_list = [image_url] if image_url else []
 
+        from datetime import timedelta
+        flash_hours = getattr(data, "flash_sale_hours", 4.0) or 4.0
+        flash_ends_at = datetime.utcnow() + timedelta(hours=flash_hours) if data.is_flash_sale else None
+
         product_data = {
             "name": data.name,
             "description": data.description,
@@ -86,6 +90,8 @@ class ProductService:
             "is_featured": data.is_featured,
             "is_bestseller": data.is_bestseller,
             "is_flash_sale": data.is_flash_sale,
+            "flash_sale_hours": flash_hours,
+            "flash_sale_ends_at": flash_ends_at,
             "is_recommended": data.is_recommended,
             "is_active": True,
             "status": "active",
