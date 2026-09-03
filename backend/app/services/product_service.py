@@ -152,6 +152,15 @@ class ProductService:
                 message="Discount price must be strictly less than the product price."
             )
 
+        # Recalculate flash_sale_ends_at when flash sale status or duration is updated
+        is_flash = update_dict.get("is_flash_sale", product.is_flash_sale)
+        if is_flash:
+            hours = float(update_dict.get("flash_sale_hours", product.flash_sale_hours or 4.0) or 4.0)
+            update_dict["flash_sale_hours"] = hours
+            update_dict["flash_sale_ends_at"] = datetime.utcnow() + timedelta(hours=hours)
+        elif "is_flash_sale" in update_dict and not is_flash:
+            update_dict["flash_sale_ends_at"] = None
+
         update_dict["updated_by"] = user_id
         return await self.product_repo.update(product, update_dict)
 

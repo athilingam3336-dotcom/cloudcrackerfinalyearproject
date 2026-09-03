@@ -402,6 +402,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     formIsFeatured,
     formIsBestseller,
     formIsFlashSale,
+    formFlashSaleHours,
     formIsRecommended,
     selectedImage,
     formExistingImageUrl,

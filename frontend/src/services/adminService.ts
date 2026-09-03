@@ -666,6 +666,7 @@ export class AdminService {
       formData.append('is_featured', String(Boolean(product.is_featured)));
       formData.append('is_bestseller', String(Boolean(product.is_bestseller)));
       formData.append('is_flash_sale', String(Boolean(product.is_flash_sale)));
+      formData.append('flash_sale_hours', String(product.flash_sale_hours || 4));
       formData.append('is_recommended', String(Boolean(product.is_recommended)));
       formData.append('time_of_day', product.time_of_day || 'both');
 
@@ -718,6 +719,9 @@ export class AdminService {
       }
       if (updates.is_flash_sale !== undefined) {
         formData.append('is_flash_sale', String(Boolean(updates.is_flash_sale)));
+      }
+      if (updates.flash_sale_hours !== undefined) {
+        formData.append('flash_sale_hours', String(updates.flash_sale_hours));
       }
       if (updates.is_recommended !== undefined) {
         formData.append('is_recommended', String(Boolean(updates.is_recommended)));
