@@ -25,6 +25,8 @@ import { adminService, AdminMetrics, TodayReportData, TodayReportStockItem } fro
 import { useNotificationStore } from '@/store';
 import { formatCurrency } from '@/utils/currency';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type AdminDashboardScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'AdminDashboard'
@@ -33,6 +35,7 @@ type AdminDashboardScreenProps = NativeStackScreenProps<
 export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [metrics, setMetrics] = useState<AdminMetrics>({
     totalRevenue: 0.0,
     newOrders: 0,
@@ -272,17 +275,6 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
     setIsRefreshing(true);
     loadMetrics();
   }, [loadMetrics]);
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>

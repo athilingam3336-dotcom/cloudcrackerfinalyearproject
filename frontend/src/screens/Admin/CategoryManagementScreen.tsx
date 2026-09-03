@@ -32,6 +32,7 @@ import {
 import { useNotificationStore } from '@/store';
 import { RootStackParamList } from '@/navigation/types';
 import { resolveProductImage } from '@/constants/productImages';
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 
 type CategoryManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -52,6 +53,7 @@ const SUGGESTED_IMAGE_PRESETS = [
 export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -233,17 +235,6 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
       }
     },
     [fetchCategories]
-  );
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
   );
 
   // Render Category Row

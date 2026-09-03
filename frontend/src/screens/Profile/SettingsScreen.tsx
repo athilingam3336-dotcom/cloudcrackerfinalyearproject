@@ -19,10 +19,12 @@ import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { RootStackParamList } from '@/navigation/types';
 import { aboutService, AboutData } from '@/services/aboutService';
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 
 type SettingsScreenProps = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [promoNotifs, setPromoNotifs] = useState(true);
   const [orderNotifs, setOrderNotifs] = useState(true);
 
@@ -45,17 +47,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
   const [modalTitle, setModalTitle] = useState('');
   const [modalBody, setModalBody] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
 
   const showAboutModal = useCallback(() => {
     setModalTitle('About Meera Crackers');

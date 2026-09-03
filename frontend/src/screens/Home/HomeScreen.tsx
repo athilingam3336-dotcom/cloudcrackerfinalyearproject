@@ -328,7 +328,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, [timerSeconds]);
 
   const flashSaleData: FlashSaleItem[] = useMemo(() => {
-    // 1. Strictly exclude products that are out of stock (stock <= 0)
+    // Strictly filter products that are explicitly tagged isFlashSale AND in stock (stock > 0)
     const inStockProducts = products.filter(
       (p: any) => p.stock === undefined || p.stock === null || p.stock > 0
     );
@@ -336,21 +336,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const explicitFlashSales = inStockProducts.filter(
       (p: any) => Boolean(p.isFlashSale || p.is_flash_sale)
     );
-    const discounted = inStockProducts.filter(
-      (p: any) =>
-        p.badge?.toLowerCase().includes('sale') ||
-        p.badge?.toLowerCase().includes('off') ||
-        (p.originalPrice && p.originalPrice > p.price)
-    );
-    const sourceProducts =
-      explicitFlashSales.length > 0
-        ? explicitFlashSales
-        : discounted.length > 0
-        ? discounted
-        : inStockProducts.slice(0, 4);
 
-    if (sourceProducts.length > 0) {
-      return sourceProducts.map((p: any) => ({
+    if (explicitFlashSales.length > 0) {
+      return explicitFlashSales.map((p: any) => ({
         id: p.id,
         title: p.title || p.name,
         subtitle: p.subtitle || 'Flash Sale Special',
@@ -447,27 +435,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           />
         </View>
 
-        {/* Flash Sale Banner Section */}
-        <View style={styles.flashSaleSection}>
-          <View style={styles.flashSaleHeaderRow}>
-            <View style={styles.flashSaleTitleBox}>
-              <MaterialIcons name="bolt" size={24} color={Colors.secondaryContainer} />
-              <Text style={styles.flashSaleTitle}>Flash Sale</Text>
+        {/* Flash Sale Banner Section (Only shown when active Flash Sale items exist) */}
+        {flashSaleData.length > 0 && (
+          <View style={styles.flashSaleSection}>
+            <View style={styles.flashSaleHeaderRow}>
+              <View style={styles.flashSaleTitleBox}>
+                <MaterialIcons name="bolt" size={24} color={Colors.secondaryContainer} />
+                <Text style={styles.flashSaleTitle}>Flash Sale</Text>
+              </View>
+              <View style={styles.timerBadge}>
+                <MaterialIcons name="timer" size={14} color="#ffffff" />
+                <Text style={styles.timerText}>{formattedTimer}</Text>
+              </View>
             </View>
-            <View style={styles.timerBadge}>
-              <MaterialIcons name="timer" size={14} color="#ffffff" />
-              <Text style={styles.timerText}>{formattedTimer}</Text>
-            </View>
+            <FlatList
+              horizontal
+              data={flashSaleData}
+              keyExtractor={(item) => item.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalListContent}
+              renderItem={renderFlashSaleItem}
+            />
           </View>
-          <FlatList
-            horizontal
-            data={flashSaleData}
-            keyExtractor={(item) => item.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalListContent}
-            renderItem={renderFlashSaleItem}
-          />
-        </View>
+        )}
 
         {/* Featured Products Section */}
         <View style={styles.sectionContainer}>

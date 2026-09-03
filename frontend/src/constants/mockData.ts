@@ -35,6 +35,11 @@ export interface ProductItem {
   reviewCount?: number;
   imageUrl?: any;
   images?: any[];
+  isFeatured?: boolean;
+  isBestseller?: boolean;
+  isFlashSale?: boolean;
+  flashSaleHours?: number;
+  endsInSeconds?: number;
 }
 
 export interface FlashSaleItem extends ProductItem {

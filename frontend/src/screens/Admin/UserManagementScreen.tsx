@@ -37,6 +37,8 @@ import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type UserManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'UserManagement'
@@ -45,6 +47,7 @@ type UserManagementScreenProps = NativeStackScreenProps<
 export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [metrics, setMetrics] = useState<UserSummaryMetrics>({
     totalUsers: 0,
@@ -297,18 +300,6 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
       );
     },
     [fetchUsers]
-  );
-
-  // Tab press navigation
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
   );
 
   // Render User Card Item

@@ -83,6 +83,11 @@ export class ProductService {
       rating: p.rating || p.average_rating || 5.0,
       reviewCount: p.reviews_count || p.total_reviews || 0,
       imageUrl: mainImage,
+      isFeatured,
+      isBestseller,
+      isFlashSale,
+      flashSaleHours: p.flash_sale_hours !== undefined ? p.flash_sale_hours : p.flashSaleHours,
+      endsInSeconds: p.ends_in_seconds !== undefined ? p.ends_in_seconds : p.endsInSeconds,
     };
   }
 

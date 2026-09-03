@@ -29,11 +29,14 @@ import { tokenStorage } from '@/storage/tokenStorage';
 import { useAuthStore, useCartStore, useNotificationStore } from '@/store';
 import { formatCurrency } from '@/utils/currency';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type CheckoutScreenProps = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
 
 type PaymentMethod = 'razorpay' | 'cod';
 
 export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 700;
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -298,21 +301,24 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
     }
   }, [fullName, email, phone, address, city, pincode, items, deliveryMethod, paymentMethod, couponCode, user, clearCart, navigation, total]);
 
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
+  const handleCheckoutBack = useCallback(() => {
+    if (currentStep === 2) {
+      setCurrentStep(1);
+    } else if (currentStep === 3) {
+      setCurrentStep(2);
+    } else {
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate('Cart');
+      }
+    }
+  }, [currentStep, navigation]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeHeader
-        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Cart'))}
+        onBackPress={handleCheckoutBack}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
@@ -323,11 +329,13 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
       <View style={styles.horizontalStepperBar}>
         <TouchableOpacity
           style={styles.inlineBackBtn}
-          onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Cart'))}
+          onPress={handleCheckoutBack}
           activeOpacity={0.7}
         >
           <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
-          <Text style={styles.inlineBackText}>Cart</Text>
+          <Text style={styles.inlineBackText}>
+            {currentStep === 2 ? 'Shipping' : currentStep === 3 ? 'Payment' : 'Cart'}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.stepperRowHorizontal}>

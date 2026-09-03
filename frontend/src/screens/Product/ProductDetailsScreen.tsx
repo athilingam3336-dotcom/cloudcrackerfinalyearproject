@@ -28,6 +28,7 @@ import { formatCurrency } from '@/utils/currency';
 import { getProductGalleryItems, resolveProductImage } from '@/constants/productImages';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useProductStore } from '@/store/productStore';
 
 type ProductDetailsScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -39,7 +40,18 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
   route,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
+  const savedCategoryId = useProductStore((state) => state.listingState.categoryId);
   const productIdParam = route.params?.productId;
+
+  const handleDetailsBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else if (savedCategoryId && savedCategoryId !== 'all') {
+      navigation.navigate('ProductListing', { categoryId: savedCategoryId });
+    } else {
+      navigation.navigate('Categories');
+    }
+  }, [navigation, savedCategoryId]);
 
   const [product, setProduct] = useState<ProductItem | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<ProductItem[]>([]);
@@ -245,7 +257,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
       {/* Header Bar with Back Button */}
       <HomeHeader
         onLogoPress={() => navigation.navigate('Home')}
-        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+        onBackPress={handleDetailsBack}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
@@ -257,7 +269,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
         <View style={styles.breadcrumbContainer}>
           <TouchableOpacity
             style={styles.backButtonRow}
-            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+            onPress={handleDetailsBack}
             activeOpacity={0.7}
           >
             <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
@@ -270,7 +282,16 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
             <Text style={styles.breadcrumbLink}>HOME</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />
-          <TouchableOpacity onPress={() => navigation.navigate('Categories')} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => {
+              if (savedCategoryId && savedCategoryId !== 'all') {
+                navigation.navigate('ProductListing', { categoryId: savedCategoryId });
+              } else {
+                navigation.navigate('Categories');
+              }
+            }}
+            activeOpacity={0.7}
+          >
             <Text style={styles.breadcrumbLink}>CATEGORIES</Text>
           </TouchableOpacity>
           <MaterialIcons name="chevron-right" size={16} color={Colors.tertiary} />

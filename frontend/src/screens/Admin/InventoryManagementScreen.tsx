@@ -35,6 +35,8 @@ import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type InventoryManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'InventoryManagement'
@@ -43,6 +45,7 @@ type InventoryManagementScreenProps = NativeStackScreenProps<
 export const InventoryManagementScreen: React.FC<InventoryManagementScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [items, setItems] = useState<InventoryItemOverviewUI[]>([]);
   const [metrics, setMetrics] = useState<InventorySummaryMetrics>({
     totalProducts: 0,
@@ -184,17 +187,6 @@ export const InventoryManagementScreen: React.FC<InventoryManagementScreenProps>
       setIsLoadingHistory(false);
     }
   }, []);
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
 
   // Render Product Inventory Row
   const renderItemRow: ListRenderItem<InventoryItemOverviewUI> = useCallback(

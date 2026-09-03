@@ -27,6 +27,7 @@ import { formatCurrency } from '@/utils/currency';
 import { LOCAL_PRODUCT_IMAGES, resolveProductImage } from '@/constants/productImages';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useProductStore } from '@/store/productStore';
 
 type ProductDetailsVariantScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -89,7 +90,18 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
   route,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
+  const savedCategoryId = useProductStore((state) => state.listingState.categoryId);
   const productIdParam = route.params?.productId;
+
+  const handleVariantDetailsBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else if (savedCategoryId && savedCategoryId !== 'all') {
+      navigation.navigate('ProductListing', { categoryId: savedCategoryId });
+    } else {
+      navigation.navigate('Categories');
+    }
+  }, [navigation, savedCategoryId]);
 
   const [product, setProduct] = useState<ProductItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -222,7 +234,7 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <HomeHeader
-        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+        onBackPress={handleVariantDetailsBack}
         onNotificationPress={() => navigation.navigate('Notifications')}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}

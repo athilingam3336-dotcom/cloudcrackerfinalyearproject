@@ -26,6 +26,7 @@ import { useNotificationStore } from '@/store';
 import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 
 type OrderManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -51,6 +52,7 @@ const PAYMENT_STATUS_OPTIONS: AdminOrderItem['paymentStatus'][] = [
 export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [orders, setOrders] = useState<AdminOrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -135,17 +137,6 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
       }
     },
     [fetchOrders]
-  );
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
   );
 
   const [isClearingAllCancelled, setIsClearingAllCancelled] = useState(false);

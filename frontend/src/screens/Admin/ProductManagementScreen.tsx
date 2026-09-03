@@ -45,6 +45,8 @@ export interface SelectedProductImage {
   base64?: string | null;
 }
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type ProductManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'ProductManagement'
@@ -53,6 +55,7 @@ type ProductManagementScreenProps = NativeStackScreenProps<
 export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [products, setProducts] = useState<AdminProductItemUI[]>([]);
   const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -484,17 +487,6 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       setIsSaving(false);
     }
   }, [stockProduct, stockTxType, stockQuantity, stockRemarks, fetchProducts]);
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
 
   // Render Product Card Item
   const renderProductRow: ListRenderItem<AdminProductItemUI> = useCallback(

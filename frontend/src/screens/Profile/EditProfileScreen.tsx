@@ -147,7 +147,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('UserProfile'))}
           activeOpacity={0.7}
         >
           <MaterialIcons name="arrow-back" size={24} color={Colors.onSurface} />

@@ -34,6 +34,8 @@ import { useNotificationStore } from '@/store';
 import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type CouponManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'CouponManagement'
@@ -42,6 +44,7 @@ type CouponManagementScreenProps = NativeStackScreenProps<
 export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [coupons, setCoupons] = useState<AdminCouponItem[]>([]);
   const [metrics, setMetrics] = useState<CouponSummaryMetrics>({
     totalCoupons: 0,
@@ -314,17 +317,6 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
       );
     },
     [fetchCoupons]
-  );
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
   );
 
   // Render Coupon Card

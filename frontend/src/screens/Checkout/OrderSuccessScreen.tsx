@@ -23,6 +23,8 @@ import { formatCurrency } from '@/utils/currency';
 import { orderService } from '@/services/orderService';
 import { downloadCustomerOrderInvoicePdf } from '@/utils/invoiceGenerator';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type OrderSuccessScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'OrderSuccess'
@@ -32,6 +34,7 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
   navigation,
   route,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const orderId = route.params?.orderId;
   const orderNumber = route.params?.orderNumber || route.params?.orderId || '#CC-99420851';
   const paymentId = route.params?.paymentId;
@@ -77,17 +80,6 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
   const handleViewOrders = useCallback(() => {
     navigation.navigate('OrderHistory');
   }, [navigation]);
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
 
   // Primary image from the first purchased product
   const primaryItem = orderItems.length > 0 ? orderItems[0] : null;

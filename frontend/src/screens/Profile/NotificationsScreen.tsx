@@ -21,6 +21,8 @@ import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { RootStackParamList } from '@/navigation/types';
 import { useNotificationStore, NotificationItem } from '@/store';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type NotificationsScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'Notifications'
@@ -29,6 +31,7 @@ type NotificationsScreenProps = NativeStackScreenProps<
 export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const {
     notifications,
     isLoading,
@@ -73,17 +76,6 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
       );
     },
     [deleteNotification]
-  );
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
   );
 
   const renderNotificationItem: ListRenderItem<NotificationItem> = useCallback(

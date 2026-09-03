@@ -26,6 +26,8 @@ import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
 import { downloadCustomerOrderInvoicePdf } from '@/utils/invoiceGenerator';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type OrderDetailsScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'OrderDetails'
@@ -35,6 +37,7 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
   navigation,
   route,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const orderIdParam = route.params?.orderId || 'ord1';
 
   const [order, setOrder] = useState<OrderRecord | null>(null);
@@ -137,17 +140,6 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
       setIsDeleting(false);
     }
   }, [order, navigation]);
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
-  );
 
   if (isLoading || !order) {
     return (

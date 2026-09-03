@@ -29,6 +29,8 @@ import { RootStackParamList } from '@/navigation/types';
 import { resolveProductImage } from '@/constants/productImages';
 import { formatCurrency } from '@/utils/currency';
 
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
 type OrderHistoryScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'OrderHistory'
@@ -39,6 +41,7 @@ type FilterCategory = 'All' | 'In Transit' | 'Delivered' | 'Cancelled';
 export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   navigation,
 }) => {
+  const { handleTabPress } = useSmartTabNavigation();
   const [selectedFilter, setSelectedFilter] = useState<FilterCategory>('All');
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -190,17 +193,6 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
       }
     },
     []
-  );
-
-  const handleTabPress = useCallback(
-    (tab: TabRoute) => {
-      if (tab === 'Home') navigation.navigate('Home');
-      else if (tab === 'Categories') navigation.navigate('Categories');
-      else if (tab === 'Cart') navigation.navigate('Cart');
-      else if (tab === 'Wishlist') navigation.navigate('Wishlist');
-      else if (tab === 'Profile') navigation.navigate('UserProfile');
-    },
-    [navigation]
   );
 
   const getStatusBadgeStyles = (status: string, paymentStatus?: string) => {
