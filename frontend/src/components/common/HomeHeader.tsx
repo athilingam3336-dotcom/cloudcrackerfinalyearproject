@@ -72,7 +72,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
               <Text
                 style={[
                   styles.brandTitle,
-                  isSmallScreen && { fontSize: 17, lineHeight: 22 },
+                  isSmallScreen && { fontSize: 20, lineHeight: 25 },
                 ]}
                 numberOfLines={1}
               >
@@ -174,9 +174,9 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   headerShopLogo: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
   titleContainer: {
     flex: 1,
@@ -190,12 +190,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   brandTitle: {
-    fontSize: 22,
-    lineHeight: 28,
+    fontSize: 26,
+    lineHeight: 32,
     fontFamily: Platform.OS === 'web' ? "'Cinzel', 'Outfit', 'Playfair Display', Georgia, serif" : 'Cinzel-Bold',
-    fontWeight: '800',
+    fontWeight: '900',
     color: '#A81818',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     textAlign: 'center',
   },
   sparkleIcon: {
