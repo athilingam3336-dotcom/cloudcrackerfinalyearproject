@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -291,8 +291,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 
   // Dynamic Live Countdown Timer for Flash Sale (Unified across all Flash Sale items)
-  const [flashTargetEndTime, setFlashTargetEndTime] = useState<number | null>(null);
-  const [timerSeconds, setTimerSeconds] = useState<number>(14400);
+  const [timerSeconds, setTimerSeconds] = useState<number>(0);
+  const targetEndTimeRef = useRef<number | null>(null);
 
   React.useEffect(() => {
     const activeFlashItems = products.filter(
@@ -309,35 +309,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         const hrs = parseFloat(p.flashSaleHours || p.flash_sale_hours || 4);
         return Math.max(60, Math.floor(hrs * 3600));
       });
-      const minRemainingSecs = Math.min(...remainingSecondsList);
+      // Pick the max duration among active flash sale items
+      const maxRemainingSecs = Math.max(...remainingSecondsList);
+      const newTargetMs = Date.now() + maxRemainingSecs * 1000;
 
-      const calculatedTargetMs = Date.now() + minRemainingSecs * 1000;
-      setFlashTargetEndTime((prevTarget) => {
-        if (prevTarget === null) {
-          return calculatedTargetMs;
-        }
-        // Update target if duration was updated (>60s diff)
-        const diff = Math.abs(calculatedTargetMs - prevTarget);
-        if (diff > 60000) {
-          return calculatedTargetMs;
-        }
-        return prevTarget;
-      });
+      // Only update target if not set or if duration changed (> 30 seconds diff)
+      if (
+        !targetEndTimeRef.current ||
+        Math.abs(newTargetMs - targetEndTimeRef.current) > 30000
+      ) {
+        targetEndTimeRef.current = newTargetMs;
+        setTimerSeconds(maxRemainingSecs);
+      }
     }
   }, [products]);
 
   React.useEffect(() => {
     const interval = setInterval(() => {
-      if (flashTargetEndTime !== null) {
-        const remaining = Math.max(0, Math.floor((flashTargetEndTime - Date.now()) / 1000));
-        setTimerSeconds(remaining);
-      } else {
-        setTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      if (targetEndTimeRef.current) {
+        const now = Date.now();
+        const diffSecs = Math.max(0, Math.floor((targetEndTimeRef.current - now) / 1000));
+        setTimerSeconds(diffSecs);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [flashTargetEndTime]);
+  }, []);
 
   const formattedTimer = useMemo(() => {
     const hrs = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
