@@ -825,21 +825,22 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               </TouchableOpacity>
             </View>
 
-            <CustomInput
-              label="Product Title *"
-              value={formName}
-              onChangeText={setFormName}
-              placeholder="e.g. Midnight Fury 30-Shot Barrage"
-            />
-
-            <CustomInput
-              label="Description"
-              value={formDescription}
-              onChangeText={setFormDescription}
-              placeholder="Detailed pyrotechnic effects description..."
-              multiline
-              numberOfLines={2}
-            />
+            <View style={styles.formRow}>
+              <CustomInput
+                label="Product Title *"
+                value={formName}
+                onChangeText={setFormName}
+                placeholder="e.g. Midnight Fury 30-Shot"
+                containerStyle={styles.halfFormInput}
+              />
+              <CustomInput
+                label="Description"
+                value={formDescription}
+                onChangeText={setFormDescription}
+                placeholder="Short effects summary..."
+                containerStyle={styles.halfFormInput}
+              />
+            </View>
 
             {/* Product Image Required Section */}
             <View style={styles.imageUploadSection}>
@@ -880,18 +881,6 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                             ? 'Current catalog image'
                             : 'Product Image')}
                       </Text>
-                      {selectedImage?.size ? (
-                        <Text style={styles.imageMetaDetails}>
-                          {(selectedImage.size / 1024).toFixed(1)} KB •{' '}
-                          {selectedImage.type
-                            .replace('image/', '')
-                            .toUpperCase()}
-                        </Text>
-                      ) : (
-                        <Text style={styles.imageMetaDetails}>
-                          Preview active
-                        </Text>
-                      )}
                     </View>
                     <View style={styles.imageActionButtons}>
                       <TouchableOpacity
@@ -901,7 +890,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                       >
                         <MaterialIcons
                           name="edit"
-                          size={14}
+                          size={12}
                           color={Colors.primary}
                         />
                         <Text style={styles.imageChangeBtnText}>Change</Text>
@@ -913,7 +902,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                       >
                         <MaterialIcons
                           name="delete-outline"
-                          size={14}
+                          size={12}
                           color={Colors.error}
                         />
                         <Text style={styles.imageRemoveBtnText}>Remove</Text>
@@ -930,26 +919,21 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                   onPress={pickProductImage}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.imageDropzoneIconWrap}>
-                    <MaterialIcons
-                      name="cloud-upload"
-                      size={28}
-                      color={Colors.primary}
-                    />
-                  </View>
+                  <MaterialIcons
+                    name="cloud-upload"
+                    size={22}
+                    color={Colors.primary}
+                  />
                   <Text style={styles.imageDropzoneTitle}>
-                    Choose Image / Upload Image
-                  </Text>
-                  <Text style={styles.imageDropzoneSubtitle}>
-                    Accepts JPG, JPEG, PNG, or WebP
+                    Choose Image / Upload Image (JPG, PNG, WebP)
                   </Text>
                   <View style={styles.imageBrowseChip}>
                     <MaterialIcons
                       name="add-photo-alternate"
-                      size={14}
+                      size={12}
                       color={Colors.onPrimary}
                     />
-                    <Text style={styles.imageBrowseChipText}>Browse Files</Text>
+                    <Text style={styles.imageBrowseChipText}>Browse</Text>
                   </View>
                 </TouchableOpacity>
               )}
@@ -994,6 +978,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               ))}
             </ScrollView>
 
+            {/* Price & Stock 3-Column Row */}
             <View style={styles.formRow}>
               <CustomInput
                 label="Original Price (₹) *"
@@ -1009,21 +994,21 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                 onChangeText={setFormDiscountPrice}
                 keyboardType="numeric"
                 containerStyle={styles.halfFormInput}
-                placeholder="Optional (e.g. 449)"
+                placeholder="Optional (449)"
+              />
+              <CustomInput
+                label="Stock Count *"
+                value={formStock}
+                onChangeText={setFormStock}
+                keyboardType="numeric"
+                containerStyle={styles.halfFormInput}
+                placeholder="e.g. 50"
               />
             </View>
 
-            <CustomInput
-              label="Inventory Stock Count *"
-              value={formStock}
-              onChangeText={setFormStock}
-              keyboardType="numeric"
-              placeholder="e.g. 50"
-            />
-
             {/* Celebration Timing Selector */}
             <Text style={styles.formSectionLabel}>Celebration Burst Timing *</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
               {[
                 { label: '☀️ Morning', value: 'morning', icon: 'wb-sunny', color: '#ED6C02' },
                 { label: '🌙 Night', value: 'night', icon: 'nights-stay', color: '#673AB7' },
@@ -1038,9 +1023,9 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      paddingVertical: 10,
-                      paddingHorizontal: 8,
-                      borderRadius: BorderRadius.lg,
+                      paddingVertical: 6,
+                      paddingHorizontal: 6,
+                      borderRadius: BorderRadius.md,
                       borderWidth: isSel ? 2 : 1,
                       borderColor: isSel ? Colors.primary : Colors.surfaceContainerHigh,
                       backgroundColor: isSel ? Colors.primaryContainer : Colors.surfaceContainerLowest,
@@ -1049,11 +1034,11 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                     onPress={() => setFormTimeOfDay(t.value as any)}
                     activeOpacity={0.8}
                   >
-                    <MaterialIcons name={t.icon as any} size={16} color={isSel ? Colors.primary : t.color} />
+                    <MaterialIcons name={t.icon as any} size={14} color={isSel ? Colors.primary : t.color} />
                     <Text
                       style={{
                         ...Typography.labelLg,
-                        fontSize: 12,
+                        fontSize: 11,
                         color: isSel ? Colors.primary : Colors.onSurface,
                         fontFamily: isSel ? 'Inter-Bold' : 'Inter-Regular',
                       }}
@@ -1069,7 +1054,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
             <Text style={styles.formSectionLabel}>Product Badges & Visibility</Text>
             <View style={styles.switchesContainer}>
               <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Featured Product</Text>
+                <Text style={styles.switchLabel}>Featured</Text>
                 <Switch
                   value={formIsFeatured}
                   onValueChange={setFormIsFeatured}
@@ -1079,7 +1064,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               </View>
 
               <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Bestseller Tag</Text>
+                <Text style={styles.switchLabel}>Bestseller</Text>
                 <Switch
                   value={formIsBestseller}
                   onValueChange={setFormIsBestseller}
@@ -1089,7 +1074,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               </View>
 
               <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Flash Sale Special</Text>
+                <Text style={styles.switchLabel}>Flash Sale</Text>
                 <Switch
                   value={formIsFlashSale}
                   onValueChange={setFormIsFlashSale}
@@ -1486,43 +1471,43 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.sm + 2,
     elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   modalTitle: {
     ...Typography.headlineLg,
-    fontSize: 20,
+    fontSize: 17,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   stockModalSubtitle: {
     ...Typography.bodyMd,
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.tertiary,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   formSectionLabel: {
     ...Typography.labelLg,
     fontSize: 11,
     fontFamily: 'Inter-Bold',
     color: Colors.tertiary,
-    marginTop: Spacing.xs,
+    marginTop: 2,
     marginBottom: 4,
   },
   modalCategoryRow: {
     gap: Spacing.xs,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   modalCategoryChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
@@ -1534,7 +1519,7 @@ const styles = StyleSheet.create({
   },
   modalCategoryChipText: {
     ...Typography.labelLg,
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.onSurfaceVariant,
   },
   modalCategoryChipTextSelected: {
@@ -1550,12 +1535,12 @@ const styles = StyleSheet.create({
   },
   switchesContainer: {
     backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    padding: 4,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    gap: 4,
+    marginBottom: Spacing.xs,
   },
   switchRow: {
     flex: 1,
@@ -1640,49 +1625,36 @@ const styles = StyleSheet.create({
   },
   imageDropzone: {
     backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
     borderWidth: 1.5,
     borderColor: Colors.surfaceContainerHigh,
     borderStyle: 'dashed',
-    paddingVertical: Spacing.md,
+    paddingVertical: 8,
     paddingHorizontal: Spacing.sm,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   imageDropzoneError: {
     borderColor: Colors.error,
     backgroundColor: '#FFF5F5',
   },
-  imageDropzoneIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: Colors.primaryContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xs,
-  },
   imageDropzoneTitle: {
     ...Typography.bodyMd,
-    fontFamily: 'Inter-Bold',
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
     color: Colors.onSurface,
-    marginBottom: 2,
-  },
-  imageDropzoneSubtitle: {
-    ...Typography.bodyMd,
-    fontSize: 11,
-    color: Colors.tertiary,
-    marginBottom: Spacing.xs,
+    flex: 1,
   },
   imageBrowseChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: BorderRadius.md,
     gap: 4,
-    marginTop: 2,
   },
   imageBrowseChipText: {
     ...Typography.labelLg,
@@ -1692,7 +1664,7 @@ const styles = StyleSheet.create({
   },
   imagePreviewCard: {
     backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
     overflow: 'hidden',
@@ -1702,7 +1674,7 @@ const styles = StyleSheet.create({
   },
   imagePreviewBox: {
     width: '100%',
-    height: 150,
+    height: 90,
     backgroundColor: '#1E1E1E',
     alignItems: 'center',
     justifyContent: 'center',

@@ -102,21 +102,33 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
     let isMounted = true;
     setIsLoading(true);
 
-    if (productIdParam) {
-      productService.getProductById(productIdParam).then((data) => {
-        if (isMounted && data) {
-          setProduct(data);
+    const loadProductData = async () => {
+      try {
+        let targetProduct: ProductItem | null = null;
+        if (productIdParam) {
+          targetProduct = await productService.getProductById(productIdParam);
+        }
+
+        if (!targetProduct) {
+          const catalog = await productService.getProducts(undefined, undefined, 50);
+          if (catalog && catalog.length > 0) {
+            targetProduct = catalog.find((p) => p.id === productIdParam) || catalog[0];
+          }
+        }
+
+        if (isMounted) {
+          setProduct(targetProduct);
+        }
+      } catch (err) {
+        console.warn('Failed to load variant details:', err);
+      } finally {
+        if (isMounted) {
           setIsLoading(false);
         }
-      });
-    } else {
-      productService.getProducts(undefined, undefined, 5).then((all) => {
-        if (isMounted && all.length > 0) {
-          setProduct(all[0]);
-          setIsLoading(false);
-        }
-      });
-    }
+      }
+    };
+
+    loadProductData();
 
     return () => {
       isMounted = false;

@@ -351,41 +351,38 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           <Text style={styles.title}>Order History</Text>
           <Text style={styles.subtitle}>Review and track your previous pyrotechnic purchases.</Text>
 
-          {/* Stats Bento Grid */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.statsGridScrollContent}
-            style={styles.statsScrollView}
-          >
+          {/* Stats Bento Full-Width Row */}
+          <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <View style={styles.statIconBox}>
-                <MaterialIcons name="shopping-bag" size={18} color={Colors.primary} />
+                <MaterialIcons name="shopping-bag" size={20} color={Colors.primary} />
               </View>
               <View style={styles.statTextBox}>
                 <Text style={styles.statLabel} numberOfLines={1}>TOTAL ORDERS</Text>
                 <Text style={styles.statValue} numberOfLines={1}>{totalOrders}</Text>
               </View>
             </View>
+
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: Colors.secondaryContainer }]}>
-                <MaterialIcons name="local-shipping" size={18} color={Colors.onSecondaryContainer} />
+                <MaterialIcons name="local-shipping" size={20} color={Colors.onSecondaryContainer} />
               </View>
               <View style={styles.statTextBox}>
                 <Text style={styles.statLabel} numberOfLines={1}>IN TRANSIT</Text>
                 <Text style={styles.statValue} numberOfLines={1}>{inTransitCount}</Text>
               </View>
             </View>
+
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: Colors.primaryFixed }]}>
-                <MaterialIcons name="savings" size={18} color={Colors.primary} />
+                <MaterialIcons name="savings" size={20} color={Colors.primary} />
               </View>
               <View style={styles.statTextBox}>
                 <Text style={styles.statLabel} numberOfLines={1}>TOTAL SPENT</Text>
                 <Text style={styles.statValue} numberOfLines={1}>{formatCurrency(totalSpent)}</Text>
               </View>
             </View>
-          </ScrollView>
+          </View>
 
           {/* Filter Chips */}
           <ScrollView
@@ -563,29 +560,28 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
     marginTop: 2,
   },
-  statsScrollView: {
-    marginTop: Spacing.sm,
-  },
-  statsGridScrollContent: {
+  statsContainer: {
     flexDirection: 'row',
-    gap: Spacing.xs,
-    paddingRight: Spacing.xs,
+    width: '100%',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   statCard: {
-    minWidth: 108,
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.xs + 2,
+    paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs + 2,
-    gap: 6,
+    gap: Spacing.xs,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
   },
   statIconBox: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.primaryFixed,
     alignItems: 'center',
@@ -593,19 +589,22 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   statTextBox: {
+    flex: 1,
     justifyContent: 'center',
   },
   statLabel: {
     ...Typography.labelLg,
-    fontSize: 8.5,
+    fontSize: 9.5,
     fontFamily: 'Inter-Bold',
     color: Colors.tertiary,
+    textTransform: 'uppercase',
   },
   statValue: {
     ...Typography.titleLg,
-    fontSize: 12.5,
+    fontSize: 14,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
+    marginTop: 1,
   },
   filterScrollView: {
     marginTop: Spacing.sm,

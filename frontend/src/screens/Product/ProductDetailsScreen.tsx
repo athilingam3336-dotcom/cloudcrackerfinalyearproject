@@ -52,28 +52,43 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
     let isMounted = true;
     setIsLoading(true);
 
-    if (productIdParam) {
-      productService.getProductById(productIdParam).then((data) => {
-        if (isMounted) {
-          setProduct(data);
-          setIsLoading(false);
-          const cat = data?.category;
-          productService.getProducts(cat, undefined, 5).then((all) => {
+    const loadProductData = async () => {
+      try {
+        let targetProduct: ProductItem | null = null;
+        if (productIdParam) {
+          targetProduct = await productService.getProductById(productIdParam);
+        }
+
+        // If product is not found by ID or no ID provided, fallback to fetching catalog items
+        if (!targetProduct) {
+          const catalog = await productService.getProducts(undefined, undefined, 50);
+          if (catalog && catalog.length > 0) {
+            targetProduct = catalog.find((p) => p.id === productIdParam) || catalog[0];
             if (isMounted) {
-              setRelatedProducts(all.filter((p) => p.id !== productIdParam).slice(0, 4));
+              setRelatedProducts(catalog.filter((p) => p.id !== targetProduct?.id).slice(0, 4));
             }
-          });
+          }
+        } else {
+          const cat = targetProduct.category;
+          const related = await productService.getProducts(cat, undefined, 10).catch(() => []);
+          if (isMounted) {
+            setRelatedProducts(related.filter((p) => p.id !== productIdParam).slice(0, 4));
+          }
         }
-      });
-    } else {
-      productService.getProducts(undefined, undefined, 5).then((all) => {
-        if (isMounted && all.length > 0) {
-          setProduct(all[0]);
-          setRelatedProducts(all.slice(1, 5));
+
+        if (isMounted) {
+          setProduct(targetProduct);
+        }
+      } catch (err) {
+        console.warn('Failed to load product details:', err);
+      } finally {
+        if (isMounted) {
           setIsLoading(false);
         }
-      });
-    }
+      }
+    };
+
+    loadProductData();
 
     return () => {
       isMounted = false;
@@ -189,7 +204,7 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
     [navigation]
   );
 
-  if (isLoading || !product) {
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <HomeHeader
@@ -199,6 +214,33 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
           notificationCount={unreadNotifs}
         />
         <LoadingSpinner message="Loading pyrotechnics specs..." />
+        <BottomNavBar activeTab="Home" onTabPress={(tab) => navigation.navigate(tab as any)} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!product) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <HomeHeader
+          onNotificationPress={() => navigation.navigate('Notifications')}
+          onProfilePress={() => navigation.navigate('UserProfile')}
+          onCartPress={() => navigation.navigate('Cart')}
+          notificationCount={unreadNotifs}
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <MaterialIcons name="search-off" size={48} color={Colors.tertiary} />
+          <Text style={{ ...Typography.titleLg, color: Colors.onSurface, marginTop: 12 }}>
+            Pyrotechnic Product Not Found
+          </Text>
+          <Text style={{ ...Typography.bodyMd, color: Colors.onSurfaceVariant, textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
+            The product details could not be loaded or the item was removed.
+          </Text>
+          <PrimaryButton
+            title="Browse Pyrotechnics Catalog"
+            onPress={() => navigation.navigate('ProductListing')}
+          />
+        </View>
         <BottomNavBar activeTab="Home" onTabPress={(tab) => navigation.navigate(tab as any)} />
       </SafeAreaView>
     );
