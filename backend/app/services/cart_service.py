@@ -57,15 +57,53 @@ class CartService:
         return await self.cart_repo.create(cart_data)
 
     async def get_user_cart(self, user_id: str) -> List[CartResponse]:
-        """Fetch all user cart items and populate product details."""
+        """Fetch all user cart items, merge duplicate product entries in DB, and populate product details."""
         cart_items = await self.cart_repo.list_user_cart(user_id)
-        responses = []
+        if not cart_items:
+            return []
+
+        # Group duplicate cart documents by product_id
+        merged_map = {}
         for item in cart_items:
-            product = await self.product_repo.get_by_id(str(item.product_id))
-            resp = CartResponse.convert_id(item)
+            p_id = str(item.product_id)
+            if p_id in merged_map:
+                main_item, extras = merged_map[p_id]
+                extras.append(item)
+                main_item.quantity += item.quantity
+            else:
+                merged_map[p_id] = (item, [])
+
+        responses = []
+        for p_id, (main_item, extras) in merged_map.items():
+            product = await self.product_repo.get_by_id(p_id)
+            max_stock = product.stock if (product and hasattr(product, 'stock') and product.stock is not None) else 999
+            
+            # Cap quantity at product stock if needed
+            if main_item.quantity > max_stock:
+                main_item.quantity = max_stock
+
+            price = (
+                product.discount_price
+                if (product and product.discount_price is not None)
+                else (product.price if product else main_item.unit_price)
+            )
+            main_item.unit_price = price
+            main_item.total_price = main_item.quantity * price
+
+            # Synchronize DB update for main item and remove extra duplicates
+            await self.cart_repo.update(main_item, {
+                "quantity": main_item.quantity,
+                "unit_price": main_item.unit_price,
+                "total_price": main_item.total_price,
+            })
+            for extra in extras:
+                await self.cart_repo.delete(extra)
+
+            resp = CartResponse.convert_id(main_item)
             if product:
                 resp["product"] = ProductResponse.convert_id(product)
             responses.append(CartResponse(**resp))
+
         return responses
 
     async def update_cart_item(

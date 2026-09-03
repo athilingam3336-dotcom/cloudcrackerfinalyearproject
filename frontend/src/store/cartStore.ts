@@ -50,8 +50,19 @@ export const useCartStore = create<CartState>((set, get) => ({
   fetchCart: async () => {
     set({ isLoading: true });
     try {
-      const items = await cartService.fetchCart();
-      set({ items: items || [], isLoading: false });
+      const rawItems = await cartService.fetchCart();
+      const mergedMap = new Map<string, CartItem>();
+      for (const item of (rawItems || [])) {
+        const pId = item.product.id;
+        if (mergedMap.has(pId)) {
+          const existing = mergedMap.get(pId)!;
+          const maxStock = typeof item.product.stock === 'number' ? item.product.stock : 999;
+          existing.quantity = Math.min(maxStock, existing.quantity + item.quantity);
+        } else {
+          mergedMap.set(pId, item);
+        }
+      }
+      set({ items: Array.from(mergedMap.values()), isLoading: false });
     } catch {
       set({ items: [], isLoading: false });
     }
@@ -63,17 +74,21 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
 
     const availableStock = typeof product.stock === 'number' ? product.stock : 999;
+    if (availableStock <= 0) {
+      throw new Error('This item is currently out of stock.');
+    }
+
     const previousItems = get().items;
     const existingIndex = previousItems.findIndex((i) => i.product.id === product.id);
     const currentQtyInCart = existingIndex >= 0 ? previousItems[existingIndex].quantity : 0;
     const totalRequested = currentQtyInCart + quantity;
 
-    if (availableStock > 0 && totalRequested > availableStock) {
+    if (totalRequested > availableStock) {
       const remainingAllowed = Math.max(0, availableStock - currentQtyInCart);
       if (remainingAllowed === 0) {
-        throw new Error(`Cannot add more items. You already have the maximum available stock (${availableStock}) in your cart.`);
+        throw new Error(`Stock limit reached! Maximum available stock is ${availableStock} items (${currentQtyInCart} already in cart).`);
       } else {
-        throw new Error(`Only ${availableStock} items available in stock. You already have ${currentQtyInCart} in your cart.`);
+        throw new Error(`Stock limit reached! Only ${availableStock} items available in stock (${currentQtyInCart} already in cart).`);
       }
     }
 

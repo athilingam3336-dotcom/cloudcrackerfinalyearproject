@@ -137,6 +137,11 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                       {product.subtitle || product.category}
                     </Text>
                     <Text style={styles.itemPrice}>{formatCurrency(product.price)}</Text>
+                    {typeof product.stock === 'number' && quantity >= product.stock && (
+                      <Text style={styles.stockLimitWarning}>
+                        Stock limit reached ({product.stock} max available)
+                      </Text>
+                    )}
                   </View>
 
                   <View style={styles.itemActions}>
@@ -177,17 +182,16 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                         onPress={async () => {
                           const maxStock = typeof product.stock === 'number' ? product.stock : 999;
                           if (quantity >= maxStock) {
-                            Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                            Alert.alert('Stock Limit Reached', `Cannot add more. Stock limit is ${maxStock} items.`);
                             return;
                           }
                           try {
                             await updateQuantity(product.id, 1);
                           } catch (err: any) {
-                            Alert.alert('Cart Error', err?.message || 'Failed to update quantity.');
+                            Alert.alert('Stock Limit Reached', err?.message || 'Failed to update quantity.');
                           }
                         }}
                         activeOpacity={0.7}
-                        disabled={typeof product.stock === 'number' && quantity >= product.stock}
                       >
                         <MaterialIcons name="add" size={16} color={Colors.onSurface} />
                       </TouchableOpacity>
@@ -379,6 +383,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
+    marginTop: 2,
+  },
+  stockLimitWarning: {
+    ...Typography.labelLg,
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: Colors.error,
     marginTop: 2,
   },
   itemActions: {

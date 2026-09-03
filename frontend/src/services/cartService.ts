@@ -18,15 +18,16 @@ export class CartService {
     const { data: res } = await apiClient.get('/cart');
     const payload = res.data !== undefined ? res.data : res;
     if (Array.isArray(payload)) {
-      return payload.map((ci: any) => {
+      const mappedList = payload.map((ci: any) => {
         const prod = ci.product || {};
         const effectivePrice = prod.discount_price != null ? prod.discount_price : (prod.price ?? ci.unit_price ?? ci.price ?? 0);
         const originalPrice = prod.discount_price != null ? prod.price : undefined;
         const mainImage = Array.isArray(prod.images) && prod.images.length > 0 ? prod.images[0] : (prod.image_url || prod.imageUrl);
+        const stockVal = typeof prod.stock === 'number' ? prod.stock : (typeof prod.available_stock === 'number' ? prod.available_stock : 999);
 
         return {
           product: {
-            id: prod.id || prod._id || ci.product_id || String(ci.id),
+            id: String(prod.id || prod._id || ci.product_id || ci.id),
             title: prod.name || prod.title || 'Pyrotechnic Item',
             subtitle: prod.description || prod.subtitle || '',
             category: prod.category_id || prod.category || 'all',
@@ -36,10 +37,25 @@ export class CartService {
             rating: prod.rating || prod.average_rating || 5.0,
             reviewCount: prod.reviews_count || prod.total_reviews || 0,
             imageUrl: mainImage,
+            stock: stockVal,
           },
           quantity: ci.quantity || 1,
         };
       });
+
+      // Deduplicate items by product.id and aggregate quantity
+      const mergedMap = new Map<string, CartItem>();
+      for (const item of mappedList) {
+        const pId = item.product.id;
+        if (mergedMap.has(pId)) {
+          const existing = mergedMap.get(pId)!;
+          const maxStock = typeof item.product.stock === 'number' ? item.product.stock : 999;
+          existing.quantity = Math.min(maxStock, existing.quantity + item.quantity);
+        } else {
+          mergedMap.set(pId, item);
+        }
+      }
+      return Array.from(mergedMap.values());
     }
     return [];
   }
