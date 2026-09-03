@@ -255,13 +255,11 @@ export class AuthService {
 
   async sendEmailOtp(
     email: string
-  ): Promise<{ email: string; otp?: string; message: string }> {
+  ): Promise<{ email: string; message: string }> {
     if (ENV.ENABLE_MOCK_API) {
-      const mockOtp = String(Math.floor(100000 + Math.random() * 900000));
       return {
         email,
-        otp: mockOtp,
-        message: `OTP code sent successfully to ${email}.`,
+        message: `Verification OTP code sent successfully to ${email}. Please check your inbox.`,
       };
     }
     const { data: res } = await apiClient.post('/auth/send-email-otp', { email });

@@ -90,11 +90,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
       const res = await authService.sendEmailOtp(email.trim());
       setIsSendingOtp(false);
       setOtpSent(true);
-      if (res.otp) {
-        setOtpMessage(`OTP sent to ${email.trim()}. (Verification Code: ${res.otp})`);
-      } else {
-        setOtpMessage(`OTP sent to ${email.trim()}. Please check your inbox.`);
-      }
+      setOtpMessage(
+        res.message || `Verification OTP code sent to ${email.trim()}. Please check your email inbox.`
+      );
     } catch (err: any) {
       setIsSendingOtp(false);
       const msg = err.response?.data?.message || err.message || 'Failed to send OTP code.';

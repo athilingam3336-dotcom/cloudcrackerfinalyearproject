@@ -478,8 +478,7 @@ class AuthService:
 
         return {
             "email": clean_email,
-            "otp": otp_code,
-            "message": f"OTP code sent successfully to {clean_email}.",
+            "message": f"Verification OTP sent successfully to {clean_email}. Please check your inbox.",
         }
 
     async def verify_email_otp(self, email: str, otp: str) -> bool:
