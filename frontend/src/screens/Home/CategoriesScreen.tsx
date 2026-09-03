@@ -105,6 +105,26 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
     });
   }, [categories, searchQuery, selectedFilter]);
 
+  // Pad filtered categories with invisible items to ensure uniform grid card sizes on incomplete rows
+  const formattedCategories = useMemo(() => {
+    const data = [...filteredCategories];
+    if (data.length === 0) return data;
+    const remainder = data.length % numColumns;
+    if (remainder !== 0) {
+      const missingCount = numColumns - remainder;
+      for (let i = 0; i < missingCount; i++) {
+        data.push({
+          id: `placeholder-${i}`,
+          name: '',
+          iconName: '',
+          itemCount: 0,
+          isPlaceholder: true,
+        } as any);
+      }
+    }
+    return data;
+  }, [filteredCategories, numColumns]);
+
   // Navigation handlers
   const handleCategoryPress = useCallback(
     (categoryId: string) => {
@@ -132,14 +152,19 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
 
   // Render individual Category grid item
   const renderCategoryItem: ListRenderItem<CategoryItem> = useCallback(
-    ({ item }) => (
-      <View style={styles.gridColumn}>
-        <CategoryGridCard
-          category={item}
-          onPress={() => handleCategoryPress(item.id)}
-        />
-      </View>
-    ),
+    ({ item }) => {
+      if ((item as any).isPlaceholder) {
+        return <View style={styles.gridColumn} />;
+      }
+      return (
+        <View style={styles.gridColumn}>
+          <CategoryGridCard
+            category={item}
+            onPress={() => handleCategoryPress(item.id)}
+          />
+        </View>
+      );
+    },
     [handleCategoryPress]
   );
 
@@ -230,7 +255,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <FlatList
-        data={filteredCategories}
+        data={formattedCategories}
         key={numColumns}
         numColumns={numColumns}
         keyExtractor={(item) => item.id}

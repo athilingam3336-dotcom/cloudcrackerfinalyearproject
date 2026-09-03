@@ -317,6 +317,26 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
     return filteredAndSortedProducts.slice(start, start + PAGE_SIZE);
   }, [filteredAndSortedProducts, currentPageSafe, PAGE_SIZE]);
 
+  const formattedProducts = useMemo(() => {
+    const data = [...paginatedProducts];
+    if (data.length === 0) return data;
+    const remainder = data.length % numColumns;
+    if (remainder !== 0) {
+      const missingCount = numColumns - remainder;
+      for (let i = 0; i < missingCount; i++) {
+        data.push({
+          id: `placeholder-${i}`,
+          title: '',
+          category: '',
+          price: 0,
+          rating: 0,
+          isPlaceholder: true,
+        } as any);
+      }
+    }
+    return data;
+  }, [paginatedProducts, numColumns]);
+
   // Navigation handlers
   const handleProductPress = useCallback(
     (productId: string) => {
@@ -338,26 +358,31 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
 
   // Render individual product item in grid
   const renderProductItem: ListRenderItem<ProductItem> = useCallback(
-    ({ item }) => (
-      <View style={styles.gridColumn}>
-        <ProductCard
-          id={item.id}
-          title={item.title}
-          category={item.subtitle || item.category}
-          price={item.price}
-          originalPrice={item.originalPrice}
-          stock={item.stock}
-          badge={item.badge}
-          rating={item.rating}
-          reviewCount={item.reviewCount}
-          imageUrl={item.imageUrl}
-          isWishlisted={wishlistItems.some((w) => w.id === item.id)}
-          onPress={() => handleProductPress(item.id)}
-          onAddToCart={() => handleAddToCart(item)}
-          onWishlistToggle={() => handleToggleWishlist(item)}
-        />
-      </View>
-    ),
+    ({ item }) => {
+      if ((item as any).isPlaceholder) {
+        return <View style={styles.gridColumn} />;
+      }
+      return (
+        <View style={styles.gridColumn}>
+          <ProductCard
+            id={item.id}
+            title={item.title}
+            category={item.subtitle || item.category}
+            price={item.price}
+            originalPrice={item.originalPrice}
+            stock={item.stock}
+            badge={item.badge}
+            rating={item.rating}
+            reviewCount={item.reviewCount}
+            imageUrl={item.imageUrl}
+            isWishlisted={wishlistItems.some((w) => w.id === item.id)}
+            onPress={() => handleProductPress(item.id)}
+            onAddToCart={() => handleAddToCart(item)}
+            onWishlistToggle={() => handleToggleWishlist(item)}
+          />
+        </View>
+      );
+    },
     [wishlistItems, handleProductPress, handleAddToCart, handleToggleWishlist]
   );
 
@@ -582,7 +607,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
       ) : (
         <FlatList
           ref={flatListRef}
-          data={paginatedProducts}
+          data={formattedProducts}
           key={numColumns}
           numColumns={numColumns}
           keyExtractor={(item) => item.id}
@@ -590,7 +615,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           ListHeaderComponent={renderHeader}
           ListFooterComponent={renderFooter}
           ListEmptyComponent={renderEmptyState}
-          columnWrapperStyle={paginatedProducts.length > 0 ? styles.gridRow : undefined}
+          columnWrapperStyle={formattedProducts.length > 0 ? styles.gridRow : undefined}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           initialNumToRender={6}

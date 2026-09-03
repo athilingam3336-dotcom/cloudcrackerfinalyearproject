@@ -31,10 +31,16 @@ export const CustomInput: React.FC<CustomInputProps> = ({
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <View style={[styles.inputWrapper, !!error && styles.inputError]}>
+      <View
+        style={[
+          styles.inputWrapper,
+          rest.multiline && styles.multilineWrapper,
+          !!error && styles.inputError,
+        ]}
+      >
         {leftIcon}
         <TextInput
-          style={[styles.input, style]}
+          style={[styles.input, rest.multiline && styles.multilineInput, style]}
           placeholderTextColor={Colors.outline}
           {...rest}
         />
@@ -67,6 +73,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     gap: Spacing.xs,
   },
+  multilineWrapper: {
+    height: undefined,
+    minHeight: 48,
+    alignItems: 'flex-start',
+    paddingVertical: Spacing.xs,
+  },
   inputError: {
     borderColor: Colors.error,
   },
@@ -75,6 +87,11 @@ const styles = StyleSheet.create({
     height: '100%',
     ...Typography.bodyLg,
     color: Colors.onBackground,
+  },
+  multilineInput: {
+    height: undefined,
+    minHeight: 40,
+    textAlignVertical: 'top',
   },
   errorText: {
     ...Typography.labelLg,
