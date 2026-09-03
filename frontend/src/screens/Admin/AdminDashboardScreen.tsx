@@ -60,6 +60,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
       const data = await adminService.getTodayReport();
       if (data && typeof data.today_revenue === 'number') {
         setTodayReport(data);
+        setIsLoadingReport(false);
         return;
       }
     } catch (err: any) {
