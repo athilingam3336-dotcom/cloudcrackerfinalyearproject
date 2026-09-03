@@ -421,14 +421,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.marginMobile,
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing.md,
   },
   cardContainer: {
     width: '100%',
     maxWidth: 440,
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.xl,
-    padding: SCREEN_WIDTH < 380 ? Spacing.md : Spacing.lg,
+    padding: SCREEN_WIDTH < 380 ? Spacing.sm : Spacing.gutter,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
     shadowColor: Colors.shadowColor,
@@ -440,12 +440,12 @@ const styles = StyleSheet.create({
   },
   brandHeader: {
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.sm,
   },
   logoBox: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.lg,
+    width: 42,
+    height: 42,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -483,13 +483,13 @@ const styles = StyleSheet.create({
     color: Colors.tertiary,
   },
   loginButton: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
     width: '100%',
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.lg,
+    marginVertical: Spacing.sm,
     width: '100%',
   },
   dividerLine: {
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     flex: 1,
-    height: 48,
+    height: 42,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   signupRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.lg,
+    marginTop: Spacing.sm,
   },
   signupText: {
     ...Typography.bodyMd,
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   footer: {
-    marginTop: Spacing.lg,
+    marginTop: Spacing.sm,
     alignItems: 'center',
   },
   legalText: {

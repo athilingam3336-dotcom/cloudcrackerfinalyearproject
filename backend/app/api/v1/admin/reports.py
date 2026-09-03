@@ -83,6 +83,14 @@ async def dispatch_daily_report_to_all_admins(requested_by_email: str = "Automat
         email_body += f"{idx}. Order #{order['order_number']} | Customer: {order['customer_name']} | ₹{order['total']:,.2f} | Status: {order['order_status']} | Items: {order['items_summary']}\n"
 
     email_body += f"""
+🏬 ITEMIZED STOCK & INVENTORY STATUS:
+------------------------------------------------------
+"""
+    stock_items = report_data.get('stock_inventory_list', [])
+    for idx, stk in enumerate(stock_items[:25], 1):
+        email_body += f"{idx}. {stk['name']} ({stk['category_name']}) | Stock Left: {stk['stock_left']} | Sold Today: {stk['sold_today']} | Status: {stk['status']}\n"
+
+    email_body += f"""
 ======================================================
 Dispatched To Admin Accounts: {', '.join(admin_emails)}
 Triggered By: {requested_by_email}

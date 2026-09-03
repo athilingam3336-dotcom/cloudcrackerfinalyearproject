@@ -232,7 +232,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
 
       // 3. Sub-filter chip match (e.g. MORNING, NIGHT, ON SALE)
       if (selectedFilterChip === '☀️ MORNING') {
-        const tod = product.timeOfDay || (product as any).time_of_day;
+        const tod = (product as any).timeOfDay || (product as any).time_of_day;
         if (tod === 'night') return false;
         if (tod === 'morning' || tod === 'both') return true;
 
@@ -250,7 +250,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           catLower.includes('kid');
         if (!isMorning) return false;
       } else if (selectedFilterChip === '🌙 NIGHT') {
-        const tod = product.timeOfDay || (product as any).time_of_day;
+        const tod = (product as any).timeOfDay || (product as any).time_of_day;
         if (tod === 'morning') return false;
         if (tod === 'night' || tod === 'both') return true;
 
@@ -267,6 +267,19 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
           catLower.includes('aerial') ||
           catLower.includes('gift');
         if (!isNight) return false;
+      } else if (selectedFilterChip === '✨ DAY & NIGHT' || selectedFilterChip === '✨ BOTH TIME') {
+        const tod = (product as any).timeOfDay || (product as any).time_of_day;
+        if (tod === 'both') return true;
+        const isBoth =
+          titleLower.includes('sparkler') ||
+          titleLower.includes('chakkar') ||
+          titleLower.includes('garland') ||
+          titleLower.includes('combo') ||
+          titleLower.includes('family') ||
+          catLower.includes('sparkler') ||
+          catLower.includes('chakkar') ||
+          catLower.includes('combo');
+        if (!isBoth) return false;
       } else if (selectedFilterChip === 'ON SALE') {
         const isSale =
           Boolean(product.originalPrice && product.originalPrice > product.price) ||
@@ -443,7 +456,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filterChipsContent}
             >
-              {['ALL', '☀️ MORNING', '🌙 NIGHT', 'ROCKETS', 'SPARKLERS', 'POTS & FOUNTAINS', 'BOMBS', 'MULTI-SHOT', 'ON SALE'].map((chip) => {
+              {['ALL', '☀️ MORNING', '🌙 NIGHT', '✨ DAY & NIGHT', 'ROCKETS', 'SPARKLERS', 'POTS & FOUNTAINS', 'BOMBS', 'MULTI-SHOT', 'ON SALE'].map((chip) => {
                 const isSelected = selectedFilterChip === chip;
                 return (
                   <TouchableOpacity

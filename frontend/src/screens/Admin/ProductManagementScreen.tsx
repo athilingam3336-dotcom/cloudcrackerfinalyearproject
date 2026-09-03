@@ -569,7 +569,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
 
               {item.timeOfDay === 'morning' && <Text style={[styles.flagChip, { backgroundColor: '#FFF3E0', color: '#E65100' }]}>☀️ Morning</Text>}
               {item.timeOfDay === 'night' && <Text style={[styles.flagChip, { backgroundColor: '#EDE7F6', color: '#4A148C' }]}>🌙 Night</Text>}
-              {item.timeOfDay === 'both' && <Text style={[styles.flagChip, { backgroundColor: '#E8F5E9', color: '#1B5E20' }]}>☀️🌙 Both</Text>}
+              {item.timeOfDay === 'both' && <Text style={[styles.flagChip, { backgroundColor: '#E8F5E9', color: '#1B5E20' }]}>✨ Day & Night</Text>}
               {item.isFeatured && <Text style={styles.flagChip}>Featured</Text>}
               {item.isBestseller && <Text style={styles.flagChip}>Bestseller</Text>}
               {item.isFlashSale && <Text style={styles.flagChip}>Flash Sale</Text>}
@@ -1027,7 +1027,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               {[
                 { label: '☀️ Morning', value: 'morning', icon: 'wb-sunny', color: '#ED6C02' },
                 { label: '🌙 Night', value: 'night', icon: 'nights-stay', color: '#673AB7' },
-                { label: '☀️🌙 Both', value: 'both', icon: 'wb-twilight', color: '#2E7D32' },
+                { label: '✨ Day & Night', value: 'both', icon: 'wb-twilight', color: '#2E7D32' },
               ].map((t) => {
                 const isSel = formTimeOfDay === t.value;
                 return (

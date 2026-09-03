@@ -160,6 +160,7 @@ export interface AdminProductCreateInput {
   is_bestseller?: boolean;
   is_flash_sale?: boolean;
   is_recommended?: boolean;
+  time_of_day?: 'morning' | 'night' | 'both' | string;
 }
 
 export interface AdminProductUpdateInput {
@@ -177,6 +178,7 @@ export interface AdminProductUpdateInput {
   is_flash_sale?: boolean;
   is_recommended?: boolean;
   is_active?: boolean;
+  time_of_day?: 'morning' | 'night' | 'both' | string;
 }
 
 export interface AdminProductItemUI {
@@ -235,6 +237,16 @@ export interface TodayReportOrderItem {
   created_at: string;
 }
 
+export interface TodayReportStockItem {
+  id: string;
+  name: string;
+  category_name: string;
+  price: number;
+  sold_today: number;
+  stock_left: number;
+  status: 'In Stock' | 'Low Stock' | 'Out of Stock' | string;
+}
+
 export interface TodayReportData {
   date: string;
   today_revenue: number;
@@ -244,6 +256,7 @@ export interface TodayReportData {
   download_count: number;
   day_closed: boolean;
   today_orders_list: TodayReportOrderItem[];
+  stock_inventory_list?: TodayReportStockItem[];
 }
 
 export interface InventorySummaryMetrics {
@@ -646,6 +659,7 @@ export class AdminService {
       formData.append('is_bestseller', String(Boolean(product.is_bestseller)));
       formData.append('is_flash_sale', String(Boolean(product.is_flash_sale)));
       formData.append('is_recommended', String(Boolean(product.is_recommended)));
+      formData.append('time_of_day', product.time_of_day || 'both');
 
       if (product.image.file) {
         formData.append('image', product.image.file);
@@ -702,6 +716,9 @@ export class AdminService {
       }
       if (updates.is_active !== undefined) {
         formData.append('is_active', String(Boolean(updates.is_active)));
+      }
+      if (updates.time_of_day !== undefined) {
+        formData.append('time_of_day', updates.time_of_day);
       }
 
       if (updates.image.file) {

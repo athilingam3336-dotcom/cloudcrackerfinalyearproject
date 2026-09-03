@@ -345,6 +345,44 @@ class DashboardService:
         today_revenue = round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
         today_items_sold = items_results[0]["total_items_sold"] if items_results else 0
 
+        # Aggregate items sold per product today
+        sold_today_map: Dict[str, int] = {}
+        for o in today_orders:
+            if o.order_status and not o.order_status.lower().startswith("cancel"):
+                for item in o.items:
+                    p_id_str = str(item.product_id) if item.product_id else ""
+                    p_name_str = item.product_name or ""
+                    if p_id_str:
+                        sold_today_map[p_id_str] = sold_today_map.get(p_id_str, 0) + item.quantity
+                    if p_name_str:
+                        sold_today_map[p_name_str.lower()] = sold_today_map.get(p_name_str.lower(), 0) + item.quantity
+
+        categories = await Category.find(Category.status != "deleted").to_list()
+        cat_map = {str(c.id): c.name for c in categories}
+
+        products = await Product.find(Product.status != "deleted").sort("name").to_list()
+        stock_inventory_list = []
+        for p in products:
+            p_id = str(p.id)
+            c_name = cat_map.get(str(p.category_id), "General Crackers")
+            sold_qty = sold_today_map.get(p_id, sold_today_map.get(p.name.lower(), 0))
+            if p.stock == 0:
+                stock_status = "Out of Stock"
+            elif p.stock <= 5:
+                stock_status = "Low Stock"
+            else:
+                stock_status = "In Stock"
+
+            stock_inventory_list.append({
+                "id": p_id,
+                "name": p.name,
+                "category_name": c_name,
+                "price": round(p.price, 2),
+                "sold_today": sold_qty,
+                "stock_left": p.stock,
+                "status": stock_status,
+            })
+
         dl_count = _today_report_downloads.get(today_str, 0)
         day_closed = dl_count >= 2
 
@@ -357,6 +395,7 @@ class DashboardService:
             "download_count": dl_count,
             "day_closed": day_closed,
             "today_orders_list": orders_list,
+            "stock_inventory_list": stock_inventory_list,
         }
 
     async def record_today_report_download(self) -> Dict[str, Any]:

@@ -39,7 +39,7 @@ const getNumColumns = (width: number) => {
 
 export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'morning' | 'night'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'morning' | 'night' | 'both'>('all');
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
 
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -61,7 +61,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
     };
   }, []);
 
-  // Filter categories by search query and morning/night tags
+  // Filter categories by search query and morning/night/both tags
   const filteredCategories = useMemo(() => {
     return categories.filter((cat) => {
       const matchesSearch =
@@ -89,6 +89,16 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
           catName.includes('shot') ||
           catName.includes('star') ||
           catName.includes('gift');
+      } else if (selectedFilter === 'both') {
+        matchesFilter =
+          catName.includes('sparkler') ||
+          catName.includes('chakkar') ||
+          catName.includes('bomb') ||
+          catName.includes('garland') ||
+          catName.includes('combo') ||
+          catName.includes('gift') ||
+          catName.includes('kid') ||
+          catName.includes('family');
       }
 
       return matchesSearch && matchesFilter;
@@ -196,6 +206,20 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
               ]}
             >
               🌙 Night Crackers
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedFilter === 'both' && styles.activeFilterChip]}
+            onPress={() => setSelectedFilter('both')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                selectedFilter === 'both' && styles.activeFilterChipText,
+              ]}
+            >
+              ✨ Both Day & Night
             </Text>
           </TouchableOpacity>
         </View>

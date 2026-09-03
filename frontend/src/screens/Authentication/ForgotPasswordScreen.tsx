@@ -389,14 +389,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.marginMobile,
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing.md,
   },
   cardContainer: {
     width: '100%',
     maxWidth: 440,
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.xl,
-    padding: SCREEN_WIDTH < 380 ? Spacing.md : Spacing.lg,
+    padding: SCREEN_WIDTH < 380 ? Spacing.sm : Spacing.gutter,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
     shadowColor: Colors.shadowColor,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   },
   textGroup: {
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.sm,
   },
   title: {
     ...Typography.headlineLg,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   submitButton: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
   },
   changeEmailButton: {
     marginTop: Spacing.sm,
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     backgroundColor: Colors.surfaceContainerLow,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: Colors.onSurfaceVariant,
     textAlign: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.sm,
   },
   successLoginButton: {
     width: '100%',
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.lg,
+    marginTop: Spacing.sm,
     gap: 4,
   },
   backToLoginText: {
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     color: Colors.tertiary,
   },
   footer: {
-    marginTop: Spacing.lg,
+    marginTop: Spacing.sm,
     alignItems: 'center',
   },
   legalText: {
