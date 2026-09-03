@@ -383,16 +383,26 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
                 style={styles.quantityBtn}
                 onPress={() => setQuantity((q) => Math.max(1, q - 1))}
                 activeOpacity={0.7}
-                disabled={product.stock !== undefined && product.stock <= 0}
+                disabled={currentDisplayItem.stock !== undefined && currentDisplayItem.stock <= 0}
               >
                 <MaterialIcons name="remove" size={20} color={Colors.onSurface} />
               </TouchableOpacity>
               <Text style={styles.quantityText}>{quantity}</Text>
               <TouchableOpacity
-                style={styles.quantityBtn}
-                onPress={() => setQuantity((q) => q + 1)}
+                style={[
+                  styles.quantityBtn,
+                  currentDisplayItem.stock !== undefined && quantity >= currentDisplayItem.stock && { opacity: 0.4 },
+                ]}
+                onPress={() => {
+                  const maxStock = currentDisplayItem.stock ?? 999;
+                  if (quantity >= maxStock) {
+                    Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                    return;
+                  }
+                  setQuantity((q) => Math.min(maxStock, q + 1));
+                }}
                 activeOpacity={0.7}
-                disabled={product.stock !== undefined && product.stock <= 0}
+                disabled={currentDisplayItem.stock !== undefined && (currentDisplayItem.stock <= 0 || quantity >= currentDisplayItem.stock)}
               >
                 <MaterialIcons name="add" size={20} color={Colors.onSurface} />
               </TouchableOpacity>

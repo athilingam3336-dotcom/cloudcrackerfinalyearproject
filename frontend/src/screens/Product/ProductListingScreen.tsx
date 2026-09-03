@@ -22,7 +22,7 @@ import { ProductCard } from '@/components/cards/ProductCard';
 import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
-import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } from '@/store';
+import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore, useProductStore } from '@/store';
 import { ProductItem, CategoryItem, MOCK_CATEGORIES, MOCK_PRODUCTS } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 
@@ -45,15 +45,30 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   route,
 }) => {
   const flatListRef = useRef<FlatList>(null);
-  const categoryIdParam = route.params?.categoryId;
+  const categoryIdParam = route.params?.categoryId || 'all';
   const initialQuery = route.params?.query || '';
 
-  const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [selectedFilterChip, setSelectedFilterChip] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<SortOption>('BEST_SELLING');
+  const listingState = useProductStore((state) => state.listingState);
+  const setListingState = useProductStore((state) => state.setListingState);
+  const storeProducts = useProductStore((state) => state.products);
+  const setStoreProducts = useProductStore((state) => state.setProducts);
+
+  const isSameCategory = listingState.categoryId === categoryIdParam;
+
+  const [searchQuery, setSearchQuery] = useState(() =>
+    initialQuery || (isSameCategory ? listingState.searchQuery : '')
+  );
+  const [selectedFilterChip, setSelectedFilterChip] = useState<string>(() =>
+    isSameCategory ? listingState.selectedFilterChip : 'ALL'
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(() =>
+    (isSameCategory ? listingState.sortBy : 'BEST_SELLING') as SortOption
+  );
   const [showSortDropdown, setShowSortDropdown] = useState(false);
 
-  const [products, setProducts] = useState<ProductItem[]>(MOCK_PRODUCTS);
+  const [products, setProducts] = useState<ProductItem[]>(() =>
+    storeProducts.length > 0 ? storeProducts : MOCK_PRODUCTS
+  );
   const [categories, setCategories] = useState<CategoryItem[]>(MOCK_CATEGORIES);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -64,8 +79,42 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const numColumns = useMemo(() => getNumColumns(screenWidth), [screenWidth]);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() =>
+    isSameCategory ? listingState.currentPage : 1
+  );
   const PAGE_SIZE = 8;
+
+  // Persist state to Zustand store whenever user changes filter, sort, search, or page
+  React.useEffect(() => {
+    setListingState({
+      searchQuery,
+      selectedFilterChip,
+      sortBy,
+      currentPage,
+      categoryId: categoryIdParam,
+    });
+  }, [searchQuery, selectedFilterChip, sortBy, currentPage, categoryIdParam, setListingState]);
+
+  // Fetch latest products from API / Service on mount
+  React.useEffect(() => {
+    let isMounted = true;
+    productService.getProducts().then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setProducts(data);
+        setStoreProducts(data);
+      }
+    }).catch(() => {});
+
+    productService.getCategories().then((cats) => {
+      if (isMounted && cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    }).catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [setStoreProducts]);
 
   const handlePageChange = useCallback((newPage: number) => {
     setCurrentPage(newPage);

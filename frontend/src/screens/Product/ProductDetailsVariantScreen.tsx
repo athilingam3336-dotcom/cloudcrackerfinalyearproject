@@ -359,9 +359,19 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
               </TouchableOpacity>
               <Text style={styles.qtyText}>{quantity}</Text>
               <TouchableOpacity
-                style={styles.qtyBtn}
-                onPress={() => setQuantity((q) => Math.min(selectedEffect.stock || 1, q + 1))}
-                disabled={selectedEffect.stock <= 0}
+                style={[
+                  styles.qtyBtn,
+                  (selectedEffect.stock !== undefined && quantity >= selectedEffect.stock) && { opacity: 0.4 },
+                ]}
+                onPress={() => {
+                  const maxStock = typeof product?.stock === 'number' ? product.stock : (selectedEffect.stock ?? 999);
+                  if (quantity >= maxStock) {
+                    Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                    return;
+                  }
+                  setQuantity((q) => Math.min(maxStock, q + 1));
+                }}
+                disabled={selectedEffect.stock <= 0 || (selectedEffect.stock !== undefined && quantity >= selectedEffect.stock)}
                 activeOpacity={0.7}
               >
                 <MaterialIcons name="add" size={20} color={Colors.onSurface} />

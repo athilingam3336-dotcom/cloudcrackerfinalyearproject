@@ -83,9 +83,6 @@ export class ProductService {
       rating: p.rating || p.average_rating || 5.0,
       reviewCount: p.reviews_count || p.total_reviews || 0,
       imageUrl: mainImage,
-      isFeatured,
-      isBestseller,
-      isFlashSale,
     };
   }
 

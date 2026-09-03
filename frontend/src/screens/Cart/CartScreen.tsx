@@ -170,8 +170,16 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                       </TouchableOpacity>
                       <Text style={styles.qtyText}>{quantity}</Text>
                       <TouchableOpacity
-                        style={styles.qtyBtn}
+                        style={[
+                          styles.qtyBtn,
+                          typeof product.stock === 'number' && quantity >= product.stock && { opacity: 0.4 },
+                        ]}
                         onPress={async () => {
+                          const maxStock = typeof product.stock === 'number' ? product.stock : 999;
+                          if (quantity >= maxStock) {
+                            Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                            return;
+                          }
                           try {
                             await updateQuantity(product.id, 1);
                           } catch (err: any) {
@@ -179,6 +187,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                           }
                         }}
                         activeOpacity={0.7}
+                        disabled={typeof product.stock === 'number' && quantity >= product.stock}
                       >
                         <MaterialIcons name="add" size={16} color={Colors.onSurface} />
                       </TouchableOpacity>

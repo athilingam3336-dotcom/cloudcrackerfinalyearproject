@@ -254,7 +254,7 @@ export const PyrotechnicEffectOverlay: React.FC = () => {
 
 const styles = StyleSheet.create({
   overlayContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 99999,
     alignItems: 'center',
   },

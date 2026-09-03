@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
+import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 
 export type TabRoute = 'Home' | 'Categories' | 'Cart' | 'Wishlist' | 'Profile';
 
@@ -12,9 +13,9 @@ interface BottomNavBarProps {
   onTabPress: (tab: TabRoute) => void;
 }
 
-const TABS: { id: TabRoute; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
+const TABS: { id: TabRoute; label: string; icon: keyof typeof MaterialIcons.glyphMap; image?: any }[] = [
   { id: 'Home', label: 'Home', icon: 'home' },
-  { id: 'Categories', label: 'Categories', icon: 'grid-view' },
+  { id: 'Categories', label: 'Categories', icon: 'grid-view', image: LOCAL_PRODUCT_IMAGES.ROCKETS },
   { id: 'Cart', label: 'Cart', icon: 'shopping-cart' },
   { id: 'Wishlist', label: 'Wishlist', icon: 'favorite' },
   { id: 'Profile', label: 'Profile', icon: 'person' },
@@ -33,11 +34,21 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = React.memo(
               onPress={() => onTabPress(tab.id)}
               activeOpacity={0.7}
             >
-              <MaterialIcons
-                name={tab.icon}
-                size={24}
-                color={isActive ? Colors.primary : Colors.tertiary}
-              />
+              {tab.image ? (
+                <View style={[styles.imageWrapper, isActive && styles.activeImageWrapper]}>
+                  <Image
+                    source={tab.image}
+                    style={styles.tabImage}
+                    resizeMode="cover"
+                  />
+                </View>
+              ) : (
+                <MaterialIcons
+                  name={tab.icon}
+                  size={24}
+                  color={isActive ? Colors.primary : Colors.tertiary}
+                />
+              )}
               <Text
                 style={[
                   styles.tabLabel,
@@ -88,6 +99,22 @@ const styles = StyleSheet.create({
   },
   activeTabLabel: {
     fontFamily: 'Inter-Bold',
+  },
+  imageWrapper: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  activeImageWrapper: {
+    borderColor: Colors.primary,
+    borderWidth: 1.5,
+  },
+  tabImage: {
+    width: '100%',
+    height: '100%',
   },
 });
 

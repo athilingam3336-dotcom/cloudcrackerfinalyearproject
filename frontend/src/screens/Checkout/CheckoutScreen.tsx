@@ -1208,6 +1208,18 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontFamily: 'Inter-Medium',
   },
+  securityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  securityText: {
+    ...Typography.labelLg,
+    fontSize: 10,
+    color: Colors.tertiary,
+    fontFamily: 'Inter-Medium',
+  },
 });
 
 export default CheckoutScreen;

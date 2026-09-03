@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { ProductItem } from '@/constants/mockData';
 
+export interface ListingState {
+  searchQuery: string;
+  selectedFilterChip: string;
+  sortBy: string;
+  currentPage: number;
+  categoryId: string;
+}
+
 export interface ProductState {
   products: ProductItem[];
   searchQuery: string;
@@ -8,7 +16,11 @@ export interface ProductState {
   selectedProduct: ProductItem | null;
   isLoading: boolean;
 
+  listingState: ListingState;
+
   // Actions
+  setListingState: (state: Partial<ListingState>) => void;
+  resetListingState: () => void;
   setProducts: (products: ProductItem[]) => void;
   setSearchQuery: (query: string) => void;
   setSelectedCategory: (category: string) => void;
@@ -19,12 +31,32 @@ export interface ProductState {
   resetProductsStore: () => void;
 }
 
+const initialListingState: ListingState = {
+  searchQuery: '',
+  selectedFilterChip: 'ALL',
+  sortBy: 'BEST_SELLING',
+  currentPage: 1,
+  categoryId: '',
+};
+
 export const useProductStore = create<ProductState>((set) => ({
   products: [],
   searchQuery: '',
   selectedCategory: 'all',
   selectedProduct: null,
   isLoading: false,
+
+  listingState: initialListingState,
+
+  setListingState: (newState) =>
+    set((state) => ({
+      listingState: { ...state.listingState, ...newState },
+    })),
+
+  resetListingState: () =>
+    set({
+      listingState: initialListingState,
+    }),
 
   setProducts: (products) => set({ products }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
@@ -53,5 +85,6 @@ export const useProductStore = create<ProductState>((set) => ({
       selectedCategory: 'all',
       selectedProduct: null,
       isLoading: false,
+      listingState: initialListingState,
     }),
 }));

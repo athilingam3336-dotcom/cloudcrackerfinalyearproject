@@ -23,7 +23,7 @@ import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
-import { useNotificationStore } from '@/store';
+import { useNotificationStore, useCategoryStore } from '@/store';
 import { CategoryItem } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
 import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
@@ -38,28 +38,42 @@ const getNumColumns = (width: number) => {
 };
 
 export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'morning' | 'night' | 'both'>('all');
+  const storeSearchQuery = useCategoryStore((state) => state.searchQuery);
+  const storeSelectedFilter = useCategoryStore((state) => state.selectedFilter);
+  const storeCategories = useCategoryStore((state) => state.categories);
+  const setCategoryFilters = useCategoryStore((state) => state.setCategoryFilters);
+  const setStoreCategories = useCategoryStore((state) => state.setCategories);
+
+  const [searchQuery, setSearchQuery] = useState(storeSearchQuery);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'morning' | 'night' | 'both'>(storeSelectedFilter);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
 
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<CategoryItem[]>(() =>
+    storeCategories.length > 0 ? storeCategories : []
+  );
+  const [isLoading, setIsLoading] = useState(() => storeCategories.length === 0);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
 
   const numColumns = useMemo(() => getNumColumns(screenWidth), [screenWidth]);
 
+  // Persist filter & search state
+  React.useEffect(() => {
+    setCategoryFilters(searchQuery, selectedFilter);
+  }, [searchQuery, selectedFilter, setCategoryFilters]);
+
   React.useEffect(() => {
     let isMounted = true;
     productService.getCategories(true).then((data) => {
-      if (isMounted) {
+      if (isMounted && data && data.length > 0) {
         setCategories(data);
+        setStoreCategories(data);
         setIsLoading(false);
       }
     });
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [setStoreCategories]);
 
   // Filter categories by search query and morning/night/both tags
   const filteredCategories = useMemo(() => {

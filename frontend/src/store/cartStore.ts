@@ -61,8 +61,21 @@ export const useCartStore = create<CartState>((set, get) => ({
     if (!product?.id) {
       throw new Error('Invalid product ID.');
     }
+
+    const availableStock = typeof product.stock === 'number' ? product.stock : 999;
     const previousItems = get().items;
     const existingIndex = previousItems.findIndex((i) => i.product.id === product.id);
+    const currentQtyInCart = existingIndex >= 0 ? previousItems[existingIndex].quantity : 0;
+    const totalRequested = currentQtyInCart + quantity;
+
+    if (availableStock > 0 && totalRequested > availableStock) {
+      const remainingAllowed = Math.max(0, availableStock - currentQtyInCart);
+      if (remainingAllowed === 0) {
+        throw new Error(`Cannot add more items. You already have the maximum available stock (${availableStock}) in your cart.`);
+      } else {
+        throw new Error(`Only ${availableStock} items available in stock. You already have ${currentQtyInCart} in your cart.`);
+      }
+    }
 
     let updatedItems: CartItem[];
     if (existingIndex >= 0) {
@@ -113,10 +126,15 @@ export const useCartStore = create<CartState>((set, get) => ({
     const currentItem = previousItems.find((i) => i.product.id === productId);
     if (!currentItem) return false;
 
+    const availableStock = typeof currentItem.product.stock === 'number' ? currentItem.product.stock : 999;
     const newQty = currentItem.quantity + delta;
 
     if (newQty <= 0) {
       return get().removeFromCart(productId);
+    }
+
+    if (delta > 0 && availableStock > 0 && newQty > availableStock) {
+      throw new Error(`Cannot exceed available stock of ${availableStock} items.`);
     }
 
     const updatedItems = previousItems.map((i) =>
