@@ -290,12 +290,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [wishlistItems, handleProductPress, handleAddToCart, handleToggleWishlist]
   );
 
-  // Dynamic Live Countdown Timer for Flash Sale
+  // Dynamic Live Countdown Timer for Flash Sale (Unified across all Flash Sale items)
   const [timerSeconds, setTimerSeconds] = useState(14400); // default 4 hours (14400s)
 
   React.useEffect(() => {
     const activeFlashItems = products.filter(
-      (p: any) => Boolean(p.isFlashSale || p.is_flash_sale)
+      (p: any) =>
+        Boolean(p.isFlashSale || p.is_flash_sale) &&
+        (p.stock === undefined || p.stock === null || p.stock > 0)
     );
 
     if (activeFlashItems.length > 0) {
@@ -326,10 +328,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, [timerSeconds]);
 
   const flashSaleData: FlashSaleItem[] = useMemo(() => {
-    const explicitFlashSales = products.filter(
+    // 1. Strictly exclude products that are out of stock (stock <= 0)
+    const inStockProducts = products.filter(
+      (p: any) => p.stock === undefined || p.stock === null || p.stock > 0
+    );
+
+    const explicitFlashSales = inStockProducts.filter(
       (p: any) => Boolean(p.isFlashSale || p.is_flash_sale)
     );
-    const discounted = products.filter(
+    const discounted = inStockProducts.filter(
       (p: any) =>
         p.badge?.toLowerCase().includes('sale') ||
         p.badge?.toLowerCase().includes('off') ||
@@ -340,7 +347,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         ? explicitFlashSales
         : discounted.length > 0
         ? discounted
-        : products.slice(0, 4);
+        : inStockProducts.slice(0, 4);
 
     if (sourceProducts.length > 0) {
       return sourceProducts.map((p: any) => ({
@@ -353,7 +360,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         discountPercent: p.originalPrice
           ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
           : 20,
-        badge: p.badge || 'FLASH SALE',
+        badge: 'FLASH SALE',
         rating: p.rating || 5.0,
         reviewCount: p.reviewCount || 0,
         endsInSeconds: timerSeconds,

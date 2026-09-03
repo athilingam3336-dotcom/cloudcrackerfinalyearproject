@@ -38,7 +38,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
 
     return (
       <View style={styles.header}>
-        {/* Left Section: Back Button & Quick Contact Actions */}
+        {/* Left Section: Back Button & Meera Crackers Logo + Title */}
         <View style={styles.leftSection}>
           {onBackPress && (
             <TouchableOpacity
@@ -52,6 +52,39 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             </TouchableOpacity>
           )}
 
+          <TouchableOpacity
+            style={styles.leftBrandTouch}
+            onPress={onLogoPress}
+            activeOpacity={onLogoPress ? 0.7 : 1}
+            disabled={!onLogoPress}
+          >
+            <Image
+              source={LOCAL_PRODUCT_IMAGES.LOGO}
+              style={styles.headerShopLogo}
+              resizeMode="contain"
+            />
+            <View style={styles.titleContainer}>
+              <View style={styles.brandTitleRow}>
+                <Text
+                  style={[
+                    styles.brandTitle,
+                    isSmallScreen && { fontSize: 17, lineHeight: 21 },
+                  ]}
+                  numberOfLines={1}
+                >
+                  MEERA CRACKERS
+                </Text>
+                <MaterialIcons name="auto-awesome" size={15} color="#D97706" style={styles.sparkleIcon} />
+              </View>
+              <Text style={styles.greetingText} numberOfLines={1}>
+                Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Right Section: Contact Action Pills & Action Buttons */}
+        <View style={styles.rightSection}>
           {!isSmallScreen && (
             <View style={styles.headerContactPillsRow}>
               <TouchableOpacity
@@ -82,43 +115,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
               </TouchableOpacity>
             </View>
           )}
-        </View>
 
-        {/* Center Section: Grand Brand Emblem Logo & Title */}
-        <View style={styles.centerSection}>
-          <TouchableOpacity
-            style={styles.centerBrandTouch}
-            onPress={onLogoPress}
-            activeOpacity={onLogoPress ? 0.7 : 1}
-            disabled={!onLogoPress}
-          >
-            <Image
-              source={LOCAL_PRODUCT_IMAGES.LOGO}
-              style={styles.headerShopLogo}
-              resizeMode="contain"
-            />
-            <View style={styles.titleContainer}>
-              <View style={styles.brandTitleRow}>
-                <Text
-                  style={[
-                    styles.brandTitle,
-                    isSmallScreen && { fontSize: 18, lineHeight: 22 },
-                  ]}
-                  numberOfLines={1}
-                >
-                  MEERA CRACKERS
-                </Text>
-                <MaterialIcons name="auto-awesome" size={15} color="#D97706" style={styles.sparkleIcon} />
-              </View>
-              <Text style={styles.greetingText} numberOfLines={1}>
-                Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Right Section: Action Buttons */}
-        <View style={styles.rightSection}>
           <TouchableOpacity
             style={styles.iconCircleButton}
             onPress={onNotificationPress}
@@ -192,21 +189,15 @@ const styles = StyleSheet.create({
     minHeight: 74,
   },
   leftSection: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
-  centerSection: {
-    flex: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerBrandTouch: {
+  leftBrandTouch: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
+    justifyContent: 'flex-start',
+    gap: 10,
   },
   backCircleButton: {
     width: 38,
@@ -218,40 +209,40 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   headerShopLogo: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
   },
   titleContainer: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
   brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 6,
   },
   brandTitle: {
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 24,
+    lineHeight: 28,
     fontFamily: Platform.OS === 'web' ? "'Cinzel Decorative', 'Cinzel', 'Playfair Display', Georgia, serif" : 'Cinzel-ExtraBold',
     fontWeight: '900',
     color: '#A81818',
     letterSpacing: 1.0,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   sparkleIcon: {
     marginTop: -2,
   },
   greetingText: {
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 15,
     fontFamily: Platform.OS === 'web' ? "'Outfit', 'Poppins', sans-serif" : 'Outfit-Medium',
     fontWeight: '500',
     color: '#64748B',
-    marginTop: 2,
-    textAlign: 'center',
+    marginTop: 1,
+    textAlign: 'left',
     letterSpacing: 0.2,
   },
   greetingUserName: {

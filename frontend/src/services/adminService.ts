@@ -561,8 +561,13 @@ export class AdminService {
     categoryId = ''
   ): Promise<AdminProductsResponse> {
     const params: Record<string, any> = { page, limit, _t: Date.now() };
-    if (search.trim()) params.search = search.trim();
-    if (categoryId && categoryId !== 'All' && categoryId !== 'all') {
+    if (categoryId === 'flash_sale' || categoryId === 'flashsale') {
+      params.is_flash_sale = true;
+    } else if (categoryId === 'featured') {
+      params.is_featured = true;
+    } else if (categoryId === 'bestseller') {
+      params.is_bestseller = true;
+    } else if (categoryId && categoryId !== 'All' && categoryId !== 'all') {
       params.category_id = categoryId;
     }
 
