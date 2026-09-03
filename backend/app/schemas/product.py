@@ -116,13 +116,23 @@ class ProductResponse(BaseModel):
                 dict_data["images"] = [dict_data["image_url"]]
             
             # Compute ends_in_seconds for flash sales
-            hours = dict_data.get("flash_sale_hours") or 4.0
-            dict_data["flash_sale_hours"] = float(hours)
+            hours = float(dict_data.get("flash_sale_hours") or 4.0)
+            dict_data["flash_sale_hours"] = hours
             ends_at = dict_data.get("flash_sale_ends_at")
-            if ends_at and isinstance(ends_at, datetime):
-                dict_data["ends_in_seconds"] = max(0, int((ends_at - datetime.utcnow()).total_seconds()))
+            if ends_at:
+                if isinstance(ends_at, str):
+                    try:
+                        ends_at = datetime.fromisoformat(ends_at.replace("Z", "+00:00"))
+                    except Exception:
+                        ends_at = None
+                if isinstance(ends_at, datetime):
+                    now_utc = datetime.utcnow()
+                    ends_naive = ends_at.replace(tzinfo=None) if ends_at.tzinfo else ends_at
+                    dict_data["ends_in_seconds"] = max(0, int((ends_naive - now_utc).total_seconds()))
+                else:
+                    dict_data["ends_in_seconds"] = int(hours * 3600)
             else:
-                dict_data["ends_in_seconds"] = int(float(hours) * 3600)
+                dict_data["ends_in_seconds"] = int(hours * 3600)
             return dict_data
         elif hasattr(data, "id"):
             # Beanie document
@@ -136,13 +146,23 @@ class ProductResponse(BaseModel):
             if img_url and not data_dict.get("images"):
                 data_dict["images"] = [img_url]
 
-            hours = data_dict.get("flash_sale_hours") or 4.0
-            data_dict["flash_sale_hours"] = float(hours)
+            hours = float(data_dict.get("flash_sale_hours") or 4.0)
+            data_dict["flash_sale_hours"] = hours
             ends_at = getattr(data, "flash_sale_ends_at", None)
-            if ends_at and isinstance(ends_at, datetime):
-                data_dict["ends_in_seconds"] = max(0, int((ends_at - datetime.utcnow()).total_seconds()))
+            if ends_at:
+                if isinstance(ends_at, str):
+                    try:
+                        ends_at = datetime.fromisoformat(ends_at.replace("Z", "+00:00"))
+                    except Exception:
+                        ends_at = None
+                if isinstance(ends_at, datetime):
+                    now_utc = datetime.utcnow()
+                    ends_naive = ends_at.replace(tzinfo=None) if ends_at.tzinfo else ends_at
+                    data_dict["ends_in_seconds"] = max(0, int((ends_naive - now_utc).total_seconds()))
+                else:
+                    data_dict["ends_in_seconds"] = int(hours * 3600)
             else:
-                data_dict["ends_in_seconds"] = int(float(hours) * 3600)
+                data_dict["ends_in_seconds"] = int(hours * 3600)
             return data_dict
         return data
 

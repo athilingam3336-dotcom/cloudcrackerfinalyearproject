@@ -291,6 +291,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 
   // Dynamic Live Countdown Timer for Flash Sale (Unified across all Flash Sale items)
+  const [flashTargetEndTime, setFlashTargetEndTime] = useState<number | null>(null);
   const [timerSeconds, setTimerSeconds] = useState<number>(14400);
 
   React.useEffect(() => {
@@ -309,17 +310,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         return Math.max(60, Math.floor(hrs * 3600));
       });
       const minRemainingSecs = Math.min(...remainingSecondsList);
-      setTimerSeconds(minRemainingSecs);
+
+      const calculatedTargetMs = Date.now() + minRemainingSecs * 1000;
+      setFlashTargetEndTime((prevTarget) => {
+        if (prevTarget === null) {
+          return calculatedTargetMs;
+        }
+        // Update target if duration was updated (>60s diff)
+        const diff = Math.abs(calculatedTargetMs - prevTarget);
+        if (diff > 60000) {
+          return calculatedTargetMs;
+        }
+        return prevTarget;
+      });
     }
   }, [products]);
 
   React.useEffect(() => {
     const interval = setInterval(() => {
-      setTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      if (flashTargetEndTime !== null) {
+        const remaining = Math.max(0, Math.floor((flashTargetEndTime - Date.now()) / 1000));
+        setTimerSeconds(remaining);
+      } else {
+        setTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [flashTargetEndTime]);
 
   const formattedTimer = useMemo(() => {
     const hrs = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
