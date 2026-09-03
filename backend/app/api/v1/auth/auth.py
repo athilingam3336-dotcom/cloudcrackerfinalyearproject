@@ -11,6 +11,8 @@ from app.schemas.auth import (
     RefreshTokenRequest,
     RegisterRequest,
     ResetPasswordRequest,
+    SendEmailOtpRequest,
+    VerifyEmailOtpRequest,
     UpdateProfileRequest,
     UserResponse,
 )
@@ -18,6 +20,42 @@ from app.schemas.common import ApiResponse
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.post(
+    "/send-email-otp",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Send OTP code to email for verification",
+    description="Generates a 6-digit OTP code, stores it with expiration, and sends it to the user email for registration verification.",
+)
+async def send_email_otp(
+    data: SendEmailOtpRequest, auth_service: AuthService = Depends()
+) -> ApiResponse:
+    result = await auth_service.send_email_otp(data.email)
+    return ApiResponse(
+        success=True,
+        message=result["message"],
+        data=result,
+    )
+
+
+@router.post(
+    "/verify-email-otp",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify OTP code received via email",
+    description="Validates provided 6-digit OTP code against stored expiration and active OTP record.",
+)
+async def verify_email_otp(
+    data: VerifyEmailOtpRequest, auth_service: AuthService = Depends()
+) -> ApiResponse:
+    verified = await auth_service.verify_email_otp(data.email, data.otp)
+    return ApiResponse(
+        success=True,
+        message="Email verified successfully!",
+        data={"verified": verified},
+    )
 
 
 @router.post(

@@ -26,7 +26,7 @@ import { GoogleAccountChooserModal } from '@/components/auth/GoogleAccountChoose
 import { InstagramAccountChooserModal } from '@/components/auth/InstagramAccountChooserModal';
 import { googleAuthService } from '@/services/googleAuthService';
 import { instagramAuthService } from '@/services/instagramAuthService';
-import { GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
+import { authService, GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
 import { RootStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
 import { ENV } from '@/config/env';
@@ -39,6 +39,7 @@ const IS_DESKTOP = SCREEN_WIDTH >= 900;
 interface RegisterErrors {
   name?: string;
   email?: string;
+  otp?: string;
   phone?: string;
   password?: string;
   confirmPassword?: string;
@@ -59,6 +60,72 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const [isInstagramLoading, setIsInstagramLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [errors, setErrors] = useState<RegisterErrors>({});
+
+  // Email OTP Verification State
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpMessage, setOtpMessage] = useState<string | null>(null);
+
+  const isValidEmail = (val: string) => {
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(val.trim());
+  };
+
+  const handleSendOtp = async () => {
+    if (!isValidEmail(email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: 'Please enter a valid email address first.',
+      }));
+      return;
+    }
+
+    setErrors((prev) => ({ ...prev, email: undefined, general: undefined }));
+    setIsSendingOtp(true);
+    setOtpMessage(null);
+
+    try {
+      const res = await authService.sendEmailOtp(email.trim());
+      setIsSendingOtp(false);
+      setOtpSent(true);
+      if (res.otp) {
+        setOtpMessage(`OTP sent to ${email.trim()}. (Verification Code: ${res.otp})`);
+      } else {
+        setOtpMessage(`OTP sent to ${email.trim()}. Please check your inbox.`);
+      }
+    } catch (err: any) {
+      setIsSendingOtp(false);
+      const msg = err.response?.data?.message || err.message || 'Failed to send OTP code.';
+      setErrors((prev) => ({ ...prev, email: msg }));
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) {
+      setErrors((prev) => ({ ...prev, otp: 'Please enter a 6-digit OTP code.' }));
+      return;
+    }
+
+    setErrors((prev) => ({ ...prev, otp: undefined, general: undefined }));
+    setIsVerifyingOtp(true);
+
+    try {
+      const success = await authService.verifyEmailOtp(email.trim(), otpCode.trim());
+      setIsVerifyingOtp(false);
+      if (success) {
+        setIsEmailVerified(true);
+        setOtpSent(false);
+        setOtpMessage(null);
+        setErrors((prev) => ({ ...prev, email: undefined }));
+      }
+    } catch (err: any) {
+      setIsVerifyingOtp(false);
+      const msg = err.response?.data?.message || err.message || 'Invalid or expired OTP code.';
+      setErrors((prev) => ({ ...prev, otp: msg }));
+    }
+  };
 
   const storeRegister = useAuthStore((state) => state.register);
   const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
@@ -128,13 +195,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
       newErrors.name = 'Full Name must only contain letters (numbers and special characters are not allowed)';
     }
 
-    // Email validation (Must have valid username and complete domain e.g. name@gmail.com, name@domain.com)
+    // Email validation & OTP Verification check
     if (!email.trim()) {
       newErrors.email = 'Email address is required';
     } else {
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(email.trim())) {
         newErrors.email = 'Please enter a valid email address with a valid domain (e.g. yourname@gmail.com)';
+      } else if (!isEmailVerified) {
+        newErrors.email = 'Please verify your email address via OTP before creating your account.';
       }
     }
 
@@ -355,22 +424,104 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                 }
               />
 
-              {/* Email Address */}
-              <CustomInput
-                label="EMAIL ADDRESS"
-                placeholder="john@example.com"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                error={errors.email}
-                leftIcon={
-                  <MaterialIcons name="mail-outline" size={20} color={Colors.tertiary} />
-                }
-              />
+              {/* Email Address with Verify Button / Verified Badge */}
+              <View style={styles.emailInputWrapper}>
+                <View style={{ flex: 1 }}>
+                  <CustomInput
+                    label="EMAIL ADDRESS"
+                    placeholder="john@example.com"
+                    value={email}
+                    editable={!isEmailVerified}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      setIsEmailVerified(false);
+                      setOtpSent(false);
+                      setOtpCode('');
+                      if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={errors.email}
+                    leftIcon={
+                      <MaterialIcons
+                        name="mail-outline"
+                        size={20}
+                        color={isEmailVerified ? '#2E7D32' : Colors.tertiary}
+                      />
+                    }
+                  />
+                </View>
+
+                {isValidEmail(email) && (
+                  <View style={{ marginTop: 24, marginLeft: 8 }}>
+                    {isEmailVerified ? (
+                      <View style={styles.verifiedBadge}>
+                        <MaterialIcons name="check-circle" size={16} color="#2E7D32" />
+                        <Text style={styles.verifiedBadgeText}>Verified</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={[styles.sendOtpBtn, isSendingOtp && { opacity: 0.7 }]}
+                        onPress={handleSendOtp}
+                        disabled={isSendingOtp}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.sendOtpBtnText}>
+                          {isSendingOtp ? 'Sending...' : otpSent ? 'Resend' : 'Verify'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </View>
+
+              {/* Inline OTP Verification Box */}
+              {otpSent && !isEmailVerified && (
+                <View style={styles.otpBox}>
+                  <View style={styles.otpBoxHeader}>
+                    <MaterialIcons name="mark-email-read" size={20} color={Colors.primary} />
+                    <Text style={styles.otpBoxTitle}>Email Verification Code</Text>
+                  </View>
+                  <Text style={styles.otpBoxSubtitle}>
+                    Enter the 6-digit OTP code sent to <Text style={{ fontFamily: 'Inter-Bold' }}>{email}</Text>
+                  </Text>
+
+                  {otpMessage && (
+                    <View style={styles.otpBanner}>
+                      <Text style={styles.otpBannerText}>{otpMessage}</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.otpRow}>
+                    <View style={{ flex: 1 }}>
+                      <CustomInput
+                        placeholder="6-digit OTP (e.g. 123456)"
+                        value={otpCode}
+                        onChangeText={(text) => {
+                          setOtpCode(text.replace(/\D/g, '').slice(0, 6));
+                          if (errors.otp) setErrors((prev) => ({ ...prev, otp: undefined }));
+                        }}
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        error={errors.otp}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.verifyOtpBtn,
+                        (otpCode.length !== 6 || isVerifyingOtp) && { opacity: 0.6 },
+                      ]}
+                      onPress={handleVerifyOtp}
+                      disabled={otpCode.length !== 6 || isVerifyingOtp}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.verifyOtpBtnText}>
+                        {isVerifyingOtp ? 'Verifying...' : 'Verify OTP'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
               {/* Phone Number */}
               <CustomInput
@@ -594,6 +745,102 @@ const styles = StyleSheet.create({
     color: Colors.error,
     flex: 1,
     lineHeight: 18,
+  },
+  emailInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  sendOtpBtn: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 48,
+  },
+  sendOtpBtnText: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onPrimary,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#A5D6A7',
+    gap: 4,
+    height: 48,
+  },
+  verifiedBadgeText: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#2E7D32',
+  },
+  otpBox: {
+    backgroundColor: '#FFF8F6',
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  otpBoxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  otpBoxTitle: {
+    ...Typography.titleLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+  },
+  otpBoxSubtitle: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    color: Colors.onSurfaceVariant,
+    marginBottom: 8,
+  },
+  otpBanner: {
+    backgroundColor: '#FFF3E0',
+    padding: 8,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+    marginBottom: 8,
+  },
+  otpBannerText: {
+    ...Typography.bodyMd,
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: '#E65100',
+  },
+  otpRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  verifyOtpBtn: {
+    backgroundColor: '#2E7D32',
+    paddingHorizontal: Spacing.md,
+    height: 48,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  verifyOtpBtnText: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
   },
   submitButton: {
     marginTop: Spacing.sm,

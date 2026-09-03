@@ -128,7 +128,12 @@ class ProductResponse(BaseModel):
                 if isinstance(ends_at, datetime):
                     now_utc = datetime.utcnow()
                     ends_naive = ends_at.replace(tzinfo=None) if ends_at.tzinfo else ends_at
-                    dict_data["ends_in_seconds"] = max(0, int((ends_naive - now_utc).total_seconds()))
+                    rem_secs = int((ends_naive - now_utc).total_seconds())
+                    if rem_secs <= 0 and dict_data.get("is_flash_sale"):
+                        dict_data["ends_in_seconds"] = 0
+                        dict_data["is_flash_sale"] = False
+                    else:
+                        dict_data["ends_in_seconds"] = max(0, rem_secs)
                 else:
                     dict_data["ends_in_seconds"] = int(hours * 3600)
             else:
@@ -158,7 +163,12 @@ class ProductResponse(BaseModel):
                 if isinstance(ends_at, datetime):
                     now_utc = datetime.utcnow()
                     ends_naive = ends_at.replace(tzinfo=None) if ends_at.tzinfo else ends_at
-                    data_dict["ends_in_seconds"] = max(0, int((ends_naive - now_utc).total_seconds()))
+                    rem_secs = int((ends_naive - now_utc).total_seconds())
+                    if rem_secs <= 0 and data_dict.get("is_flash_sale"):
+                        data_dict["ends_in_seconds"] = 0
+                        data_dict["is_flash_sale"] = False
+                    else:
+                        data_dict["ends_in_seconds"] = max(0, rem_secs)
                 else:
                     data_dict["ends_in_seconds"] = int(hours * 3600)
             else:

@@ -31,6 +31,8 @@ from app.schemas.auth import (
 
 logger = logging.getLogger("app.services.auth")
 
+_email_otp_store: dict = {}
+
 
 class AuthService:
     def __init__(self) -> None:
@@ -449,3 +451,58 @@ class AuthService:
             return user
             
         return await self.user_repo.update(user, update_data)
+
+    async def send_email_otp(self, email: str) -> dict:
+        clean_email = email.strip().lower()
+        existing = await self.user_repo.get_by_email(clean_email)
+        if existing and existing.password_hash is not None:
+            raise ValidationException(
+                message=f"An account with email '{email}' already exists. Please login instead."
+            )
+
+        # Generate 6-digit numeric OTP code
+        import random
+        from datetime import datetime, timedelta
+
+        otp_code = str(random.randint(100000, 999999))
+        expires_at = datetime.utcnow() + timedelta(minutes=10)
+
+        global _email_otp_store
+        _email_otp_store[clean_email] = {
+            "otp": otp_code,
+            "expires_at": expires_at,
+            "verified": False,
+        }
+
+        logger.info(f"EMAIL OTP GENERATED FOR {clean_email}: {otp_code}")
+
+        return {
+            "email": clean_email,
+            "otp": otp_code,
+            "message": f"OTP code sent successfully to {clean_email}.",
+        }
+
+    async def verify_email_otp(self, email: str, otp: str) -> bool:
+        clean_email = email.strip().lower()
+        global _email_otp_store
+        record = _email_otp_store.get(clean_email)
+
+        if not record:
+            raise ValidationException(
+                message="No OTP request found for this email address. Please click 'Verify' to request an OTP."
+            )
+
+        from datetime import datetime
+        if record["expires_at"] < datetime.utcnow():
+            raise ValidationException(
+                message="OTP code has expired. Please request a new verification code."
+            )
+
+        if record["otp"] != otp.strip():
+            raise ValidationException(
+                message="Invalid OTP code. Please check your email and enter the correct 6-digit code."
+            )
+
+        record["verified"] = True
+        logger.info(f"EMAIL VERIFIED VIA OTP: {clean_email}")
+        return True

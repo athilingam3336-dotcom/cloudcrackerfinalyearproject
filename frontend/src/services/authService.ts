@@ -252,6 +252,31 @@ export class AuthService {
     const payload = res.data || res;
     return { accessToken: payload.access_token || payload.accessToken };
   }
+
+  async sendEmailOtp(
+    email: string
+  ): Promise<{ email: string; otp?: string; message: string }> {
+    if (ENV.ENABLE_MOCK_API) {
+      const mockOtp = String(Math.floor(100000 + Math.random() * 900000));
+      return {
+        email,
+        otp: mockOtp,
+        message: `OTP code sent successfully to ${email}.`,
+      };
+    }
+    const { data: res } = await apiClient.post('/auth/send-email-otp', { email });
+    const payload = res.data || res;
+    return payload;
+  }
+
+  async verifyEmailOtp(email: string, otp: string): Promise<boolean> {
+    if (ENV.ENABLE_MOCK_API) {
+      return true;
+    }
+    const { data: res } = await apiClient.post('/auth/verify-email-otp', { email, otp });
+    const payload = res.data || res;
+    return Boolean(payload.verified ?? res.success);
+  }
 }
 
 export const authService = new AuthService();

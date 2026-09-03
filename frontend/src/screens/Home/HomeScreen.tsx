@@ -295,11 +295,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const targetEndTimeRef = useRef<number | null>(null);
 
   React.useEffect(() => {
-    const activeFlashItems = products.filter(
-      (p: any) =>
-        Boolean(p.isFlashSale || p.is_flash_sale) &&
-        (p.stock === undefined || p.stock === null || p.stock > 0)
-    );
+    const activeFlashItems = products.filter((p: any) => {
+      const isFlash = Boolean(p.isFlashSale || p.is_flash_sale);
+      const hasStock = p.stock === undefined || p.stock === null || p.stock > 0;
+      const notExpired = p.endsInSeconds === undefined || p.endsInSeconds === null || p.endsInSeconds > 0;
+      return isFlash && hasStock && notExpired;
+    });
 
     if (activeFlashItems.length > 0) {
       const remainingSecondsList = activeFlashItems.map((p: any) => {
@@ -309,7 +310,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         const hrs = parseFloat(p.flashSaleHours || p.flash_sale_hours || 4);
         return Math.max(60, Math.floor(hrs * 3600));
       });
-      // Pick the max duration among active flash sale items
+      // Pick the max duration among active unexpired flash sale items
       const maxRemainingSecs = Math.max(...remainingSecondsList);
       const newTargetMs = Date.now() + maxRemainingSecs * 1000;
 
@@ -321,6 +322,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         targetEndTimeRef.current = newTargetMs;
         setTimerSeconds(maxRemainingSecs);
       }
+    } else {
+      targetEndTimeRef.current = null;
+      setTimerSeconds(0);
     }
   }, [products]);
 
@@ -350,7 +354,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     );
 
     const explicitFlashSales = inStockProducts.filter(
-      (p: any) => Boolean(p.isFlashSale || p.is_flash_sale)
+      (p: any) =>
+        Boolean(p.isFlashSale || p.is_flash_sale) &&
+        (p.endsInSeconds === undefined || p.endsInSeconds === null || p.endsInSeconds > 0)
     );
 
     if (explicitFlashSales.length > 0) {
