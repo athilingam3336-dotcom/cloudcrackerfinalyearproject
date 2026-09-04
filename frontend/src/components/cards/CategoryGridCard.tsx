@@ -1,6 +1,5 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { BorderRadius, Spacing } from '@/constants/spacing';
@@ -14,7 +13,35 @@ interface CategoryGridCardProps {
 
 export const CategoryGridCard: React.FC<CategoryGridCardProps> = React.memo(
   ({ category, onPress }) => {
-    const imageSource = resolveProductImage(category);
+    const imageSource = resolveProductImage(category, 350);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const translateYAnim = useRef(new Animated.Value(-10)).current;
+    const scaleAnim = useRef(new Animated.Value(1.05)).current;
+
+    const handleImageLoad = () => {
+      setIsLoaded(true);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 320,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateYAnim, {
+          toValue: 0,
+          tension: 70,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 70,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    };
 
     return (
       <TouchableOpacity
@@ -25,11 +52,29 @@ export const CategoryGridCard: React.FC<CategoryGridCardProps> = React.memo(
         accessibilityLabel={`Category ${category.name}, ${category.itemCount || 0} items`}
       >
         <View style={styles.imageContainer}>
-          <Image
-            source={imageSource}
-            style={styles.image}
-            resizeMode="cover"
-          />
+          {/* Skeleton background placeholder while fetching Cloudinary image */}
+          {!isLoaded && (
+            <View style={styles.skeletonContainer}>
+              <View style={styles.skeletonPulse} />
+            </View>
+          )}
+
+          <Animated.View
+            style={[
+              styles.animatedImageWrapper,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: translateYAnim }, { scale: scaleAnim }],
+              },
+            ]}
+          >
+            <Image
+              source={imageSource}
+              style={styles.image}
+              resizeMode="cover"
+              onLoad={handleImageLoad}
+            />
+          </Animated.View>
 
           {category.tag && (
             <View style={styles.badge}>
@@ -74,18 +119,31 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  skeletonContainer: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#e2e8f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  skeletonPulse: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#cbd5e1',
+    opacity: 0.5,
+  },
+  animatedImageWrapper: {
+    width: '100%',
+    height: '100%',
   },
   image: {
     width: '100%',
     height: '100%',
   },
-  placeholderContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
   },
   badge: {
     position: 'absolute',

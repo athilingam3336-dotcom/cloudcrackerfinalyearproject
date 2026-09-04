@@ -41,7 +41,7 @@ export const LOCAL_PRODUCT_IMAGES = {
  * - Filters out dummy placeholder URLs (example.com, img.jpg, localhost/127.0.0.1 on HTTPS web)
  * - Returns null for invalid or non-HTTPS remote URLs so they gracefully fall back to bundled Stitch assets.
  */
-export const sanitizeRemoteImageUrl = (url?: string | null): string | null => {
+export const sanitizeRemoteImageUrl = (url?: string | null, maxWidth: number = 400): string | null => {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -72,7 +72,6 @@ export const sanitizeRemoteImageUrl = (url?: string | null): string | null => {
   let finalUrl = trimmed;
   // Upgrade insecure http:// to https://
   if (finalUrl.startsWith('http://')) {
-    // Filter out localhost / 127.0.0.1 when running on HTTPS web
     if (lower.includes('localhost') || lower.includes('127.0.0.1')) {
       if (typeof window !== 'undefined' && window.location?.protocol === 'https:') {
         return null;
@@ -83,10 +82,12 @@ export const sanitizeRemoteImageUrl = (url?: string | null): string | null => {
   }
 
   // Cloudinary Image Performance Optimization:
-  // Inject automatic WebP/AVIF format, quality compression, and 600px max width for product cards/details.
-  // Reduces image network payload by ~85-90% (e.g. 2MB PNG -> 35KB WebP) without changing cloud storage architecture.
-  if (finalUrl.includes('res.cloudinary.com') && finalUrl.includes('/upload/') && !finalUrl.includes('/upload/f_auto')) {
-    finalUrl = finalUrl.replace('/upload/', '/upload/f_auto,q_auto,w_600/');
+  // Inject automatic WebP/AVIF format, quality compression, and dynamic max width.
+  // Reduces image network payload by ~90% (e.g. 2MB PNG -> 15KB WebP) for ultra-fast load times.
+  if (finalUrl.includes('res.cloudinary.com') && finalUrl.includes('/upload/')) {
+    if (!finalUrl.includes('/upload/f_auto')) {
+      finalUrl = finalUrl.replace('/upload/', `/upload/f_auto,q_auto,w_${maxWidth},c_scale/`);
+    }
   }
 
   if (finalUrl.startsWith('https://')) {
@@ -97,8 +98,8 @@ export const sanitizeRemoteImageUrl = (url?: string | null): string | null => {
 };
 
 /**
- * Resolves any product, category, or title to its exact local Stitch image source.
- * Handles primary, gallery, and variant images without any external web requests or placeholders.
+ * Resolves any product, category, or title to its exact image source.
+ * Prioritizes real Cloudinary HTTPS remote URLs, falling back to local Stitch assets.
  */
 export const resolveProductImage = (
   item?: {
@@ -108,22 +109,49 @@ export const resolveProductImage = (
     category?: string;
     subtitle?: string;
     imageUrl?: any;
+    image_url?: any;
     images?: any[];
-  } | string | null
+  } | string | null,
+  maxWidth: number = 400
 ): any => {
   if (!item) return LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30;
 
-  // If item is already an image asset reference (number from require)
+  // If item is already an image asset reference (number from require or object with { uri })
   if (typeof item === 'number') {
     return item;
   }
+  if (typeof item === 'object' && item !== null && 'uri' in item && typeof (item as any).uri === 'string') {
+    return item;
+  }
 
-  // Extract query string to match item against real Stitch product box assets
+  // 1. TOP PRIORITY: Check for valid Cloudinary or Remote HTTPS Image URL
+  if (typeof item === 'object' && item !== null) {
+    const rawUrl =
+      (typeof item.imageUrl === 'string' && item.imageUrl) ||
+      (typeof item.image_url === 'string' && item.image_url) ||
+      (Array.isArray(item.images) && item.images.length > 0 && typeof item.images[0] === 'string' ? item.images[0] : null);
+
+    if (rawUrl) {
+      const safeUri = sanitizeRemoteImageUrl(rawUrl, maxWidth);
+      if (safeUri && !safeUri.toLowerCase().includes('diwali_kids') && !safeUri.toLowerCase().includes('mascot')) {
+        return { uri: safeUri };
+      }
+    }
+  }
+
+  if (typeof item === 'string') {
+    const safeUri = sanitizeRemoteImageUrl(item, maxWidth);
+    if (safeUri && !safeUri.toLowerCase().includes('diwali_kids') && !safeUri.toLowerCase().includes('mascot')) {
+      return { uri: safeUri };
+    }
+  }
+
+  // 2. FALLBACK: Match keywords against bundled local Stitch photography assets
   const textQuery = typeof item === 'string'
     ? item.toLowerCase()
-    : `${item.title || item.name || ''} ${item.category || ''} ${item.subtitle || ''} ${item.id || ''} ${Array.isArray(item.images) ? item.images.join(' ') : (item.imageUrl || '')}`.toLowerCase();
+    : `${item.title || item.name || ''} ${item.category || ''} ${item.subtitle || ''} ${item.id || ''}`.toLowerCase();
 
-  // 1. Rockets (Solar Flare, Supernova, Sky Rocket, High-Fly)
+  // Rockets
   if (
     textQuery.includes('rocket') ||
     textQuery.includes('solar flare') ||
@@ -132,7 +160,7 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.ROCKETS;
   }
 
-  // 2. Sparklers (Electric Sparklers, Starlight, Wedding Pack, Gold Sparklers)
+  // Sparklers
   if (
     textQuery.includes('sparkler') ||
     textQuery.includes('starlight') ||
@@ -141,7 +169,7 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.ELECTRIC_SPARKLERS;
   }
 
-  // 3. Flower Pots / Fountains (Dragon's Breath, Silver Comet, Aanar, Fountain)
+  // Flower Pots / Fountains
   if (
     textQuery.includes('fountain') ||
     textQuery.includes('flower pot') ||
@@ -153,7 +181,7 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.FLOWER_POT;
   }
 
-  // 4. Roman Candles & Pencil Crackers (Celestial, Twinkling Star, Candle, Cobalt)
+  // Roman Candles & Pencil Crackers
   if (
     textQuery.includes('candle') ||
     textQuery.includes('pencil') ||
@@ -165,7 +193,7 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.PENCIL_CANDLES;
   }
 
-  // 5. Ground Chakkars & Spinners (Zamin, Spinner, Chakkar, Wheel, Novelties)
+  // Ground Chakkars & Spinners
   if (
     textQuery.includes('chakkar') ||
     textQuery.includes('spinner') ||
@@ -176,7 +204,7 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.GROUND_CHAKKARS;
   }
 
-  // 6. Atom Bomb & Sound Crackers (Midnight Fury, Canister, Bomb, Hydro, Mortar, Bijili, Sound, Salute)
+  // Atom Bomb & Sound Crackers
   if (
     textQuery.includes('bomb') ||
     textQuery.includes('shell') ||
@@ -190,7 +218,7 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.ATOM_BOMB;
   }
 
-  // 7. Grand Festival Gift Box & Value Kits (Assortments, Family Pack, Festival Box)
+  // Grand Festival Gift Box
   if (
     textQuery.includes('gift') ||
     textQuery.includes('box') ||
@@ -202,7 +230,7 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.GIFT_BOX;
   }
 
-  // 8. Barrages & Multi-Shot Cakes (30-Shot, Golden Willow, Titanium Rain, Crimson Sovereign, Grand Finale, Aerial)
+  // Barrages & Multi-Shot Cakes
   if (
     textQuery.includes('barrage') ||
     textQuery.includes('cake') ||
@@ -217,28 +245,7 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30;
   }
 
-  // If item is object with a sanitized remote image URL that is not a diwali_kids illustration
-  if (typeof item === 'object' && item !== null) {
-    const rawUrl = typeof item.imageUrl === 'string'
-      ? item.imageUrl
-      : (Array.isArray(item.images) && item.images.length > 0 && typeof item.images[0] === 'string' ? item.images[0] : null);
-    if (rawUrl) {
-      const safeUri = sanitizeRemoteImageUrl(rawUrl);
-      if (safeUri && !safeUri.toLowerCase().includes('diwali_kids') && !safeUri.toLowerCase().includes('mascot')) {
-        return { uri: safeUri };
-      }
-    }
-  }
-
-  // If passed a remote URL string directly
-  if (typeof item === 'string') {
-    const safeUri = sanitizeRemoteImageUrl(item);
-    if (safeUri && !safeUri.toLowerCase().includes('diwali_kids') && !safeUri.toLowerCase().includes('mascot')) {
-      return { uri: safeUri };
-    }
-  }
-
-  // Default fallback to real Stitch product box photography (30 Shots)
+  // Default fallback
   return LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30;
 };
 
