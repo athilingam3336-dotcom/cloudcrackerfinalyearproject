@@ -66,21 +66,20 @@ class EmailService:
             """
             msg.attach(MIMEText(html_content, "html"))
 
-            if int(smtp_port) == 465:
-                with smtplib.SMTP_SSL(smtp_host, 465, timeout=12) as server:
+            # Try SSL (Port 465) first for instant connection on cloud servers, then fallback to 587 STARTTLS
+            sent = False
+            try:
+                with smtplib.SMTP_SSL(smtp_host, 465, timeout=8) as server:
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, [to_email], msg.as_string())
-            else:
-                try:
-                    with smtplib.SMTP(smtp_host, int(smtp_port), timeout=12) as server:
-                        server.starttls()
-                        server.login(smtp_user, smtp_pass)
-                        server.sendmail(smtp_from, [to_email], msg.as_string())
-                except Exception as port_err:
-                    logger.warning(f"Port {smtp_port} STARTTLS failed ({port_err}). Trying SSL Port 465 fallback...")
-                    with smtplib.SMTP_SSL(smtp_host, 465, timeout=12) as server:
-                        server.login(smtp_user, smtp_pass)
-                        server.sendmail(smtp_from, [to_email], msg.as_string())
+                sent = True
+            except Exception as ssl_err:
+                logger.warning(f"SMTP SSL Port 465 failed ({ssl_err}), trying Port {smtp_port} STARTTLS...")
+                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=8) as server:
+                    server.starttls()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_from, [to_email], msg.as_string())
+                sent = True
 
             logger.info(f"REAL OTP EMAIL SENT SUCCESSFULLY TO {to_email}")
             return True
