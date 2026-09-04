@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, Linking, use
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
-import { Spacing, BorderRadius } from '@/constants/spacing';
+import { BorderRadius, Spacing } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { sanitizeRemoteImageUrl, LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 import { CLIENT_INFO } from '@/constants/clientInfo';
@@ -37,157 +37,195 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
     const isSmallScreen = width < 640;
 
     return (
-      <View style={styles.header}>
-        {/* Left Section: Back Button & Meera Crackers Logo + Title */}
-        <View style={styles.leftSection}>
-          {onBackPress && (
+      <View style={styles.headerContainer}>
+        {/* Main Header Bar (Logo, Title, Actions) */}
+        <View style={styles.headerMainRow}>
+          {/* Left Section: Back Button & Meera Crackers Logo + Title */}
+          <View style={styles.leftSection}>
+            {onBackPress && (
+              <TouchableOpacity
+                style={[styles.backCircleButton, isSmallScreen && styles.backCircleButtonSmall]}
+                onPress={onBackPress}
+                activeOpacity={0.7}
+                accessibilityLabel="Go back"
+                accessibilityRole="button"
+              >
+                <MaterialIcons name="arrow-back" size={isSmallScreen ? 18 : 22} color={Colors.primary} />
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
-              style={[styles.backCircleButton, isSmallScreen && styles.backCircleButtonSmall]}
-              onPress={onBackPress}
+              style={styles.leftBrandTouch}
+              onPress={onLogoPress}
+              activeOpacity={onLogoPress ? 0.7 : 1}
+              disabled={!onLogoPress}
+            >
+              <Image
+                source={LOCAL_PRODUCT_IMAGES.LOGO}
+                style={[styles.headerShopLogo, isSmallScreen && styles.headerShopLogoSmall]}
+                resizeMode="contain"
+              />
+              <View style={styles.titleContainer}>
+                <View style={styles.brandTitleRow}>
+                  <Text
+                    style={[
+                      styles.brandTitle,
+                      isSmallScreen && { fontSize: 15, lineHeight: 19 },
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    MEERA CRACKERS
+                  </Text>
+                  <MaterialIcons name="auto-awesome" size={13} color="#D97706" style={styles.sparkleIcon} />
+                </View>
+                <Text style={styles.greetingText} numberOfLines={1} ellipsizeMode="tail">
+                  Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Right Section: Contact Action Pills (Desktop) & Icon Buttons */}
+          <View style={styles.rightSection}>
+            {!isSmallScreen && (
+              <View style={styles.headerContactPillsRow}>
+                <TouchableOpacity
+                  style={styles.headerContactChip}
+                  onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="call" size={14} color="#B30000" />
+                  <Text style={styles.headerContactChipText}>{CLIENT_INFO.primaryPhone}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.headerContactChip}
+                  onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="email" size={14} color="#B30000" />
+                  <Text style={styles.headerContactChipText}>Email Us</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.headerContactChip, styles.headerMapChip]}
+                  onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="location-on" size={14} color="#B45309" />
+                  <Text style={styles.headerMapChipText}>Map Location</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.iconCircleButton, isSmallScreen && styles.iconCircleButtonSmall]}
+              onPress={onNotificationPress}
               activeOpacity={0.7}
-              accessibilityLabel="Go back"
+              accessibilityLabel="Notifications"
               accessibilityRole="button"
             >
-              <MaterialIcons name="arrow-back" size={isSmallScreen ? 18 : 22} color={Colors.primary} />
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={styles.leftBrandTouch}
-            onPress={onLogoPress}
-            activeOpacity={onLogoPress ? 0.7 : 1}
-            disabled={!onLogoPress}
-          >
-            <Image
-              source={LOCAL_PRODUCT_IMAGES.LOGO}
-              style={[styles.headerShopLogo, isSmallScreen && styles.headerShopLogoSmall]}
-              resizeMode="contain"
-            />
-            <View style={styles.titleContainer}>
-              <View style={styles.brandTitleRow}>
-                <Text
-                  style={[
-                    styles.brandTitle,
-                    isSmallScreen && { fontSize: 15, lineHeight: 19 },
-                  ]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  MEERA CRACKERS
-                </Text>
-                <MaterialIcons name="auto-awesome" size={13} color="#D97706" style={styles.sparkleIcon} />
-              </View>
-              <Text style={styles.greetingText} numberOfLines={1} ellipsizeMode="tail">
-                Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Right Section: Contact Action Pills & Action Buttons */}
-        <View style={styles.rightSection}>
-          {!isSmallScreen && (
-            <View style={styles.headerContactPillsRow}>
-              <TouchableOpacity
-                style={styles.headerContactChip}
-                onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
-                activeOpacity={0.7}
-              >
-                <MaterialIcons name="call" size={14} color="#B30000" />
-                <Text style={styles.headerContactChipText}>{CLIENT_INFO.primaryPhone}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.headerContactChip}
-                onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
-                activeOpacity={0.7}
-              >
-                <MaterialIcons name="email" size={14} color="#B30000" />
-                <Text style={styles.headerContactChipText}>Email Us</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.headerContactChip, styles.headerMapChip]}
-                onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
-                activeOpacity={0.7}
-              >
-                <MaterialIcons name="location-on" size={14} color="#B45309" />
-                <Text style={styles.headerMapChipText}>Map Location</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={[styles.iconCircleButton, isSmallScreen && styles.iconCircleButtonSmall]}
-            onPress={onNotificationPress}
-            activeOpacity={0.7}
-            accessibilityLabel="Notifications"
-            accessibilityRole="button"
-          >
-            <MaterialIcons
-              name="notifications-none"
-              size={isSmallScreen ? 20 : 22}
-              color={Colors.onBackground}
-            />
-            {notificationCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {notificationCount > 9 ? '9+' : notificationCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.iconCircleButton, isSmallScreen && styles.iconCircleButtonSmall]}
-            onPress={onCartPress}
-            activeOpacity={0.7}
-            accessibilityLabel="Shopping Cart"
-            accessibilityRole="button"
-          >
-            <MaterialIcons
-              name="shopping-bag"
-              size={isSmallScreen ? 20 : 22}
-              color={Colors.onBackground}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.avatarButton, isSmallScreen && styles.avatarButtonSmall]}
-            onPress={onProfilePress}
-            activeOpacity={0.7}
-            accessibilityLabel="User Profile"
-            accessibilityRole="button"
-          >
-            {activeAvatar ? (
-              <Image
-                source={{ uri: activeAvatar }}
-                style={[styles.avatarImg, isSmallScreen && styles.avatarImgSmall]}
-                resizeMode="cover"
+              <MaterialIcons
+                name="notifications-none"
+                size={isSmallScreen ? 20 : 22}
+                color={Colors.onBackground}
               />
-            ) : (
-              <View style={[styles.avatarInner, isSmallScreen && styles.avatarInnerSmall]}>
-                <MaterialIcons name="person" size={isSmallScreen ? 18 : 20} color={Colors.primary} />
-              </View>
-            )}
-          </TouchableOpacity>
+              {notificationCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.iconCircleButton, isSmallScreen && styles.iconCircleButtonSmall]}
+              onPress={onCartPress}
+              activeOpacity={0.7}
+              accessibilityLabel="Shopping Cart"
+              accessibilityRole="button"
+            >
+              <MaterialIcons
+                name="shopping-bag"
+                size={isSmallScreen ? 20 : 22}
+                color={Colors.onBackground}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.avatarButton, isSmallScreen && styles.avatarButtonSmall]}
+              onPress={onProfilePress}
+              activeOpacity={0.7}
+              accessibilityLabel="User Profile"
+              accessibilityRole="button"
+            >
+              {activeAvatar ? (
+                <Image
+                  source={{ uri: activeAvatar }}
+                  style={[styles.avatarImg, isSmallScreen && styles.avatarImgSmall]}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.avatarInner, isSmallScreen && styles.avatarInnerSmall]}>
+                  <MaterialIcons name="person" size={isSmallScreen ? 18 : 20} color={Colors.primary} />
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Mobile Contact Strip: Phone, Email & Map Location buttons */}
+        {isSmallScreen && (
+          <View style={styles.mobileContactStrip}>
+            <TouchableOpacity
+              style={styles.mobileContactChip}
+              onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="call" size={13} color="#B30000" />
+              <Text style={styles.mobileContactChipText}>{CLIENT_INFO.primaryPhone}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mobileContactChip}
+              onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="email" size={13} color="#B30000" />
+              <Text style={styles.mobileContactChipText}>Email Us</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.mobileContactChip, styles.mobileMapChip]}
+              onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="location-on" size={13} color="#B45309" />
+              <Text style={styles.mobileMapChipText}>Map Location</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     );
   }
 );
 
 const styles = StyleSheet.create({
-  header: {
+  headerContainer: {
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.surfaceContainerHigh,
+    width: '100%',
+  },
+  headerMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.xs,
     paddingVertical: 6,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.surfaceContainerHigh,
-    minHeight: 62,
+    minHeight: 60,
     width: '100%',
   },
   leftSection: {
@@ -315,6 +353,44 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#B45309',
   },
+  mobileContactStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 6,
+    backgroundColor: '#FFF9F9',
+    borderTopWidth: 1,
+    borderTopColor: '#FEE2E2',
+    gap: 4,
+  },
+  mobileContactChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: '#FFF0F0',
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+  },
+  mobileContactChipText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: '#B30000',
+  },
+  mobileMapChip: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  mobileMapChipText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: '#B45309',
+  },
   iconCircleButton: {
     width: 38,
     height: 38,
@@ -374,6 +450,7 @@ const styles = StyleSheet.create({
   avatarImgSmall: {
     width: 30,
     height: 30,
+    borderRadius: BorderRadius.full,
   },
   avatarInner: {
     width: 30,

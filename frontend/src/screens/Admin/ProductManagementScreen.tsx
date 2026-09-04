@@ -863,22 +863,19 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               </TouchableOpacity>
             </View>
 
-            <View style={styles.formRow}>
-              <CustomInput
-                label="Product Title *"
-                value={formName}
-                onChangeText={setFormName}
-                placeholder="e.g. Midnight Fury 30-Shot"
-                containerStyle={styles.halfFormInput}
-              />
-              <CustomInput
-                label="Description"
-                value={formDescription}
-                onChangeText={setFormDescription}
-                placeholder="Short effects summary..."
-                containerStyle={styles.halfFormInput}
-              />
-            </View>
+            {/* Title & Description Fields (Full Width for Mobile Clarity) */}
+            <CustomInput
+              label="Product Title *"
+              value={formName}
+              onChangeText={setFormName}
+              placeholder="e.g. Midnight Fury 30-Shot"
+            />
+            <CustomInput
+              label="Description"
+              value={formDescription}
+              onChangeText={setFormDescription}
+              placeholder="Short effects summary..."
+            />
 
             {/* Product Image Required Section */}
             <View style={styles.imageUploadSection}>
@@ -916,7 +913,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                       <Text style={styles.imageMetaName} numberOfLines={1}>
                         {selectedImage?.name ||
                           (formExistingImageUrl
-                            ? 'Current catalog image'
+                            ? 'Catalog Image'
                             : 'Product Image')}
                       </Text>
                     </View>
@@ -963,7 +960,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                     color={Colors.primary}
                   />
                   <Text style={styles.imageDropzoneTitle}>
-                    Choose Image / Upload Image (JPG, PNG, WebP)
+                    Upload Image (JPG, PNG, WebP)
                   </Text>
                   <View style={styles.imageBrowseChip}>
                     <MaterialIcons
@@ -1016,7 +1013,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               ))}
             </ScrollView>
 
-            {/* Price & Stock 3-Column Row */}
+            {/* Price Row (2 Columns) */}
             <View style={styles.formRow}>
               <CustomInput
                 label="Original Price (₹) *"
@@ -1034,19 +1031,20 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                 containerStyle={styles.halfFormInput}
                 placeholder="Optional (449)"
               />
-              <CustomInput
-                label="Stock Count *"
-                value={formStock}
-                onChangeText={setFormStock}
-                keyboardType="numeric"
-                containerStyle={styles.halfFormInput}
-                placeholder="e.g. 50"
-              />
             </View>
+
+            {/* Stock Count Row (Full Width for clear number entry) */}
+            <CustomInput
+              label="Stock Count *"
+              value={formStock}
+              onChangeText={setFormStock}
+              keyboardType="numeric"
+              placeholder="e.g. 50"
+            />
 
             {/* Celebration Timing Selector */}
             <Text style={styles.formSectionLabel}>Celebration Burst Timing *</Text>
-            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
               {[
                 { label: '☀️ Morning', value: 'morning', icon: 'wb-sunny', color: '#ED6C02' },
                 { label: '🌙 Night', value: 'night', icon: 'nights-stay', color: '#673AB7' },
@@ -1058,11 +1056,12 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                     key={t.value}
                     style={{
                       flex: 1,
+                      minWidth: 95,
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      paddingVertical: 6,
-                      paddingHorizontal: 6,
+                      paddingVertical: 7,
+                      paddingHorizontal: 4,
                       borderRadius: BorderRadius.md,
                       borderWidth: isSel ? 2 : 1,
                       borderColor: isSel ? Colors.primary : Colors.surfaceContainerHigh,
@@ -1072,7 +1071,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                     onPress={() => setFormTimeOfDay(t.value as any)}
                     activeOpacity={0.8}
                   >
-                    <MaterialIcons name={t.icon as any} size={14} color={isSel ? Colors.primary : t.color} />
+                    <MaterialIcons name={t.icon as any} size={13} color={isSel ? Colors.primary : t.color} />
                     <Text
                       style={{
                         ...Typography.labelLg,
@@ -1080,6 +1079,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                         color: isSel ? Colors.primary : Colors.onSurface,
                         fontFamily: isSel ? 'Inter-Bold' : 'Inter-Regular',
                       }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
                       {t.label}
                     </Text>
@@ -1128,6 +1129,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                     padding: 12,
                     borderRadius: BorderRadius.lg,
                     marginTop: 8,
+                    width: '100%',
                     borderWidth: 1,
                     borderColor: Colors.primary,
                   }}
@@ -1571,20 +1573,23 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: Spacing.marginMobile,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
   },
   modalScroll: {
     width: '100%',
-    maxHeight: '90%',
+    maxWidth: 560,
+    maxHeight: '94%',
   },
   modalCard: {
     backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.sm + 2,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.md,
     elevation: 10,
+    width: '100%',
   },
   modalHeader: {
     flexDirection: 'row',
