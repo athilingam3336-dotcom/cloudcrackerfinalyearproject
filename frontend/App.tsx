@@ -45,8 +45,8 @@ const linking = {
       Notifications: 'Notifications',
       Settings: 'Settings',
       AdminDashboard: 'AdminDashboard',
-      Login: 'auth/instagram/callback',
-      Register: 'auth/instagram/register-callback',
+      Login: 'login',
+      Register: 'register',
     },
   },
 };
