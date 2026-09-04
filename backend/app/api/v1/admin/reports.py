@@ -57,52 +57,25 @@ async def dispatch_daily_report_to_all_admins(requested_by_email: str = "Automat
 
     admin_emails = list(set([a.email for a in admins if a.email]))
     if not admin_emails:
-        admin_emails = ["admin@meera-crackers.com"]
+        admin_emails = ["athilingam3336@gmail.com"]
 
     today_date = datetime.utcnow().strftime("%d %B %Y")
     email_subject = f"🔥 Daily Pyrotechnics Report - {today_date} | Meera Crackers"
 
-    email_body = f"""
-======================================================
-  MEERA CRACKERS - DAILY SALES & STOCK REPORT
-  Date: {today_date} (Dispatched to Admin Emails)
-======================================================
-
-📊 TODAY'S BUSINESS SUMMARY:
-------------------------------------------------------
-• Today's Revenue      : ₹{report_data['today_revenue']:,.2f}
-• Today's Total Orders : {report_data['today_orders']}
-• Cracker Items Sold   : {report_data['today_items_sold']} Units
-• Warehouse Stock Left : {report_data['remaining_stock']} Units
-• PDF Report Downloads : {report_data['download_count']} Times (Unlimited Access)
-
-📦 TODAY'S ORDERS BREAKDOWN:
-------------------------------------------------------
-"""
-    for idx, order in enumerate(report_data.get('today_orders_list', [])[:15], 1):
-        email_body += f"{idx}. Order #{order['order_number']} | Customer: {order['customer_name']} | ₹{order['total']:,.2f} | Status: {order['order_status']} | Items: {order['items_summary']}\n"
-
-    email_body += f"""
-🏬 ITEMIZED STOCK & INVENTORY STATUS:
-------------------------------------------------------
-"""
-    stock_items = report_data.get('stock_inventory_list', [])
-    for idx, stk in enumerate(stock_items[:25], 1):
-        email_body += f"{idx}. {stk['name']} ({stk['category_name']}) | Stock Left: {stk['stock_left']} | Sold Today: {stk['sold_today']} | Status: {stk['status']}\n"
-
-    email_body += f"""
-======================================================
-Dispatched To Admin Accounts: {', '.join(admin_emails)}
-Triggered By: {requested_by_email}
-Meera Crackers Automated Analytics Platform
-======================================================
-"""
+    # Send real email with PDF attachment using EmailService
+    from app.services.email_service import EmailService
+    email_sent = await EmailService.send_admin_report_email(
+        admin_emails=admin_emails,
+        report_data=report_data,
+        requested_by_email=requested_by_email
+    )
 
     return {
         "admin_emails_notified": admin_emails,
         "report_summary": report_data,
         "email_subject": email_subject,
-        "email_preview": email_body[:300] + "...",
+        "email_sent_status": email_sent,
+        "message": f"Daily report with PDF attachment dispatched to {len(admin_emails)} admin accounts."
     }
 
 

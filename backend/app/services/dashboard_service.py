@@ -315,6 +315,10 @@ class DashboardService:
             Order.get_pymongo_collection().aggregate(today_items_pipeline).to_list(length=None),
         )
 
+        total_stock = stock_results[0]["total_stock"] if stock_results else 0
+        today_revenue = round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
+        today_items_sold = items_results[0]["total_items_sold"] if items_results else 0
+
         today_orders_count = await Order.find(
             Order.admin_deleted_at == None,
             Order.created_at >= today_start
@@ -325,11 +329,37 @@ class DashboardService:
             Order.created_at >= today_start
         ).sort("-created_at").to_list(length=100)
 
+        from app.models.order_item import OrderItem
+
         orders_list = []
+        sold_today_map: Dict[str, int] = {}
+
         for o in today_orders:
+            items_list = getattr(o, "items", None)
+            if items_list is None:
+                items_list = await OrderItem.find(OrderItem.order_id == o.id).to_list()
+
             items_summary = []
-            for item in o.items:
-                items_summary.append(f"{item.product_name} x{item.quantity}")
+            is_active_order = o.order_status and not o.order_status.lower().startswith("cancel")
+
+            for item in items_list:
+                p_name = getattr(item, "product_name", None)
+                p_id = getattr(item, "product_id", None)
+                qty = getattr(item, "quantity", 1)
+
+                if not p_name and p_id:
+                    prod = await Product.get(p_id)
+                    p_name = prod.name if prod else "Cracker Item"
+
+                p_name = p_name or "Cracker Item"
+                items_summary.append(f"{p_name} x{qty}")
+
+                if is_active_order:
+                    if p_id:
+                        sold_today_map[str(p_id)] = sold_today_map.get(str(p_id), 0) + qty
+                    if p_name:
+                        sold_today_map[p_name.lower()] = sold_today_map.get(p_name.lower(), 0) + qty
+
             orders_list.append({
                 "id": str(o.id),
                 "order_number": str(o.id)[-6:].upper(),
@@ -340,22 +370,6 @@ class DashboardService:
                 "items_summary": ", ".join(items_summary) if items_summary else "Crackers item",
                 "created_at": o.created_at.strftime("%I:%M %p"),
             })
-
-        total_stock = stock_results[0]["total_stock"] if stock_results else 0
-        today_revenue = round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
-        today_items_sold = items_results[0]["total_items_sold"] if items_results else 0
-
-        # Aggregate items sold per product today
-        sold_today_map: Dict[str, int] = {}
-        for o in today_orders:
-            if o.order_status and not o.order_status.lower().startswith("cancel"):
-                for item in o.items:
-                    p_id_str = str(item.product_id) if item.product_id else ""
-                    p_name_str = item.product_name or ""
-                    if p_id_str:
-                        sold_today_map[p_id_str] = sold_today_map.get(p_id_str, 0) + item.quantity
-                    if p_name_str:
-                        sold_today_map[p_name_str.lower()] = sold_today_map.get(p_name_str.lower(), 0) + item.quantity
 
         categories = await Category.find(Category.status != "deleted").to_list()
         cat_map = {str(c.id): c.name for c in categories}
