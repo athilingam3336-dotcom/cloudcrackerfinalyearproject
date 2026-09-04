@@ -350,38 +350,43 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           <Text style={styles.title}>Order History</Text>
           <Text style={styles.subtitle}>Review and track your previous pyrotechnic purchases.</Text>
 
-          {/* Stats Bento Full-Width Row */}
-          <View style={styles.statsContainer}>
+          {/* Stats Bento Scrollable Row */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.statsScrollContent}
+            style={styles.statsScrollView}
+          >
             <View style={styles.statCard}>
               <View style={styles.statIconBox}>
-                <MaterialIcons name="shopping-bag" size={20} color={Colors.primary} />
+                <MaterialIcons name="shopping-bag" size={18} color={Colors.primary} />
               </View>
               <View style={styles.statTextBox}>
-                <Text style={styles.statLabel} numberOfLines={1}>TOTAL ORDERS</Text>
+                <Text style={styles.statLabel} numberOfLines={1}>Total Orders</Text>
                 <Text style={styles.statValue} numberOfLines={1}>{totalOrders}</Text>
               </View>
             </View>
 
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: Colors.secondaryContainer }]}>
-                <MaterialIcons name="local-shipping" size={20} color={Colors.onSecondaryContainer} />
+                <MaterialIcons name="local-shipping" size={18} color={Colors.onSecondaryContainer} />
               </View>
               <View style={styles.statTextBox}>
-                <Text style={styles.statLabel} numberOfLines={1}>IN TRANSIT</Text>
+                <Text style={styles.statLabel} numberOfLines={1}>In Transit</Text>
                 <Text style={styles.statValue} numberOfLines={1}>{inTransitCount}</Text>
               </View>
             </View>
 
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: Colors.primaryFixed }]}>
-                <MaterialIcons name="savings" size={20} color={Colors.primary} />
+                <MaterialIcons name="savings" size={18} color={Colors.primary} />
               </View>
               <View style={styles.statTextBox}>
-                <Text style={styles.statLabel} numberOfLines={1}>TOTAL SPENT</Text>
+                <Text style={styles.statLabel} numberOfLines={1}>Total Spent</Text>
                 <Text style={styles.statValue} numberOfLines={1}>{formatCurrency(totalSpent)}</Text>
               </View>
             </View>
-          </View>
+          </ScrollView>
 
           {/* Filter Chips */}
           <ScrollView
@@ -559,28 +564,30 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
     marginTop: 2,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    gap: Spacing.sm,
+  statsScrollView: {
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
   },
+  statsScrollContent: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    paddingRight: Spacing.md,
+  },
   statCard: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs + 2,
-    gap: Spacing.xs,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 8,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
+    minWidth: 115,
   },
   statIconBox: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.primaryFixed,
     alignItems: 'center',
@@ -596,7 +603,6 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontFamily: 'Inter-Bold',
     color: Colors.tertiary,
-    textTransform: 'uppercase',
   },
   statValue: {
     ...Typography.titleLg,
@@ -612,7 +618,7 @@ const styles = StyleSheet.create({
   filterScrollContent: {
     flexDirection: 'row',
     gap: Spacing.xs,
-    paddingRight: Spacing.xs,
+    paddingRight: Spacing.lg,
   },
   filterChip: {
     paddingHorizontal: Spacing.md,
@@ -744,7 +750,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: 6,
     marginTop: Spacing.xs,
   },
   trackBtn: {
@@ -752,14 +758,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: BorderRadius.lg,
     gap: 4,
   },
   trackBtnText: {
     ...Typography.labelLg,
-    fontSize: 12,
+    fontSize: 11.5,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
@@ -769,14 +775,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFCDD2',
     backgroundColor: '#FFF5F5',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: BorderRadius.lg,
     gap: 4,
   },
   cancelBtnText: {
     ...Typography.labelLg,
-    fontSize: 12,
+    fontSize: 11.5,
     fontFamily: 'Inter-Bold',
     color: '#D32F2F',
   },
@@ -786,21 +792,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFCDD2',
     backgroundColor: '#FFEBEE',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: BorderRadius.lg,
     gap: 4,
   },
   deleteBtnText: {
     ...Typography.labelLg,
-    fontSize: 12,
+    fontSize: 11.5,
     fontFamily: 'Inter-Bold',
     color: '#D32F2F',
   },
   reorderBtn: {
     backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     borderRadius: BorderRadius.lg,
   },
   reorderBtnText: {

@@ -42,13 +42,13 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
         <View style={styles.leftSection}>
           {onBackPress && (
             <TouchableOpacity
-              style={styles.backCircleButton}
+              style={[styles.backCircleButton, isSmallScreen && styles.backCircleButtonSmall]}
               onPress={onBackPress}
               activeOpacity={0.7}
               accessibilityLabel="Go back"
               accessibilityRole="button"
             >
-              <MaterialIcons name="arrow-back" size={22} color={Colors.primary} />
+              <MaterialIcons name="arrow-back" size={isSmallScreen ? 18 : 22} color={Colors.primary} />
             </TouchableOpacity>
           )}
 
@@ -60,7 +60,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
           >
             <Image
               source={LOCAL_PRODUCT_IMAGES.LOGO}
-              style={styles.headerShopLogo}
+              style={[styles.headerShopLogo, isSmallScreen && styles.headerShopLogoSmall]}
               resizeMode="contain"
             />
             <View style={styles.titleContainer}>
@@ -68,15 +68,16 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
                 <Text
                   style={[
                     styles.brandTitle,
-                    isSmallScreen && { fontSize: 17, lineHeight: 21 },
+                    isSmallScreen && { fontSize: 15, lineHeight: 19 },
                   ]}
                   numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   MEERA CRACKERS
                 </Text>
-                <MaterialIcons name="auto-awesome" size={15} color="#D97706" style={styles.sparkleIcon} />
+                <MaterialIcons name="auto-awesome" size={13} color="#D97706" style={styles.sparkleIcon} />
               </View>
-              <Text style={styles.greetingText} numberOfLines={1}>
+              <Text style={styles.greetingText} numberOfLines={1} ellipsizeMode="tail">
                 Welcome back, <Text style={styles.greetingUserName}>{activeUserName}</Text>
               </Text>
             </View>
@@ -117,7 +118,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
           )}
 
           <TouchableOpacity
-            style={styles.iconCircleButton}
+            style={[styles.iconCircleButton, isSmallScreen && styles.iconCircleButtonSmall]}
             onPress={onNotificationPress}
             activeOpacity={0.7}
             accessibilityLabel="Notifications"
@@ -125,7 +126,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
           >
             <MaterialIcons
               name="notifications-none"
-              size={22}
+              size={isSmallScreen ? 20 : 22}
               color={Colors.onBackground}
             />
             {notificationCount > 0 && (
@@ -138,7 +139,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.iconCircleButton}
+            style={[styles.iconCircleButton, isSmallScreen && styles.iconCircleButtonSmall]}
             onPress={onCartPress}
             activeOpacity={0.7}
             accessibilityLabel="Shopping Cart"
@@ -146,13 +147,13 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
           >
             <MaterialIcons
               name="shopping-bag"
-              size={22}
+              size={isSmallScreen ? 20 : 22}
               color={Colors.onBackground}
             />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.avatarButton}
+            style={[styles.avatarButton, isSmallScreen && styles.avatarButtonSmall]}
             onPress={onProfilePress}
             activeOpacity={0.7}
             accessibilityLabel="User Profile"
@@ -161,12 +162,12 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             {activeAvatar ? (
               <Image
                 source={{ uri: activeAvatar }}
-                style={styles.avatarImg}
+                style={[styles.avatarImg, isSmallScreen && styles.avatarImgSmall]}
                 resizeMode="cover"
               />
             ) : (
-              <View style={styles.avatarInner}>
-                <MaterialIcons name="person" size={20} color={Colors.primary} />
+              <View style={[styles.avatarInner, isSmallScreen && styles.avatarInnerSmall]}>
+                <MaterialIcons name="person" size={isSmallScreen ? 18 : 20} color={Colors.primary} />
               </View>
             )}
           </TouchableOpacity>
@@ -181,69 +182,94 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.marginMobile,
-    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 6,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.surfaceContainerHigh,
-    minHeight: 74,
+    minHeight: 62,
+    width: '100%',
   },
   leftSection: {
+    flex: 1,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
+    marginRight: 6,
+    overflow: 'hidden',
   },
   leftBrandTouch: {
+    flex: 1,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 10,
+    gap: 6,
+    overflow: 'hidden',
   },
   backCircleButton: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 6,
+    marginRight: 4,
+    flexShrink: 0,
+  },
+  backCircleButtonSmall: {
+    width: 32,
+    height: 32,
+    marginRight: 2,
   },
   headerShopLogo: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    flexShrink: 0,
+  },
+  headerShopLogoSmall: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
   },
   titleContainer: {
+    flex: 1,
+    flexShrink: 1,
     alignItems: 'flex-start',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 6,
+    gap: 4,
+    maxWidth: '100%',
   },
   brandTitle: {
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 20,
+    lineHeight: 24,
     fontFamily: Platform.OS === 'web' ? "'Cinzel Decorative', 'Cinzel', 'Playfair Display', Georgia, serif" : 'Cinzel-ExtraBold',
     fontWeight: '900',
     color: '#A81818',
-    letterSpacing: 1.0,
+    letterSpacing: 0.5,
     textAlign: 'left',
   },
   sparkleIcon: {
-    marginTop: -2,
+    marginTop: -1,
   },
   greetingText: {
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 11,
+    lineHeight: 14,
     fontFamily: Platform.OS === 'web' ? "'Outfit', 'Poppins', sans-serif" : 'Outfit-Medium',
     fontWeight: '500',
     color: '#64748B',
     marginTop: 1,
     textAlign: 'left',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
+    maxWidth: '100%',
   },
   greetingUserName: {
     fontFamily: Platform.OS === 'web' ? "'Outfit', 'Poppins', sans-serif" : 'Outfit-Bold',
@@ -252,12 +278,11 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   rightSection: {
-    flex: 1,
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: Spacing.xs,
-    flexShrink: 0,
+    gap: 5,
   },
   headerContactPillsRow: {
     flexDirection: 'row',
@@ -291,18 +316,23 @@ const styles = StyleSheet.create({
     color: '#B45309',
   },
   iconCircleButton: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    flexShrink: 0,
+  },
+  iconCircleButtonSmall: {
+    width: 34,
+    height: 34,
   },
   badge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: -2,
+    right: -2,
     backgroundColor: Colors.primary,
     borderRadius: 10,
     minWidth: 16,
@@ -310,16 +340,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: Colors.surface,
   },
   badgeText: {
     ...Typography.labelLg,
     color: '#ffffff',
     fontSize: 9,
     fontFamily: 'Inter-Bold',
+    lineHeight: 11,
   },
   avatarButton: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.primaryFixed,
     alignItems: 'center',
@@ -327,19 +360,32 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.primary,
     overflow: 'hidden',
+    flexShrink: 0,
+  },
+  avatarButtonSmall: {
+    width: 34,
+    height: 34,
   },
   avatarImg: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: BorderRadius.full,
   },
+  avatarImgSmall: {
+    width: 30,
+    height: 30,
+  },
   avatarInner: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surfaceContainerLowest,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarInnerSmall: {
+    width: 26,
+    height: 26,
   },
 });
 

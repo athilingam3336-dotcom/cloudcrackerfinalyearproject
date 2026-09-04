@@ -118,48 +118,7 @@ export const resolveProductImage = (
     return item;
   }
 
-  // If item is already an object with uri: { uri: '...' }
-  if (typeof item === 'object' && item && 'uri' in item && typeof (item as any).uri === 'string' && (item as any).uri.trim().length > 0) {
-    const safeUri = sanitizeRemoteImageUrl((item as any).uri);
-    if (safeUri) {
-      return { uri: safeUri };
-    }
-  }
-
-  // If passed a remote URL string directly
-  if (typeof item === 'string') {
-    const safeUri = sanitizeRemoteImageUrl(item);
-    if (safeUri) {
-      return { uri: safeUri };
-    }
-  }
-
-  // If object has imageUrl or images with valid remote URL or direct asset
-  if (typeof item === 'object' && item !== null) {
-    if (typeof item.imageUrl === 'string') {
-      const safeUri = sanitizeRemoteImageUrl(item.imageUrl);
-      if (safeUri) {
-        return { uri: safeUri };
-      }
-    }
-    if (typeof item.imageUrl === 'number') {
-      return item.imageUrl;
-    }
-    if (Array.isArray(item.images) && item.images.length > 0) {
-      const firstImg = item.images[0];
-      if (typeof firstImg === 'string') {
-        const safeUri = sanitizeRemoteImageUrl(firstImg);
-        if (safeUri) {
-          return { uri: safeUri };
-        }
-      }
-      if (typeof firstImg === 'number') {
-        return firstImg;
-      }
-    }
-  }
-
-  // If passed a raw string or object to match local catalog
+  // Extract query string to match item against real Stitch product box assets
   const textQuery = typeof item === 'string'
     ? item.toLowerCase()
     : `${item.title || item.name || ''} ${item.category || ''} ${item.subtitle || ''} ${item.id || ''} ${Array.isArray(item.images) ? item.images.join(' ') : (item.imageUrl || '')}`.toLowerCase();
@@ -188,7 +147,8 @@ export const resolveProductImage = (
     textQuery.includes('flower pot') ||
     textQuery.includes('dragon') ||
     textQuery.includes('comet') ||
-    textQuery.includes('aanar')
+    textQuery.includes('aanar') ||
+    textQuery.includes('pot')
   ) {
     return LOCAL_PRODUCT_IMAGES.FLOWER_POT;
   }
@@ -199,7 +159,8 @@ export const resolveProductImage = (
     textQuery.includes('pencil') ||
     textQuery.includes('celestial') ||
     textQuery.includes('cobalt') ||
-    textQuery.includes('repeater')
+    textQuery.includes('repeater') ||
+    textQuery.includes('kid')
   ) {
     return LOCAL_PRODUCT_IMAGES.PENCIL_CANDLES;
   }
@@ -215,13 +176,16 @@ export const resolveProductImage = (
     return LOCAL_PRODUCT_IMAGES.GROUND_CHAKKARS;
   }
 
-  // 6. Atom Bomb & Aerial Shells (Midnight Fury, Canister, Bomb, Hydro, Mortar)
+  // 6. Atom Bomb & Sound Crackers (Midnight Fury, Canister, Bomb, Hydro, Mortar, Bijili, Sound, Salute)
   if (
     textQuery.includes('bomb') ||
     textQuery.includes('shell') ||
     textQuery.includes('fury') ||
     textQuery.includes('mortar') ||
-    textQuery.includes('hydro')
+    textQuery.includes('hydro') ||
+    textQuery.includes('bijili') ||
+    textQuery.includes('sound') ||
+    textQuery.includes('thunder')
   ) {
     return LOCAL_PRODUCT_IMAGES.ATOM_BOMB;
   }
@@ -232,12 +196,13 @@ export const resolveProductImage = (
     textQuery.includes('box') ||
     textQuery.includes('assortment') ||
     textQuery.includes('kit') ||
-    textQuery.includes('pack')
+    textQuery.includes('pack') ||
+    textQuery.includes('combo')
   ) {
     return LOCAL_PRODUCT_IMAGES.GIFT_BOX;
   }
 
-  // 8. Barrages & Multi-Shot Cakes (30-Shot, Golden Willow, Titanium Rain, Crimson Sovereign, Grand Finale)
+  // 8. Barrages & Multi-Shot Cakes (30-Shot, Golden Willow, Titanium Rain, Crimson Sovereign, Grand Finale, Aerial)
   if (
     textQuery.includes('barrage') ||
     textQuery.includes('cake') ||
@@ -245,12 +210,35 @@ export const resolveProductImage = (
     textQuery.includes('willow') ||
     textQuery.includes('titanium') ||
     textQuery.includes('sovereign') ||
-    textQuery.includes('finale')
+    textQuery.includes('finale') ||
+    textQuery.includes('aerial') ||
+    textQuery.includes('fancy')
   ) {
     return LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30;
   }
 
-  // Default fallback to first real Stitch image
+  // If item is object with a sanitized remote image URL that is not a diwali_kids illustration
+  if (typeof item === 'object' && item !== null) {
+    const rawUrl = typeof item.imageUrl === 'string'
+      ? item.imageUrl
+      : (Array.isArray(item.images) && item.images.length > 0 && typeof item.images[0] === 'string' ? item.images[0] : null);
+    if (rawUrl) {
+      const safeUri = sanitizeRemoteImageUrl(rawUrl);
+      if (safeUri && !safeUri.toLowerCase().includes('diwali_kids') && !safeUri.toLowerCase().includes('mascot')) {
+        return { uri: safeUri };
+      }
+    }
+  }
+
+  // If passed a remote URL string directly
+  if (typeof item === 'string') {
+    const safeUri = sanitizeRemoteImageUrl(item);
+    if (safeUri && !safeUri.toLowerCase().includes('diwali_kids') && !safeUri.toLowerCase().includes('mascot')) {
+      return { uri: safeUri };
+    }
+  }
+
+  // Default fallback to real Stitch product box photography (30 Shots)
   return LOCAL_PRODUCT_IMAGES.MULTI_SHOT_30;
 };
 

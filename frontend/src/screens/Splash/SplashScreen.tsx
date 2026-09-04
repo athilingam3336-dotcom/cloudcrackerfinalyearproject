@@ -241,6 +241,24 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         >
           Happy & Safety Guarantee • Wholesale & Retailer
         </Animated.Text>
+
+        {/* Prominent Kids Diwali Celebration Showcase Image */}
+        <Animated.View
+          style={[
+            styles.kidsShowcaseCard,
+            {
+              opacity: sloganFade,
+              transform: [{ translateY: sloganY }],
+            },
+          ]}
+        >
+          <Image
+            source={LOCAL_PRODUCT_IMAGES.FESTIVE_KIDS_FIREWORKS}
+            style={styles.kidsShowcaseImage}
+            resizeMode="cover"
+          />
+          <View style={styles.kidsImageOverlay} />
+        </Animated.View>
       </View>
 
       {/* Loading Progress Section */}
@@ -272,39 +290,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.splashBackground,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.xl,
   },
   contentContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.marginMobile,
     zIndex: 10,
+    width: '100%',
+    marginTop: Spacing.md,
   },
   sparkWrapper: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 120,
-    height: 120,
+    width: 155,
+    height: 155,
   },
   outerGlow: {
     position: 'absolute',
-    width: 110,
-    height: 110,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primaryContainer,
-    shadowColor: Colors.primary,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255, 215, 0, 0.18)',
+    shadowColor: '#FFD700',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 25,
+    shadowOpacity: 0.9,
+    shadowRadius: 30,
   },
   innerGlow: {
     position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.secondaryContainer,
-    opacity: 0.25,
+    width: 105,
+    height: 105,
+    borderRadius: 52.5,
+    backgroundColor: Colors.primaryContainer,
+    opacity: 0.35,
   },
   iconCenter: {
     position: 'relative',
@@ -312,55 +333,85 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   splashShopLogo: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 135,
+    height: 135,
+    borderRadius: 67.5,
+    borderWidth: 2.5,
+    borderColor: '#FFD700',
   },
   brandTitle: {
     ...Typography.displayLg,
     fontFamily: 'Inter-Bold',
     color: '#ffffff',
-    marginBottom: Spacing.xs,
+    marginBottom: 6,
     textAlign: 'center',
-    fontSize: SCREEN_WIDTH < 380 ? 44 : 57,
-    lineHeight: SCREEN_WIDTH < 380 ? 52 : 64,
+    fontSize: SCREEN_WIDTH < 380 ? 38 : 46,
+    lineHeight: SCREEN_WIDTH < 380 ? 44 : 54,
+    letterSpacing: 0.6,
   },
   sloganText: {
     ...Typography.bodyLg,
     fontFamily: 'Inter-Regular',
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(255, 255, 255, 0.85)',
     textAlign: 'center',
-    maxWidth: 320,
+    maxWidth: 340,
+    marginBottom: Spacing.lg,
+    fontSize: 13.5,
+    letterSpacing: 0.2,
+  },
+  kidsShowcaseCard: {
+    width: SCREEN_WIDTH * 0.92,
+    maxWidth: 400,
+    height: 215,
+    borderRadius: 22,
+    overflow: 'hidden',
+    borderWidth: 2.5,
+    borderColor: 'rgba(255, 215, 0, 0.55)',
+    marginVertical: Spacing.xs,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+    backgroundColor: '#000000',
+  },
+  kidsShowcaseImage: {
+    width: '100%',
+    height: '100%',
+  },
+  kidsImageOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   loadingContainer: {
-    position: 'absolute',
-    bottom: Spacing.xl,
-    width: 256,
+    width: 260,
     alignItems: 'center',
-    gap: Spacing.base,
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
   },
   progressBarTrack: {
     width: '100%',
     height: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: BorderRadius.full,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: Colors.primary,
+    backgroundColor: '#FFD700',
     borderRadius: BorderRadius.full,
-    shadowColor: Colors.primary,
+    shadowColor: '#FFD700',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
+    shadowOpacity: 0.9,
+    shadowRadius: 12,
   },
   loadingText: {
     ...Typography.labelLg,
     fontFamily: 'Inter-SemiBold',
-    color: 'rgba(255,255,255,0.4)',
-    letterSpacing: 2.4,
+    color: 'rgba(255,255,255,0.5)',
+    letterSpacing: 2.5,
     textTransform: 'uppercase',
+    fontSize: 11,
   },
 });
 

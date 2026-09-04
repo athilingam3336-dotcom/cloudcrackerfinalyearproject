@@ -156,33 +156,37 @@ export default function App() {
 
       // 3. Global CSS Reset for consistent cross-browser mobile layout & typography
       const cssId = 'cross-browser-mobile-reset';
-      if (!document.getElementById(cssId)) {
-        const style = document.createElement('style');
-        style.id = cssId;
-        style.textContent = `
-          * {
-            box-sizing: border-box !important;
-            -webkit-tap-highlight-color: transparent;
-          }
-          html, body, #root {
-            width: 100% !important;
-            max-width: 100vw !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow-x: hidden !important;
-            -webkit-text-size-adjust: 100% !important;
-            text-size-adjust: 100% !important;
-          }
-          ::-webkit-scrollbar {
-            display: none !important;
-          }
-          * {
-            -ms-overflow-style: none !important;
-            scrollbar-width: none !important;
-          }
-        `;
-        document.head.appendChild(style);
+      let styleEl = document.getElementById(cssId) as HTMLStyleElement | null;
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = cssId;
+        document.head.appendChild(styleEl);
       }
+      styleEl.textContent = `
+        * {
+          box-sizing: border-box !important;
+          -webkit-tap-highlight-color: transparent;
+        }
+        html, body, #root {
+          width: 100% !important;
+          max-width: 100vw !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow-x: hidden !important;
+          -webkit-text-size-adjust: 100% !important;
+          text-size-adjust: 100% !important;
+        }
+        input, textarea, select {
+          max-width: 100% !important;
+        }
+        ::-webkit-scrollbar {
+          display: none !important;
+        }
+        * {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
+      `;
     }
   }, []);
 

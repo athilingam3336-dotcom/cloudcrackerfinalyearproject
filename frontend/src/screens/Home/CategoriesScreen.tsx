@@ -9,6 +9,7 @@ import {
   ListRenderItem,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -95,26 +96,40 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
           catName.includes('bomb') ||
           catName.includes('bijili') ||
           catName.includes('sound') ||
-          catName.includes('kid');
+          catName.includes('garland') ||
+          catName.includes('chorsa') ||
+          catName.includes('kid') ||
+          catName.includes('morning') ||
+          catName.includes('day');
       } else if (selectedFilter === 'night') {
         matchesFilter =
           catName.includes('rocket') ||
           catName.includes('pot') ||
+          catName.includes('flower') ||
           catName.includes('fountain') ||
           catName.includes('aerial') ||
           catName.includes('shot') ||
           catName.includes('star') ||
-          catName.includes('gift');
+          catName.includes('gift') ||
+          catName.includes('night') ||
+          catName.includes('sky') ||
+          catName.includes('fancy');
       } else if (selectedFilter === 'both') {
         matchesFilter =
           catName.includes('sparkler') ||
           catName.includes('chakkar') ||
           catName.includes('bomb') ||
+          catName.includes('pot') ||
+          catName.includes('flower') ||
           catName.includes('garland') ||
           catName.includes('combo') ||
           catName.includes('gift') ||
           catName.includes('kid') ||
-          catName.includes('family');
+          catName.includes('family') ||
+          catName.includes('assort') ||
+          catName.includes('both') ||
+          catName.includes('star') ||
+          catName.includes('sound');
       }
 
       return matchesSearch && matchesFilter;
@@ -197,8 +212,13 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
           placeholder="Search categories (e.g. rockets, sparklers)..."
         />
 
-        {/* Filter Pills */}
-        <View style={styles.filterBar}>
+        {/* Filter Pills Horizontal ScrollView */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScrollView}
+          contentContainerStyle={styles.filterBarContent}
+        >
           <TouchableOpacity
             style={[styles.filterChip, selectedFilter === 'all' && styles.activeFilterChip]}
             onPress={() => setSelectedFilter('all')}
@@ -255,7 +275,7 @@ export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }
               ✨ Both Day & Night
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     );
   }, [searchQuery, selectedFilter, navigation]);
@@ -343,10 +363,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
   },
-  filterBar: {
+  filterScrollView: {
+    marginVertical: Spacing.xs,
+  },
+  filterBarContent: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.marginMobile,
-    marginVertical: Spacing.xs,
+    paddingRight: Spacing.lg,
     gap: Spacing.xs,
   },
   filterChip: {
@@ -356,6 +379,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
+    flexShrink: 0,
   },
   activeFilterChip: {
     backgroundColor: Colors.primaryContainer,

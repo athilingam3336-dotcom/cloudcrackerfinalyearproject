@@ -136,48 +136,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Wide CTA Banner */}
-          <TouchableOpacity style={styles.wideBanner} onPress={handleRegister} activeOpacity={0.9}>
-            <View style={styles.wideBannerContent}>
-              <Text style={styles.wideBannerTitle}>Ready to light up the night?</Text>
-              <Text style={styles.wideBannerDescription}>
-                Join over 10,000 professional planners and celebration enthusiasts.
-              </Text>
-              <View style={styles.joinButton}>
-                <Text style={styles.joinButtonText}>JOIN NOW</Text>
-              </View>
-            </View>
-            <MaterialIcons
-              name="celebration"
-              size={120}
-              color="rgba(255,255,255,0.15)"
-              style={styles.bannerWatermark}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Newsletter Section */}
-        <View style={styles.newsletterSection}>
-          <Text style={styles.newsletterTitle}>Stay Inspired</Text>
-          <Text style={styles.newsletterDescription}>
-            Subscribe for exclusive early access to seasonal collections and expert safety tips.
-          </Text>
-          <View style={styles.newsletterForm}>
-            <CustomInput
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              containerStyle={styles.newsletterInputContainer}
-            />
-            <PrimaryButton
-              title="Subscribe"
-              onPress={() => {}}
-              style={styles.subscribeButton}
-            />
-          </View>
-          <Text style={styles.newsletterSubtext}>
-            No spam. Only sparks. Unsubscribe anytime.
-          </Text>
         </View>
 
         {/* Footer */}

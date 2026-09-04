@@ -407,7 +407,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                 </View>
 
                 {/* Name & Phone */}
-                <View style={styles.nameRow}>
+                <View style={[styles.nameRow, !isDesktop && styles.nameRowMobile]}>
                   <CustomInput
                     label="Name"
                     value={fullName}
@@ -426,7 +426,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                 </View>
 
                 {/* Email & Street Address */}
-                <View style={styles.nameRow}>
+                <View style={[styles.nameRow, !isDesktop && styles.nameRowMobile]}>
                   <CustomInput
                     label="Email"
                     value={email}
@@ -446,7 +446,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                 </View>
 
                 {/* City & Pincode */}
-                <View style={styles.nameRow}>
+                <View style={[styles.nameRow, !isDesktop && styles.nameRowMobile]}>
                   <CustomInput
                     label="City"
                     value={city}
@@ -862,29 +862,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 4,
+    gap: 2,
+    flexShrink: 1,
   },
   stepItemHorizontal: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
+    flexShrink: 1,
   },
   stepLineHorizontal: {
-    width: 24,
+    width: 14,
     height: 2,
     backgroundColor: Colors.surfaceContainerHigh,
-    marginHorizontal: 4,
+    marginHorizontal: 2,
+    flexShrink: 1,
   },
   activeStepLineHorizontal: {
     backgroundColor: Colors.primary,
   },
   stepCircleHorizontal: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: Colors.surfaceContainerHigh,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   currentStepCircle: {
     backgroundColor: Colors.primary,
@@ -894,7 +898,7 @@ const styles = StyleSheet.create({
   },
   stepNumberHorizontal: {
     ...Typography.labelLg,
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Inter-Bold',
     color: Colors.tertiary,
   },
@@ -903,9 +907,10 @@ const styles = StyleSheet.create({
   },
   stepLabelHorizontal: {
     ...Typography.labelLg,
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter-Medium',
     color: Colors.tertiary,
+    flexShrink: 1,
   },
   activeStepLabelHorizontal: {
     fontFamily: 'Inter-Bold',
@@ -990,8 +995,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.xs,
   },
+  nameRowMobile: {
+    flexDirection: 'column',
+    gap: 0,
+  },
   halfInput: {
     flex: 1,
+    width: '100%',
   },
   radioOption: {
     flexDirection: 'row',
@@ -1115,7 +1125,8 @@ const styles = StyleSheet.create({
   },
   gatewayPillsRow: {
     flexDirection: 'row',
-    gap: Spacing.xs,
+    flexWrap: 'wrap',
+    gap: 6,
     marginTop: Spacing.sm,
     paddingTop: Spacing.xs,
     borderTopWidth: 1,
