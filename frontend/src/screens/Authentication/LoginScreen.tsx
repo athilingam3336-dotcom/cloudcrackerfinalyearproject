@@ -22,7 +22,6 @@ import { CustomInput } from '@/components/inputs/CustomInput';
 import { PasswordInput } from '@/components/inputs/PasswordInput';
 import { Checkbox } from '@/components/inputs/Checkbox';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
-import { GoogleAccountChooserModal } from '@/components/auth/GoogleAccountChooserModal';
 import { InstagramAccountChooserModal } from '@/components/auth/InstagramAccountChooserModal';
 import { googleAuthService } from '@/services/googleAuthService';
 import { instagramAuthService } from '@/services/instagramAuthService';
@@ -41,7 +40,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [isInstagramLoading, setIsInstagramLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -155,9 +153,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
     setErrors({});
     setIsGoogleLoading(true);
 
-    // Try Google Identity Services native popup first (if client ID is configured)
-    const nativeLaunched = await googleAuthService.triggerNativeGooglePopup(
-      async (payload) => {
+    await googleAuthService.loginWithOfficialGoogle(
+      async (payload: GoogleAuthPayload) => {
         const success = await storeLoginWithGoogle(payload);
         setIsGoogleLoading(false);
         if (success) {
@@ -172,36 +169,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           setErrors({ email: storeError || 'Google authentication failed.' });
         }
       },
-      (errorMsg) => {
+      (errorMsg: string) => {
         setIsGoogleLoading(false);
         setErrors({ email: errorMsg || 'Google authentication error.' });
       }
     );
-
-    // If native GIS popup not available or not configured, open interactive Google Account Chooser modal
-    if (!nativeLaunched) {
-      setIsGoogleLoading(false);
-      setShowGoogleModal(true);
-    }
-  };
-
-  const handleGoogleAccountSelect = async (payload: GoogleAuthPayload) => {
-    setIsGoogleLoading(true);
-    const success = await storeLoginWithGoogle(payload);
-    setIsGoogleLoading(false);
-
-    if (success) {
-      setShowGoogleModal(false);
-      const user = useAuthStore.getState().user;
-      if (user?.role === 'admin') {
-        navigation.navigate('AdminDashboard');
-      } else {
-        navigation.navigate('Home');
-      }
-    } else {
-      const storeError = useAuthStore.getState().error;
-      setErrors({ email: storeError || 'Google authentication failed.' });
-    }
   };
 
   const handleInstagramLoginClick = () => {
@@ -374,14 +346,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* Google Account Selector Modal */}
-      <GoogleAccountChooserModal
-        visible={showGoogleModal}
-        onClose={() => setShowGoogleModal(false)}
-        onSelectAccount={handleGoogleAccountSelect}
-        isLoading={isGoogleLoading}
-      />
     </SafeAreaView>
   );
 };

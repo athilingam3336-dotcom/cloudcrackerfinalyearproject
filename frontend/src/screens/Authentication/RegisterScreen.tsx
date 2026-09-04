@@ -22,7 +22,6 @@ import { CustomInput } from '@/components/inputs/CustomInput';
 import { PasswordInput } from '@/components/inputs/PasswordInput';
 import { Checkbox } from '@/components/inputs/Checkbox';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
-import { GoogleAccountChooserModal } from '@/components/auth/GoogleAccountChooserModal';
 import { InstagramAccountChooserModal } from '@/components/auth/InstagramAccountChooserModal';
 import { googleAuthService } from '@/services/googleAuthService';
 import { instagramAuthService } from '@/services/instagramAuthService';
@@ -56,7 +55,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [isInstagramLoading, setIsInstagramLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [errors, setErrors] = useState<RegisterErrors>({});
@@ -130,7 +128,42 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const storeLoginWithInstagram = useAuthStore((state) => state.loginWithInstagram);
 
   useEffect(() => {
-    const handleMetaInstagramCallback = async () => {
+    const handleOAuthCallbacks = async () => {
+      // 1. Handle Google OAuth redirect callback (#access_token=...)
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash ? window.location.hash.substring(1) : '';
+        const search = window.location.search ? window.location.search.substring(1) : '';
+        const fullParams = new URLSearchParams(hash || search);
+        const accessToken = fullParams.get('access_token');
+
+        if (accessToken) {
+          setIsGoogleLoading(true);
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+
+          await googleAuthService.fetchProfileAndComplete(
+            accessToken,
+            async (payload) => {
+              const success = await storeLoginWithGoogle(payload);
+              setIsGoogleLoading(false);
+              if (success) {
+                navigation.navigate('Home');
+              } else {
+                const storeError = useAuthStore.getState().error;
+                setErrors({ email: storeError || 'Google registration failed.' });
+              }
+            },
+            (errorMsg) => {
+              setIsGoogleLoading(false);
+              setErrors({ email: errorMsg || 'Google authentication error.' });
+            }
+          );
+          return;
+        }
+      }
+
+      // 2. Handle Instagram OAuth callback (?code=...)
       let code: string | null = null;
       let errorParam: string | null = null;
       let errorReason: string | null = null;
@@ -178,7 +211,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
         }
       }
     };
-    handleMetaInstagramCallback();
+    handleOAuthCallbacks();
   }, [route?.params]);
 
   const validateForm = (): boolean => {
@@ -286,7 +319,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
     setErrors({});
     setIsGoogleLoading(true);
 
-    const nativeLaunched = await googleAuthService.triggerNativeGooglePopup(
+    await googleAuthService.loginWithOfficialGoogle(
       async (payload) => {
         const success = await storeLoginWithGoogle(payload);
         setIsGoogleLoading(false);
@@ -302,25 +335,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
         setErrors({ email: errorMsg || 'Google authentication error.' });
       }
     );
-
-    if (!nativeLaunched) {
-      setIsGoogleLoading(false);
-      setShowGoogleModal(true);
-    }
-  };
-
-  const handleGoogleAccountSelect = async (payload: GoogleAuthPayload) => {
-    setIsGoogleLoading(true);
-    const success = await storeLoginWithGoogle(payload);
-    setIsGoogleLoading(false);
-
-    if (success) {
-      setShowGoogleModal(false);
-      navigation.navigate('Home');
-    } else {
-      const storeError = useAuthStore.getState().error;
-      setErrors({ email: storeError || 'Google registration failed.' });
-    }
   };
 
   const handleInstagramLoginClick = () => {
@@ -625,14 +639,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* Google Account Selector Modal */}
-      <GoogleAccountChooserModal
-        visible={showGoogleModal}
-        onClose={() => setShowGoogleModal(false)}
-        onSelectAccount={handleGoogleAccountSelect}
-        isLoading={isGoogleLoading}
-      />
     </SafeAreaView>
   );
 };
