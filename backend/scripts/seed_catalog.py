@@ -596,10 +596,10 @@ async def seed_database():
     from app.core.security import hash_password
     users_data = [
         {
-            "email": "admin@example.com",
-            "full_name": "Admin User",
+            "email": "athilingam3336@gmail.com",
+            "full_name": "Athilingam Admin",
             "phone": "+91 9999999999",
-            "password_hash": hash_password("AdminPassword123!"),
+            "password_hash": hash_password("Athi1833@"),
             "role": "ADMIN",
             "is_verified": True,
             "is_active": True,
