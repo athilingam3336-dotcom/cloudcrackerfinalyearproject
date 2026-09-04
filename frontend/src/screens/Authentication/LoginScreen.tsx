@@ -360,14 +360,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
                 <Text style={styles.socialText}>Continue with Google</Text>
               </TouchableOpacity>
             </View>
-
-            {/* Signup Redirect */}
-            <View style={styles.signupRow}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={handleSignUp} activeOpacity={0.7}>
-                <Text style={styles.signupLink}>Sign Up</Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
           {/* Legal Footer */}
