@@ -1,15 +1,24 @@
 /**
- * Official Google Identity Services (GIS) Auth Manager
- * Direct Integration with accounts.google.com/gsi/client
+ * Official Google OAuth Manager using Expo WebBrowser & Google Identity Services (GIS)
+ * Official Google Sign-In for Web and Mobile Platforms
  */
 
 import { ENV } from '@/config/env';
 import { GoogleAuthPayload } from '@/services/authService';
-import { Platform, Linking } from 'react-native';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 
-const GOOGLE_CLIENT_ID =
-  ENV.GOOGLE_CLIENT_ID ||
-  '440996806558-b3bfcqr7j19rkiefsaqk2lffshuoh0cm.apps.googleusercontent.com';
+WebBrowser.maybeCompleteAuthSession();
+
+// OAuth Client IDs
+const WEB_CLIENT_ID = '440996806558-b3bfcqr7j19rkiefsaqk2lffshuoh0cm.apps.googleusercontent.com';
+const ANDROID_CLIENT_ID = '440996806558-k2ocedpa3p6ccv0m5a891c6fuqh65rqa.apps.googleusercontent.com';
+
+const GOOGLE_CLIENT_ID = Platform.OS === 'web'
+  ? (process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || WEB_CLIENT_ID)
+  : ANDROID_CLIENT_ID;
 
 function parseJwt(token: string): any {
   try {
@@ -73,7 +82,8 @@ class GoogleAuthManager {
   }
 
   /**
-   * Triggers Official Google OAuth Sign-In via Google Identity Services (GIS)
+   * Triggers Official Google OAuth Sign-In
+   * Uses GIS on Web, and Expo In-App WebBrowser on Mobile App
    */
   async loginWithOfficialGoogle(
     onSuccess: (payload: GoogleAuthPayload) => Promise<void>,
@@ -82,6 +92,7 @@ class GoogleAuthManager {
     this.activeSuccessCallback = onSuccess;
     this.activeErrorCallback = onError;
 
+    // --- 1. WEB PLATFORM: Official Google Identity Services (GIS) ---
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const isLoaded = await this.ensureGisLoaded();
       const googleObj = (window as any).google;
@@ -91,7 +102,6 @@ class GoogleAuthManager {
         return;
       }
 
-      // 1. Initialize Google ID Token Prompt
       if (googleObj.accounts.id) {
         try {
           googleObj.accounts.id.initialize({
@@ -118,9 +128,9 @@ class GoogleAuthManager {
               }
             },
             auto_select: false,
+            use_fedcm_for_prompt: false,
           });
 
-          // Trigger Google Native Sign-In Prompt (bottom sheet on mobile browser)
           googleObj.accounts.id.prompt((notification: any) => {
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
               console.log('Google prompt notification status:', notification.getNotDisplayedReason?.());
@@ -131,7 +141,6 @@ class GoogleAuthManager {
         }
       }
 
-      // 2. Trigger Token Client Popup for explicit account selection
       if (googleObj.accounts.oauth2) {
         try {
           const tokenClient = googleObj.accounts.oauth2.initTokenClient({
@@ -158,16 +167,52 @@ class GoogleAuthManager {
       return;
     }
 
+    // --- 2. MOBILE NATIVE PLATFORM: Official In-App WebBrowser Session ---
     try {
-      const redirectUri = 'cloudcrackers://auth/google/callback';
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: 'cloudcrackers',
+        path: 'auth/google/callback',
+      });
+
+      console.log('GOOGLE OAUTH REDIRECT URI IS:', redirectUri);
+
+      // Web Client ID is required for https://accounts.google.com/o/oauth2/v2/auth endpoint
+      const clientId = WEB_CLIENT_ID;
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
         redirectUri
       )}&response_type=token&scope=${encodeURIComponent('email profile openid')}&prompt=select_account`;
 
-      await Linking.openURL(authUrl);
-      return;
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+
+      if (result.type === 'success' && result.url) {
+        let accessToken: string | null = null;
+        
+        // Extract access_token from URL fragment or query string
+        if (result.url.includes('#')) {
+          const hashString = result.url.split('#')[1];
+          const params = new URLSearchParams(hashString);
+          accessToken = params.get('access_token');
+        } else if (result.url.includes('?')) {
+          const queryString = result.url.split('?')[1];
+          const params = new URLSearchParams(queryString);
+          accessToken = params.get('access_token');
+        }
+
+        if (accessToken) {
+          await this.fetchProfileAndComplete(accessToken, onSuccess, onError);
+          return;
+        } else {
+          onError('Google Sign-In completed but no access token was returned.');
+          return;
+        }
+      } else if (result.type === 'cancel' || result.type === 'dismiss') {
+        // User cancelled official sign in prompt
+        return;
+      } else {
+        onError('Google Sign-In session ended without completing.');
+      }
     } catch (err: any) {
-      onError('Unable to open Google Sign-In in device browser.');
+      onError('Unable to open official Google Sign-In browser session.');
     }
   }
 

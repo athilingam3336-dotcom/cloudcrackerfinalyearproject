@@ -619,14 +619,17 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
 
         <View style={styles.topSection}>
           <View style={styles.titleRow}>
-            <View>
+            <View style={styles.titleTextContainer}>
               <Text style={styles.title}>Inventory Control</Text>
             </View>
-            <PrimaryButton
-              title="+ Add New"
+            <TouchableOpacity
+              style={styles.addCategoryBtn}
               onPress={handleOpenAddModal}
-              style={styles.addCta}
-            />
+              activeOpacity={0.85}
+            >
+              <MaterialIcons name="add" size={18} color="#ffffff" />
+              <Text style={styles.addCategoryBtnText}>Add Product</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Search Bar */}
@@ -1304,21 +1307,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.sm,
   },
+  titleTextContainer: {
+    flex: 1,
+    paddingRight: Spacing.xs,
+  },
   title: {
     ...Typography.headlineLg,
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   subtitle: {
     ...Typography.bodyMd,
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.onSurfaceVariant,
     marginTop: 2,
   },
-  addCta: {
-    paddingHorizontal: Spacing.md,
-    height: 40,
+  addCategoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.lg,
+    gap: 4,
+    flexShrink: 0,
+  },
+  addCategoryBtnText: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onPrimary,
   },
   filterRow: {
     flexDirection: 'row',

@@ -337,17 +337,20 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
 
         <View style={styles.topSection}>
           <View style={styles.titleRow}>
-            <View>
+            <View style={styles.titleTextContainer}>
               <Text style={styles.title}>Category Catalog</Text>
               <Text style={styles.subtitle}>
                 {categories.length} product categories registered in MongoDB
               </Text>
             </View>
-            <PrimaryButton
-              title="+ Add Category"
+            <TouchableOpacity
+              style={styles.addCategoryBtn}
               onPress={handleOpenAddModal}
-              style={styles.addCta}
-            />
+              activeOpacity={0.85}
+            >
+              <MaterialIcons name="add" size={18} color="#ffffff" />
+              <Text style={styles.addCategoryBtnText}>Add Category</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Search Bar */}
@@ -521,7 +524,7 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
 
             {/* Visibility Toggle */}
             <View style={styles.switchRow}>
-              <View>
+              <View style={styles.switchTextContainer}>
                 <Text style={styles.switchLabel}>Active in Customer Catalog</Text>
                 <Text style={styles.switchSubtitle}>
                   Inactive categories are hidden from customer product listings.
@@ -578,21 +581,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.sm,
   },
+  titleTextContainer: {
+    flex: 1,
+    paddingRight: Spacing.xs,
+  },
   title: {
     ...Typography.headlineLg,
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   subtitle: {
     ...Typography.bodyMd,
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.onSurfaceVariant,
     marginTop: 2,
   },
-  addCta: {
-    paddingHorizontal: Spacing.md,
-    height: 40,
+  addCategoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.lg,
+    gap: 4,
+    flexShrink: 0,
+  },
+  addCategoryBtnText: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onPrimary,
   },
   filterRow: {
     flexDirection: 'row',
@@ -834,8 +853,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surfaceContainerLow,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     marginVertical: Spacing.xs,
+  },
+  switchTextContainer: {
+    flex: 1,
+    paddingRight: Spacing.xs,
   },
   switchLabel: {
     ...Typography.bodyMd,
@@ -848,7 +872,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.tertiary,
     marginTop: 2,
-    maxWidth: 220,
   },
   modalActions: {
     marginTop: Spacing.md,

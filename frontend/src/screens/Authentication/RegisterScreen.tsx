@@ -639,6 +639,13 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <InstagramAccountChooserModal
+        visible={showInstagramModal}
+        onClose={() => setShowInstagramModal(false)}
+        onSelectAccount={handleInstagramAccountSelect}
+        isLoading={isInstagramLoading}
+      />
     </SafeAreaView>
   );
 };

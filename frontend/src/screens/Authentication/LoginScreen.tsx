@@ -346,6 +346,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <InstagramAccountChooserModal
+        visible={showInstagramModal}
+        onClose={() => setShowInstagramModal(false)}
+        onSelectAccount={handleInstagramAccountSelect}
+        isLoading={isInstagramLoading}
+      />
     </SafeAreaView>
   );
 };

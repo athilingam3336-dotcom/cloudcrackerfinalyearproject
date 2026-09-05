@@ -5,7 +5,7 @@
     "scheme": "cloudcrackers",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo-fixed.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
@@ -13,15 +13,20 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1D1E22",
-        "foregroundImage": "./assets/logo-fixed.png",
+        "foregroundImage": "./assets/logo.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.cloudcrackers.app"
+      "package": "com.athilingam.frontend"
     },
     "web": {
       "favicon": "./assets/logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2c7207f7-4ec1-4983-ab1c-1e7177d5c1bd"
+      }
     },
     "plugins": [
       [
@@ -31,13 +36,7 @@
             "usesCleartextTraffic": true
           }
         }
-      ],
-      "expo-web-browser"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "47599940-de04-463e-9fd9-029d7ea434d5"
-      }
-    }
+      ]
+    ]
   }
 }

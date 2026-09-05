@@ -333,8 +333,8 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
           activeOpacity={0.7}
         >
           <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
-          <Text style={styles.inlineBackText}>
-            {currentStep === 2 ? 'Shipping' : currentStep === 3 ? 'Payment' : 'Cart'}
+          <Text style={styles.inlineBackText} numberOfLines={1}>
+            Back
           </Text>
         </TouchableOpacity>
 
@@ -370,14 +370,17 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                     ]}
                   >
                     {isCompleted ? (
-                      <MaterialIcons name="check" size={13} color="#ffffff" />
+                      <MaterialIcons name="check" size={12} color="#ffffff" />
                     ) : (
                       <Text style={[styles.stepNumberHorizontal, isActive && styles.activeStepNumberHorizontal]}>
                         {step}
                       </Text>
                     )}
                   </View>
-                  <Text style={[styles.stepLabelHorizontal, isActive && styles.activeStepLabelHorizontal]}>
+                  <Text
+                    style={[styles.stepLabelHorizontal, isActive && styles.activeStepLabelHorizontal]}
+                    numberOfLines={1}
+                  >
                     {label}
                   </Text>
                 </TouchableOpacity>
@@ -841,7 +844,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: Colors.surfaceContainerLowest,
     paddingHorizontal: Spacing.marginMobile,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: Colors.surfaceContainerHigh,
     marginBottom: 6,
@@ -850,11 +853,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingRight: Spacing.xs,
+    paddingRight: 8,
+    flexShrink: 0,
   },
   inlineBackText: {
     ...Typography.labelLg,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
@@ -862,29 +866,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 2,
-    flexShrink: 1,
+    gap: 4,
+    flex: 1,
   },
   stepItemHorizontal: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    flexShrink: 1,
+    gap: 3,
+    flexShrink: 0,
   },
   stepLineHorizontal: {
-    width: 14,
+    width: 10,
     height: 2,
     backgroundColor: Colors.surfaceContainerHigh,
-    marginHorizontal: 2,
+    marginHorizontal: 1,
     flexShrink: 1,
   },
   activeStepLineHorizontal: {
     backgroundColor: Colors.primary,
   },
   stepCircleHorizontal: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: Colors.surfaceContainerHigh,
     alignItems: 'center',
     justifyContent: 'center',
@@ -910,7 +914,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Inter-Medium',
     color: Colors.tertiary,
-    flexShrink: 1,
+    flexShrink: 0,
   },
   activeStepLabelHorizontal: {
     fontFamily: 'Inter-Bold',

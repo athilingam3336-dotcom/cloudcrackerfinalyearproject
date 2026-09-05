@@ -459,7 +459,7 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
 
         <View style={styles.topSection}>
           <View style={styles.screenTitleRow}>
-            <View>
+            <View style={styles.screenTitleTextContainer}>
               <Text style={styles.screenTitle}>Coupon Campaigns</Text>
               <Text style={styles.screenSubtitle}>
                 Manage promotional codes and checkout discounts
@@ -471,7 +471,7 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
               onPress={handleOpenCreateModal}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="add" size={20} color={Colors.onPrimary} />
+              <MaterialIcons name="add" size={18} color={Colors.onPrimary} />
               <Text style={styles.addCouponBtnText}>New</Text>
             </TouchableOpacity>
           </View>
@@ -973,15 +973,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.sm,
   },
+  screenTitleTextContainer: {
+    flex: 1,
+    paddingRight: Spacing.xs,
+  },
   screenTitle: {
     ...Typography.headlineLg,
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   screenSubtitle: {
     ...Typography.bodyMd,
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.onSurfaceVariant,
     marginTop: 2,
   },
@@ -989,14 +993,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.sm,
     paddingVertical: 8,
     borderRadius: BorderRadius.lg,
     gap: 4,
+    flexShrink: 0,
   },
   addCouponBtnText: {
     ...Typography.labelLg,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter-Bold',
     color: Colors.onPrimary,
   },
