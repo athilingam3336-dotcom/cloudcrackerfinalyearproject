@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Midnight Fury Shells - CloudCrackers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e4bebc;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#bb152c",
+                        "on-primary-fixed-variant": "#92001c",
+                        "surface-container-low": "#f3f4f5",
+                        "surface": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "on-primary-fixed": "#410007",
+                        "on-surface": "#191c1d",
+                        "tertiary-container": "#747479",
+                        "surface-dim": "#d9dadb",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#1a1b1f",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "surface-bright": "#f8f9fa",
+                        "secondary-fixed-dim": "#ffb950",
+                        "primary-container": "#db313f",
+                        "primary-fixed": "#ffdad8",
+                        "surface-container": "#edeeef",
+                        "background": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "outline": "#8f6f6e",
+                        "on-secondary-fixed": "#291800",
+                        "secondary": "#825500",
+                        "on-secondary-container": "#6b4500",
+                        "secondary-fixed": "#ffddb3",
+                        "tertiary-fixed-dim": "#c7c6cb",
+                        "inverse-primary": "#ffb3b1",
+                        "on-secondary-fixed-variant": "#624000",
+                        "error": "#ba1a1a",
+                        "tertiary": "#5b5c60",
+                        "on-surface-variant": "#5b403f",
+                        "primary": "#b7102a",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "inverse-surface": "#2e3132",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary-fixed-variant": "#46464b",
+                        "on-tertiary-container": "#fefcff",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "tertiary-fixed": "#e3e2e7",
+                        "secondary-container": "#ffae1d",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e4bebc",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-highest": "#e1e3e4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "80px",
+                        "gutter": "16px",
+                        "sm": "12px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "margin-desktop": "64px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<span class="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed-dim tracking-tight">CloudCrackers</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">search</span>
+</button>
+<button class="hidden md:flex hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">shopping_cart</span>
+</button>
+</div>
+</header>
+<main class="pt-20 pb-24 md:pb-32 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<!-- Breadcrumbs -->
+<nav class="mb-6 flex items-center gap-2 text-label-lg font-label-lg text-on-surface-variant">
+<span>Shop</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Professional Shells</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-bold">Midnight Fury Shells</span>
+</nav>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg lg:gap-xl">
+<!-- Hero Image Gallery -->
+<div class="space-y-4">
+<div class="relative aspect-square rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-outline-variant/30 bg-surface-container-lowest">
+<img class="w-full h-full object-cover" data-alt="A professional-grade pyrotechnic shell box labeled Midnight Fury, featuring high-gloss black packaging with vibrant red and orange spark graphics. The product is shot in a high-end commercial studio with soft rim lighting and crisp shadows against a clean, off-white background. The aesthetic is premium e-commerce, balancing industrial reliability with explosive excitement." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAP7p-rAk38wzI36vF04GyEW_IoEFRlYrMcYFTmA5ux2MYU1BVQxdxbOJEtojj4o0nKvYc0UZFZkngXefUeOSuN9RhbAwIWCHjK1gan-giRebFdGC1wSCgAmXYtUDnh87e2p2PuL0SurRoWnXj0rIUOhP9teve675IlY6GDtMgXS27ZrFmHhm0Wh-XXwfNouPJFtdYuhhOjdO-uWxYHtH6-xsyO-JgBDjYXden6z2L9_viSwAnXmIO"/>
+<div class="absolute top-4 left-4 bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-lg text-label-lg shadow-sm">
+                        BEST SELLER
+                    </div>
+</div>
+<div class="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+<div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 border-primary shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Close-up shot of the Midnight Fury firework shell casing, showing detailed craftsmanship and safety labeling. The lighting is bright and professional, highlighting the texture of the materials against a minimalist white studio backdrop. The red and black color scheme reflects a modern, energetic brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBP0PxeVrZxJ4gFuBCNvfqWc4dOpgTwZMgEDYHMTnlYzhJKYuMrleVbUqJMqfUzdk3dHQAGTgmZYZ_5S_rekV_MEoh-bzLDNgctwchTG4oJH0b38spk3zbfiElWfuxfxKJ_pp9-m5Z3GRrYJZCnbioUhjiaYZAJaTzZqInrb85VZaI-IA_3xii92KRiTcow_1O8G7VgWHGpwFUt2RlctnKly3Q0Mq9wBnOp0MKTLx3H7o6HJLqtk0E"/>
+</div>
+<div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-outline-variant hover:border-primary transition-colors cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="A spectacular night sky capture of a Midnight Fury shell exploding into a massive, multi-layered bloom of deep crimson and gold sparks. Long exposure photography captures the intricate trails of light against a pitch-black sky. The mood is exhilarating and awe-inspiring, showcasing the product's performance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkdLzyHFDsw1zGBwyGgm-1xpMbLOo7JKyUmR7wwvNN8EpPEFqWtTq5LEZrTKTOlc-fBvKNBSEu4hx-h9VcJGqQfJPsu36jToTX6DM3qFtmW4-lZ_8hIy90AwFsHe_1Kt3xtwbZB57QxmOn6zMjTmO6gE6HhHxUSrhbS7M3B6tQ_nJDuM9xawSjJdNvmohXg4BlXlKb3RGKrqUlv92X4ENyl2HIyNKm188I2EyCOUVnmcl8hSaNQ_j4"/>
+</div>
+<div class="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border border-outline-variant hover:border-primary transition-colors cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="A wide-angle lifestyle shot of professional pyrotechnicians setting up Midnight Fury shells in a launch mortar during a desert festival. The scene is bathed in the warm glow of the golden hour, creating a professional and trustworthy atmosphere for high-end fireworks enthusiasts." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVB2jPvH13eNmWruZZ9_V_jv0lkFpA29YFmPzJ7U8nPORi8U7CesDd62pq4qll3verf0I60Hyur6rv17eCUb-67AM_yOhbx9b0sYUl4fWmbCM3VDSAV39hPVM5mXpFfYIb9joH_iI9J42QdSzGwrHUXbA69CTzCRMu5iTiWm9CQsTr4hIlxTz7wa-NJyEZH5SLwJ-VU2OppLKFac10wmgdxWtL3k_GCsv1Jyzt4ZHnwCbBZwRHC4DM"/>
+</div>
+</div>
+</div>
+<!-- Product Details -->
+<div class="flex flex-col">
+<div class="mb-2">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-1">Midnight Fury shells</h1>
+<div class="flex items-center gap-2 mb-4">
+<div class="flex text-secondary-container">
+<span class="material-symbols-outlined fill-icon text-[20px]">star</span>
+<span class="material-symbols-outlined fill-icon text-[20px]">star</span>
+<span class="material-symbols-outlined fill-icon text-[20px]">star</span>
+<span class="material-symbols-outlined fill-icon text-[20px]">star</span>
+<span class="material-symbols-outlined fill-icon text-[20px]">star</span>
+</div>
+<span class="text-body-md font-body-md text-on-surface-variant">(128 reviews)</span>
+</div>
+</div>
+<div class="mb-6">
+<span class="text-display-lg font-display-lg text-primary">$89.99</span>
+<p class="text-label-lg font-label-lg text-secondary mt-1">In Stock • Ready to ship</p>
+</div>
+<div class="space-y-6 mb-8">
+<div>
+<h3 class="font-label-lg text-label-lg uppercase tracking-wider text-on-surface-variant mb-2">Description</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                            Experience the pinnacle of pyrotechnic engineering with our Midnight Fury shells. Designed for professional enthusiasts, these shells deliver a massive 300ft spread of deep crimson chrysanthemum blooms followed by a secondary crackling dragon-egg effect. Each shell is precision-crafted for symmetrical breaks and maximum hang time.
+                        </p>
+</div>
+<!-- Options / Quantity -->
+<div class="flex flex-wrap items-end gap-6">
+<div class="flex flex-col gap-2">
+<h3 class="font-label-lg text-label-lg uppercase tracking-wider text-on-surface-variant">Quantity</h3>
+<div class="flex items-center border border-outline-variant rounded-lg bg-surface-container-low h-12 w-32 overflow-hidden">
+<button class="flex-1 h-full hover:bg-surface-container-high flex items-center justify-center transition-colors" onclick="decrement()">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="flex-1 text-center font-bold font-body-lg text-body-lg" id="qty">1</span>
+<button class="flex-1 h-full hover:bg-surface-container-high flex items-center justify-center transition-colors" onclick="increment()">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- CTA Actions -->
+<div class="flex flex-col sm:flex-row gap-4 mb-8">
+<button class="flex-1 bg-primary text-on-primary font-bold py-4 px-8 rounded-lg shadow-sm hover:brightness-90 transition-all active:scale-[0.98] duration-150">
+                        Add to Cart
+                    </button>
+<button class="flex-1 border-2 border-on-background text-on-background font-bold py-4 px-8 rounded-lg hover:bg-surface-container-high transition-all active:scale-[0.98] duration-150">
+                        Buy Now
+                    </button>
+</div>
+<!-- Product Perks -->
+<div class="grid grid-cols-2 gap-4 pt-6 border-t border-outline-variant/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">local_shipping</span>
+<div>
+<p class="font-label-lg text-label-lg">Free Shipping</p>
+<p class="text-[10px] text-on-surface-variant">Orders over $200</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+<div>
+<p class="font-label-lg text-label-lg">Hazmat Safe</p>
+<p class="text-[10px] text-on-surface-variant">Certified Handling</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Related Products Section -->
+<section class="mt-20">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg">You May Also Like</h2>
+<p class="text-body-md font-body-md text-on-surface-variant">Complete your show with these top picks</p>
+</div>
+<button class="text-primary font-bold flex items-center gap-1 hover:gap-2 transition-all">
+                    View All <span class="material-symbols-outlined text-base">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Related Card 1 -->
+<div class="group bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-outline-variant/30 hover:shadow-lg transition-all">
+<div class="relative aspect-[4/3] rounded-lg overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Packaging for Neon Nebula 25-shot cake firework, featuring vibrant purple and electric blue galactic graphics on a sleek dark background. Professional product photography for an upscale e-commerce platform, emphasizing the premium quality and energetic brand aesthetic of CloudCrackers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBiWPeQiIWvl2XYmMIs6wJmucVYyRVfilDPzTO1vM5fQEtQNddo8s_9KuPhq-WLSyypEoTiUQOBPY4N_xwYgRPFoNohjnvWMsDODBKiG3-2WN_ReiE3TXx1HwHuWWL-v_iCF0PkOh3xZW4MwAhHCdgaB-J8ZnGZia-cSnk7FKMhQCokbhhb9e7GbYn6hUa_7bDRAo7QKWbv8waJ_vrte3JhUq_Z1tQ_oA_hXqq0dPgmRScgU85JvW4"/>
+<span class="absolute top-2 right-2 bg-secondary text-on-secondary px-2 py-0.5 rounded font-label-lg text-[10px]">NEW</span>
+</div>
+<h3 class="font-title-lg text-body-lg mb-1 truncate">Neon Nebula 25s</h3>
+<p class="text-primary font-bold mb-3">$45.00</p>
+<button class="w-full border border-primary text-primary py-2 rounded-lg font-label-lg hover:bg-primary hover:text-on-primary transition-colors">Quick Add</button>
+</div>
+<!-- Related Card 2 -->
+<div class="group bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-outline-variant/30 hover:shadow-lg transition-all">
+<div class="relative aspect-[4/3] rounded-lg overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Silver Streak rocket set featuring long, sleek rocket canisters with chrome-effect finishes. The photography uses dramatic studio lighting with high-key accents to evoke a sense of high-performance and modern technology in pyrotechnics. The setting is clean and minimalist, perfect for a high-end web storefront." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMTkqyXRaevTserwDCyc6rK8LeIiRhtgjfEfc9pMIz9qsrjLMG7HQk247mTEKNmYXzJSj6s2q2x5dQg9GnjEH_ffMx7yqUUEC3rhqscGNBGnz7KiXariFRQx6iWs0TNA2PM5q29SL7QTlWHEqDegdQnWlnXbdNhTq8-jbXcf0l5G27BIva7OsW-AKfWGOmiRl_v0Wj7zjFxKIz-ia9NfS5FEWRBFlQp-OgEKIU45yaoC0DwmnkwwIW"/>
+</div>
+<h3 class="font-title-lg text-body-lg mb-1 truncate">Silver Streaks</h3>
+<p class="text-primary font-bold mb-3">$29.99</p>
+<button class="w-full border border-primary text-primary py-2 rounded-lg font-label-lg hover:bg-primary hover:text-on-primary transition-colors">Quick Add</button>
+</div>
+<!-- Related Card 3 -->
+<div class="group bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-outline-variant/30 hover:shadow-lg transition-all">
+<div class="relative aspect-[4/3] rounded-lg overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A large, impressive firework fan cake named Dragon Breath, with fiery red and gold label art depicting a stylized dragon. The packaging looks heavy-duty and professional. The image is crisp, with a soft ambient shadow on a light grey background, creating a floating effect common in Material 3 design systems." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkhBOya4a8B7U8FiU3vvSLIgPyZauqwfpx1mYXy1yDAess4u_Txh0PJQPjb0MU8nE2Q_4kSODFLoBAJ-b1kQikPK-1nsJ2U8OwBB_QHKlpSZr5dDZmjTT8swBkctlmhFC15n-yMsO7FsEY7tooKGa0rl4M1AtthBX3EmKsbISsspAjCQuOj4P_F7xw_V_NVxn9zUz9QNRWrxEhBNoPzBPwNll6AjbPCRhBrhVS1XqiOfvdfFYwIVIA"/>
+</div>
+<h3 class="font-title-lg text-body-lg mb-1 truncate">Dragon's Breath Fan</h3>
+<p class="text-primary font-bold mb-3">$112.50</p>
+<button class="w-full border border-primary text-primary py-2 rounded-lg font-label-lg hover:bg-primary hover:text-on-primary transition-colors">Quick Add</button>
+</div>
+<!-- Related Card 4 -->
+<div class="group bg-surface-container-lowest rounded-xl p-3 shadow-sm border border-outline-variant/30 hover:shadow-lg transition-all">
+<div class="relative aspect-[4/3] rounded-lg overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Professional firework firing system with remote control unit and wireless receivers. The hardware is rugged, black with orange accents, and looks like high-tech industrial equipment. Shot from a top-down perspective on a white background, the lighting is even and professional, emphasizing the reliability of the CloudCrackers brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlDHInJhVwx8oQ-vkU3rJffw02m9XY-x7xArQA3zDL-_hdNDkrAyAyq3cpGW51gRBAvGMFoFqSTrnkFIoQ979Z_BJF2l2da-g_kw6LkGVzattT1YZDVso4rmxXBmGyZ_5cRYIRP6bsioAbJkpzyAZdQpfSbihq5NcMDtT8jTuMTUSzx7Yf3iMn2qsKKM-K9Q0ZZ0s6iLZSkr6vq8eB5lVt2G0KDuqdwNrO3uymux42Z37bxXEmMBuN"/>
+</div>
+<h3 class="font-title-lg text-body-lg mb-1 truncate">Wireless Igniter Pro</h3>
+<p class="text-primary font-bold mb-3">$159.00</p>
+<button class="w-full border border-primary text-primary py-2 rounded-lg font-label-lg hover:bg-primary hover:text-on-primary transition-colors">Quick Add</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface dark:bg-surface-dim shadow-[0_-4px_15px_rgba(0,0,0,0.06)] md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-lg px-3 py-1 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined fill-icon">grid_view</span>
+<span class="font-label-lg text-label-lg">Categories</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-lg text-label-lg">Cart</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-label-lg text-label-lg">Wishlist</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+<!-- Desktop Sidebar-style Nav (Hidden on mobile) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-16 h-[calc(100vh-4rem)] w-16 hover:w-64 bg-surface-container-low border-r border-outline-variant/20 z-40 transition-all group overflow-hidden">
+<div class="flex flex-col py-6 px-2 gap-4">
+<div class="flex items-center gap-4 p-2 rounded-xl text-primary font-bold bg-primary-container/20 group-hover:bg-primary-container transition-colors cursor-pointer">
+<span class="material-symbols-outlined fill-icon">grid_view</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity font-label-lg text-label-lg">Shop Catalog</span>
+</div>
+<div class="flex items-center gap-4 p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="material-symbols-outlined">bolt</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity font-label-lg text-label-lg">Flash Sales</span>
+</div>
+<div class="flex items-center gap-4 p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="material-symbols-outlined">local_fire_department</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity font-label-lg text-label-lg">Top Rated</span>
+</div>
+<div class="flex items-center gap-4 p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="material-symbols-outlined">help</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity font-label-lg text-label-lg">Safety Guide</span>
+</div>
+</div>
+</aside>
+<script>
+        let quantity = 1;
+        const qtyDisplay = document.getElementById('qty');
+
+        function increment() {
+            quantity++;
+            updateDisplay();
+        }
+
+        function decrement() {
+            if (quantity > 1) {
+                quantity--;
+                updateDisplay();
+            }
+        }
+
+        function updateDisplay() {
+            qtyDisplay.innerText = quantity;
+            qtyDisplay.classList.add('scale-110');
+            setTimeout(() => qtyDisplay.classList.remove('scale-110'), 150);
+        }
+
+        // Simple observer for scroll shadow effect on header
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 10) {
+                header.classList.add('shadow-md');
+            } else {
+                header.classList.remove('shadow-md');
+            }
+        });
+    </script>
+</body></html>

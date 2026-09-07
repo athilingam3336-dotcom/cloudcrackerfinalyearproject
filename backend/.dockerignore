@@ -1,0 +1,40 @@
+# Exclude virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Exclude python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Exclude git configuration and logs
+.git/
+.gitignore
+logs/
+*.log
+
+# Exclude environment files containing secrets
+.env
+.env.*
+
+# Exclude local database files and MongoDB binaries
+mongodb_data/
+mongodb_bin/
+mongosh-*/
+mongosh-*.tgz
+mongodb-compass_*.deb
+products_backup.json
+
+# Exclude IDE settings and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

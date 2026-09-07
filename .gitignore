@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.orig
+*.log
+
+# Virtual env
+.venv/
+env/
+venv/
+
+# Environment files
+.env
+.env.*
+
+# FastAPI logs
+logs/
+
+# Build artifacts
+dist/
+build/
+*.egg
+
+# Node / React / Frontend
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# OS files
+Thumbs.db
+# Local MongoDB data & binaries
+backend/mongodb_data/
+backend/mongodb_bin/
+backend/mongosh-*/
+backend/mongosh-*.tgz
+backend/mongodb-compass_*.deb
+
+# Python
+backend/.venv/
+backend/venv/
+__pycache__/
+*.pyc
+
+# Environment secrets
+.env
+backend/.env
+frontend/.env
+

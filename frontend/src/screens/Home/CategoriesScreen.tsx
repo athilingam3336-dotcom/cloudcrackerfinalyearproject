@@ -1,0 +1,437 @@
+import React, { useState, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Dimensions,
+  ImageBackground,
+  ListRenderItem,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Colors } from '@/constants/colors';
+import { Typography } from '@/constants/typography';
+import { Spacing, BorderRadius } from '@/constants/spacing';
+import { HomeHeader } from '@/components/common/HomeHeader';
+import { FooterSection } from '@/components/common/FooterSection';
+import { SearchBar } from '@/components/inputs/SearchBar';
+import { CategoryGridCard } from '@/components/cards/CategoryGridCard';
+import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
+import { PrimaryButton } from '@/components/buttons/PrimaryButton';
+import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
+import { productService } from '@/services/productService';
+import { useNotificationStore, useCategoryStore } from '@/store';
+import { CategoryItem } from '@/constants/mockData';
+import { RootStackParamList } from '@/navigation/types';
+import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
+import { useAppLayout } from '@/hooks/useAppLayout';
+import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
+type CategoriesScreenProps = NativeStackScreenProps<RootStackParamList, 'Categories'>;
+
+export const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ navigation }) => {
+  const { handleTabPress } = useSmartTabNavigation();
+  const { numGridColumns: numColumns } = useAppLayout();
+  const storeSearchQuery = useCategoryStore((state) => state.searchQuery);
+  const storeSelectedFilter = useCategoryStore((state) => state.selectedFilter);
+  const storeCategories = useCategoryStore((state) => state.categories);
+  const setCategoryFilters = useCategoryStore((state) => state.setCategoryFilters);
+  const setStoreCategories = useCategoryStore((state) => state.setCategories);
+
+  const [searchQuery, setSearchQuery] = useState(storeSearchQuery);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'morning' | 'night' | 'both'>(storeSelectedFilter);
+  const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+
+  const [categories, setCategories] = useState<CategoryItem[]>(() =>
+    storeCategories.length > 0 ? storeCategories : []
+  );
+  const [isLoading, setIsLoading] = useState(() => storeCategories.length === 0);
+  const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
+
+  // Persist filter & search state
+  React.useEffect(() => {
+    setCategoryFilters(searchQuery, selectedFilter);
+  }, [searchQuery, selectedFilter, setCategoryFilters]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    productService.getCategories(true).then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setCategories(data);
+        setStoreCategories(data);
+        setIsLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [setStoreCategories]);
+
+  // Filter categories by search query and morning/night/both tags
+  const filteredCategories = useMemo(() => {
+    return categories.filter((cat) => {
+      const matchesSearch =
+        !searchQuery.trim() ||
+        cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (cat.description && cat.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const catName = cat.name.toLowerCase();
+
+      let matchesFilter = true;
+      if (selectedFilter === 'morning') {
+        matchesFilter =
+          catName.includes('sparkler') ||
+          catName.includes('chakkar') ||
+          catName.includes('bomb') ||
+          catName.includes('bijili') ||
+          catName.includes('sound') ||
+          catName.includes('garland') ||
+          catName.includes('chorsa') ||
+          catName.includes('kid') ||
+          catName.includes('morning') ||
+          catName.includes('day');
+      } else if (selectedFilter === 'night') {
+        matchesFilter =
+          catName.includes('rocket') ||
+          catName.includes('pot') ||
+          catName.includes('flower') ||
+          catName.includes('fountain') ||
+          catName.includes('aerial') ||
+          catName.includes('shot') ||
+          catName.includes('star') ||
+          catName.includes('gift') ||
+          catName.includes('night') ||
+          catName.includes('sky') ||
+          catName.includes('fancy');
+      } else if (selectedFilter === 'both') {
+        matchesFilter =
+          catName.includes('sparkler') ||
+          catName.includes('chakkar') ||
+          catName.includes('bomb') ||
+          catName.includes('pot') ||
+          catName.includes('flower') ||
+          catName.includes('garland') ||
+          catName.includes('combo') ||
+          catName.includes('gift') ||
+          catName.includes('kid') ||
+          catName.includes('family') ||
+          catName.includes('assort') ||
+          catName.includes('both') ||
+          catName.includes('star') ||
+          catName.includes('sound');
+      }
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [categories, searchQuery, selectedFilter]);
+
+  // Pad filtered categories with invisible items to ensure uniform grid card sizes on incomplete rows
+  const formattedCategories = useMemo(() => {
+    const data = [...filteredCategories];
+    if (data.length === 0) return data;
+    const remainder = data.length % numColumns;
+    if (remainder !== 0) {
+      const missingCount = numColumns - remainder;
+      for (let i = 0; i < missingCount; i++) {
+        data.push({
+          id: `placeholder-${i}`,
+          name: '',
+          iconName: '',
+          itemCount: 0,
+          isPlaceholder: true,
+        } as any);
+      }
+    }
+    return data;
+  }, [filteredCategories, numColumns]);
+
+  // Navigation handlers
+  const handleCategoryPress = useCallback(
+    (categoryId: string) => {
+      navigation.navigate('ProductListing', { categoryId });
+    },
+    [navigation]
+  );
+
+
+
+  const handleEliteProgramPress = useCallback(() => {
+    Alert.alert(
+      'Meera Crackers Elite',
+      'Unlock wholesale pyrotechnic pricing, seasonal priority access, and zero-fee shipping on bulk orders.'
+    );
+  }, []);
+
+  // Render individual Category grid item
+  const renderCategoryItem: ListRenderItem<CategoryItem> = useCallback(
+    ({ item }) => {
+      if ((item as any).isPlaceholder) {
+        return <View style={styles.gridColumn} />;
+      }
+      return (
+        <View style={styles.gridColumn}>
+          <CategoryGridCard
+            category={item}
+            onPress={() => handleCategoryPress(item.id)}
+          />
+        </View>
+      );
+    },
+    [handleCategoryPress]
+  );
+
+  // List Header Component containing Header Bar, Search Bar, Hero Banner & Filter Chips
+  const renderHeader = useMemo(() => {
+    return (
+      <View style={styles.headerWrapper}>
+        {/* Top Header Bar */}
+        <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+          onNotificationPress={() => navigation.navigate('Notifications')}
+          onProfilePress={() => navigation.navigate('UserProfile')}
+          onCartPress={() => navigation.navigate('Cart')}
+          notificationCount={3}
+        />
+
+        {/* Search Bar */}
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onClear={() => setSearchQuery('')}
+          placeholder="Search categories (e.g. rockets, sparklers)..."
+        />
+
+        {/* Filter Pills Horizontal ScrollView */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScrollView}
+          contentContainerStyle={styles.filterBarContent}
+        >
+          <TouchableOpacity
+            style={[styles.filterChip, selectedFilter === 'all' && styles.activeFilterChip]}
+            onPress={() => setSelectedFilter('all')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                selectedFilter === 'all' && styles.activeFilterChipText,
+              ]}
+            >
+              All Categories
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedFilter === 'morning' && styles.activeFilterChip]}
+            onPress={() => setSelectedFilter('morning')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                selectedFilter === 'morning' && styles.activeFilterChipText,
+              ]}
+            >
+              ☀️ Morning Crackers
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedFilter === 'night' && styles.activeFilterChip]}
+            onPress={() => setSelectedFilter('night')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                selectedFilter === 'night' && styles.activeFilterChipText,
+              ]}
+            >
+              🌙 Night Crackers
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterChip, selectedFilter === 'both' && styles.activeFilterChip]}
+            onPress={() => setSelectedFilter('both')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                selectedFilter === 'both' && styles.activeFilterChipText,
+              ]}
+            >
+              ✨ Both Day & Night
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    );
+  }, [searchQuery, selectedFilter, navigation]);
+
+  return (
+    <ResponsiveContainer>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <FlatList
+          data={formattedCategories}
+          key={numColumns}
+          numColumns={numColumns}
+          keyExtractor={(item) => item.id}
+          renderItem={renderCategoryItem}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={<FooterSection />}
+          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={8}
+          maxToRenderPerBatch={12}
+          windowSize={5}
+        />
+
+        {/* Bottom Navigation with Active Categories Tab */}
+        <BottomNavBar activeTab="Categories" onTabPress={handleTabPress} />
+      </SafeAreaView>
+    </ResponsiveContainer>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  listContent: {
+    paddingBottom: Spacing.xl,
+  },
+  headerWrapper: {
+    marginBottom: Spacing.sm,
+  },
+  heroContainer: {
+    marginHorizontal: Spacing.marginMobile,
+    marginVertical: Spacing.sm,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+  },
+  inlineBackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+    paddingHorizontal: 4,
+  },
+  inlineBackText: {
+    ...Typography.labelLg,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+  },
+  heroBackground: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  heroContent: {
+    padding: Spacing.md,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  heroTitle: {
+    ...Typography.headlineLg,
+    fontSize: 26,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    ...Typography.bodyLg,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
+  filterScrollView: {
+    marginVertical: Spacing.xs,
+  },
+  filterBarContent: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.marginMobile,
+    paddingRight: Spacing.lg,
+    gap: Spacing.xs,
+  },
+  filterChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.surfaceContainerLow,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    flexShrink: 0,
+  },
+  activeFilterChip: {
+    backgroundColor: Colors.primaryContainer,
+    borderColor: Colors.primaryContainer,
+  },
+  filterChipText: {
+    ...Typography.bodyMd,
+    fontSize: 13,
+    fontFamily: 'Inter-Medium',
+    color: Colors.onSurfaceVariant,
+  },
+  activeFilterChipText: {
+    fontFamily: 'Inter-Bold',
+    color: Colors.onPrimaryContainer,
+  },
+  gridRow: {
+    paddingHorizontal: Spacing.marginMobile,
+    gap: Spacing.sm,
+  },
+  gridColumn: {
+    flex: 1,
+  },
+  footerWrapper: {
+    paddingHorizontal: Spacing.marginMobile,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  eliteCard: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    flexDirection: 'column',
+    gap: Spacing.md,
+  },
+  eliteTextContent: {
+    flex: 1,
+  },
+  eliteTitle: {
+    ...Typography.headlineLg,
+    fontSize: 22,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onPrimary,
+    marginBottom: Spacing.xs,
+  },
+  eliteSubtitle: {
+    ...Typography.bodyMd,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: 20,
+  },
+  eliteCta: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.lg,
+  },
+});
+
+export default CategoriesScreen;

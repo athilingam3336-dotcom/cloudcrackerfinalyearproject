@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudCrackers - Forgot Password</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#bb152c",
+                    "on-primary-fixed-variant": "#92001c",
+                    "surface-container-low": "#f3f4f5",
+                    "surface": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed": "#410007",
+                    "on-surface": "#191c1d",
+                    "tertiary-container": "#747479",
+                    "surface-dim": "#d9dadb",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b1f",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "surface-bright": "#f8f9fa",
+                    "secondary-fixed-dim": "#ffb950",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "surface-container": "#edeeef",
+                    "background": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "outline": "#8f6f6e",
+                    "on-secondary-fixed": "#291800",
+                    "secondary": "#825500",
+                    "on-secondary-container": "#6b4500",
+                    "secondary-fixed": "#ffddb3",
+                    "tertiary-fixed-dim": "#c7c6cb",
+                    "inverse-primary": "#ffb3b1",
+                    "on-secondary-fixed-variant": "#624000",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5b5c60",
+                    "on-surface-variant": "#5b403f",
+                    "primary": "#b7102a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#fffbff",
+                    "inverse-surface": "#2e3132",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary-fixed-variant": "#46464b",
+                    "on-tertiary-container": "#fefcff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary-fixed": "#e3e2e7",
+                    "secondary-container": "#ffae1d",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-container-highest": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "80px",
+                    "gutter": "16px",
+                    "sm": "12px",
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f8f9fa;
+            color: #191c1d;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .focused-input:focus-within {
+            border-color: #f1a208;
+            box-shadow: 0 0 0 2px rgba(241, 162, 8, 0.2);
+        }
+        .card-shadow {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm h-16 flex justify-between items-center px-margin-mobile md:px-margin-desktop">
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-150 text-primary">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-title-lg font-title-lg font-bold text-primary">CloudCrackers</h1>
+</div>
+<div class="flex items-center">
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-150 text-primary">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex items-center justify-center pt-24 pb-12 px-margin-mobile">
+<div class="max-w-md w-full flex flex-col items-center">
+<!-- Illustration Area -->
+<div class="w-full aspect-square max-w-[280px] mb-8 relative group">
+<!-- Decorative background elements -->
+<div class="absolute inset-0 bg-primary/5 rounded-full scale-110 blur-xl group-hover:scale-125 transition-transform duration-700"></div>
+<div class="relative w-full h-full rounded-xl overflow-hidden card-shadow bg-white">
+<img class="w-full h-full object-cover" data-alt="A sophisticated 3D digital illustration of a glowing golden padlock floating amidst a burst of stylized, abstract fireworks and light streaks. The composition uses a clean, minimalist white background with premium red and deep charcoal accents. High-end product photography style with soft ambient occlusion and cinematic studio lighting. The vibe is modern, secure, and energetic, perfectly aligning with a premium pyrotechnics brand's visual identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbnzrnJLSHWLZ8xwf7xSPmbHk4nTs-zYBESO6_7D9axegXht_WEtXwPkstakX3ZKhIRi9AuOT2CVbjcNlDC9421Hmv3yZaW5jCO5-TY2NBbqR0cWTOAdIV6CYStzCjS1y6jWFxW0WH3zmAGkjbm7YG-8sMVhUkt-4WaYQgC4_tr8Q4LrWJWbu8OePJgO-ODnoGmtfMKk0ptyY8j0bp5BMK6UUkoQ5s_HEySfe3nJN03AUC4zfIqO9V"/>
+</div>
+</div>
+<!-- Title and Description -->
+<div class="text-center mb-8">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Forgot Password?</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-[320px] mx-auto">
+                    No worries! Enter your email address below and we'll send you a recovery link to reset your account.
+                </p>
+</div>
+<!-- Recovery Form -->
+<form class="w-full space-y-6" onsubmit="event.preventDefault();">
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider ml-1" for="email">Email Address</label>
+<div class="relative focused-input transition-all duration-200 border border-outline-variant bg-surface-container-lowest rounded-lg overflow-hidden flex items-center">
+<span class="material-symbols-outlined ml-4 text-on-surface-variant">mail</span>
+<input class="w-full py-4 px-4 bg-transparent border-none focus:ring-0 text-on-surface font-body-lg text-body-lg placeholder:text-outline" id="email" name="email" placeholder="e.g. pyrotech@cloudcrackers.com" required="" type="email"/>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary py-4 rounded-lg font-bold shadow-lg hover:brightness-110 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 group" type="submit">
+<span>Send Link</span>
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</form>
+<!-- Back to Login Action -->
+<div class="mt-8">
+<a class="font-label-lg text-label-lg text-tertiary hover:text-primary transition-colors flex items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                    Back to Login
+                </a>
+</div>
+</div>
+</main>
+<!-- Footer Space Holder (Since navigation is suppressed for transactional focus) -->
+<footer class="py-8 text-center text-on-surface-variant/40 select-none">
+<p class="font-label-lg text-[10px]">© 2024 CloudCrackers Pyrotechnics. All rights reserved.</p>
+</footer>
+<!-- Micro-interaction Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const emailInput = document.getElementById('email');
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                // Visual feedback for click
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Processing...</span>
+                `;
+                submitBtn.classList.add('pointer-events-none', 'opacity-80');
+
+                // Simulate API call
+                setTimeout(() => {
+                    const originalContent = `
+                        <div class="bg-primary-container/20 p-6 rounded-xl text-center space-y-4 animate-in fade-in zoom-in duration-300">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            </div>
+                            <h3 class="font-title-lg text-title-lg text-primary">Check your inbox!</h3>
+                            <p class="font-body-md text-body-md text-on-surface-variant">We've sent a magic link to <span class="font-bold text-on-surface">${emailInput.value}</span>.</p>
+                            <button onclick="window.location.reload()" class="text-primary font-bold text-label-lg border-b border-primary pt-2 hover:opacity-70 transition-opacity">Didn't get it? Try again</button>
+                        </div>
+                    `;
+                    form.parentElement.innerHTML = originalContent;
+                }, 1500);
+            });
+        });
+    </script>
+</body></html>

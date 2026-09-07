@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudCrackers Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#bb152c",
+                    "on-primary-fixed-variant": "#92001c",
+                    "surface-container-low": "#f3f4f5",
+                    "surface": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed": "#410007",
+                    "on-surface": "#191c1d",
+                    "tertiary-container": "#747479",
+                    "surface-dim": "#d9dadb",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b1f",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "surface-bright": "#f8f9fa",
+                    "secondary-fixed-dim": "#ffb950",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "surface-container": "#edeeef",
+                    "background": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "outline": "#8f6f6e",
+                    "on-secondary-fixed": "#291800",
+                    "secondary": "#825500",
+                    "on-secondary-container": "#6b4500",
+                    "secondary-fixed": "#ffddb3",
+                    "tertiary-fixed-dim": "#c7c6cb",
+                    "inverse-primary": "#ffb3b1",
+                    "on-secondary-fixed-variant": "#624000",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5b5c60",
+                    "on-surface-variant": "#5b403f",
+                    "primary": "#b7102a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#fffbff",
+                    "inverse-surface": "#2e3132",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary-fixed-variant": "#46464b",
+                    "on-tertiary-container": "#fefcff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary-fixed": "#e3e2e7",
+                    "secondary-container": "#ffae1d",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-container-highest": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "80px",
+                    "gutter": "16px",
+                    "sm": "12px",
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e1e3e4; border-radius: 10px; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); }
+    </style>
+</head>
+<body class="bg-background text-on-background overflow-hidden">
+<!-- Navigation Drawer -->
+<aside class="h-full w-80 fixed left-0 top-0 z-50 bg-surface dark:bg-surface-dim shadow-xl flex flex-col py-md px-base">
+<div class="px-4 mb-lg">
+<h1 class="text-headline-lg font-headline-lg text-primary">CloudCrackers</h1>
+</div>
+<!-- Profile Header -->
+<div class="flex items-center gap-4 px-4 py-md mb-md bg-surface-container rounded-xl">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-primary-fixed ring-2 ring-primary">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a senior tech administrator in a minimalist workspace. The lighting is bright and clean, emphasizing a high-key light mode aesthetic. The background features blurred white architectural elements. The subject has a confident expression, wearing a sleek black polo shirt, conveying authority and technical expertise." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAgXJsRPDFXnOn4ve13-wnMyM-S53HE080wRQ8Gx5EzFgsgEnk5vT1UFfFQEuEf1ik8fCm9QtWgfEPepZNa6ttAW68d9zmPYGaswsc5-Hco7GMMjRkEeHNwWkxZBgee4EvOCin9y5DEjAyOVfqBVmQlZDmCS4qsbnHm-fqAWQ5fKCC6y5031_IevcaPYN12PVWgdRJlEp2v30ZRJQptXOA39k9MQBeMNDle7_XQQtRUp-l2UnUzo9M"/>
+</div>
+<div class="flex flex-col">
+<span class="font-bold text-on-surface font-body-lg">Admin User</span>
+<span class="text-on-surface-variant font-label-lg uppercase tracking-wider">Administrator</span>
+<span class="text-primary font-label-lg">CloudCrackers Pro</span>
+</div>
+</div>
+<!-- Nav Links -->
+<nav class="flex-1 space-y-2 overflow-y-auto custom-scrollbar">
+<!-- Dashboard Active -->
+<a class="flex items-center gap-4 py-3 px-4 bg-primary-container text-on-primary-container font-bold rounded-r-full mr-4 transition-all active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all rounded-r-full mr-4 cursor-pointer active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-lg">Inventory</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all rounded-r-full mr-4 cursor-pointer active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-body-lg">Orders</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all rounded-r-full mr-4 cursor-pointer active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-body-lg">Analytics</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all rounded-r-full mr-4 cursor-pointer active:scale-98 mt-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-lg">Settings</span>
+</a>
+<a class="flex items-center gap-4 py-3 px-4 text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all rounded-r-full mr-4 cursor-pointer active:scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-lg">Logout</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-80 h-full overflow-y-auto bg-background">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center px-margin-desktop h-16 w-full bg-surface dark:bg-surface-dim shadow-sm sticky top-0 z-40">
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150" data-icon="menu">menu</button>
+<h2 class="font-title-lg text-title-lg font-bold text-primary">Overview</h2>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative hidden lg:block">
+<input class="bg-surface-container border-none rounded-full px-12 py-2 w-64 focus:ring-2 focus:ring-secondary-container transition-all" placeholder="Search analytics..." type="text"/>
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant active:scale-95" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant active:scale-95" data-icon="apps">apps</button>
+</div>
+</div>
+</header>
+<div class="p-margin-desktop space-y-lg max-w-[1600px] mx-auto">
+<!-- Summary Stats Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-gutter">
+<!-- Total Sales -->
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-outline-variant group hover:border-primary transition-all">
+<div class="flex justify-between items-start mb-md">
+<div class="p-base bg-primary-fixed rounded-lg text-primary">
+<span class="material-symbols-outlined text-2xl" data-icon="payments">payments</span>
+</div>
+<span class="text-secondary font-label-lg bg-secondary-fixed px-2 py-0.5 rounded-full">+12.5%</span>
+</div>
+<p class="text-on-surface-variant font-label-lg uppercase tracking-wider mb-base">Total Revenue</p>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">$128,430.00</h3>
+</div>
+<!-- New Orders -->
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-outline-variant group hover:border-primary transition-all">
+<div class="flex justify-between items-start mb-md">
+<div class="p-base bg-secondary-container rounded-lg text-on-secondary-container">
+<span class="material-symbols-outlined text-2xl" data-icon="shopping_bag">shopping_bag</span>
+</div>
+<span class="text-secondary font-label-lg bg-secondary-fixed px-2 py-0.5 rounded-full">+4.2%</span>
+</div>
+<p class="text-on-surface-variant font-label-lg uppercase tracking-wider mb-base">New Orders</p>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">1,240</h3>
+</div>
+<!-- Active Users -->
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-outline-variant group hover:border-primary transition-all">
+<div class="flex justify-between items-start mb-md">
+<div class="p-base bg-tertiary-fixed rounded-lg text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-2xl" data-icon="group">group</span>
+</div>
+<span class="text-error font-label-lg bg-error-container px-2 py-0.5 rounded-full">-2.1%</span>
+</div>
+<p class="text-on-surface-variant font-label-lg uppercase tracking-wider mb-base">Active Users</p>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">8,622</h3>
+</div>
+<!-- Revenue Target -->
+<div class="p-md rounded-xl bg-surface-container-lowest shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-outline-variant group hover:border-primary transition-all">
+<div class="flex justify-between items-start mb-md">
+<div class="p-base bg-primary-container rounded-lg text-on-primary-container">
+<span class="material-symbols-outlined text-2xl" data-icon="ads_click">ads_click</span>
+</div>
+<span class="text-secondary font-label-lg bg-secondary-fixed px-2 py-0.5 rounded-full">Target Met</span>
+</div>
+<p class="text-on-surface-variant font-label-lg uppercase tracking-wider mb-base">Conversion Rate</p>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">4.85%</h3>
+</div>
+</section>
+<!-- Main Dashboard Row: Chart & Activity -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter h-[450px]">
+<!-- Sales Trend Chart Area -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-xl p-md border border-outline-variant shadow-sm flex flex-col relative overflow-hidden">
+<div class="flex justify-between items-center mb-lg z-10">
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface">Sales Performance</h4>
+<p class="text-on-surface-variant font-body-md">Monthly revenue comparison vs previous year</p>
+</div>
+<select class="bg-surface border border-outline-variant rounded-lg text-body-md py-1 px-3 focus:ring-primary">
+<option>Last 6 Months</option>
+<option>Last Year</option>
+</select>
+</div>
+<!-- Placeholder for Chart - Animated Shader Overlay for atmosphere -->
+<div class="flex-1 relative rounded-lg bg-surface flex items-end gap-2 px-2 pb-2">
+
+<!-- Simple visual mock of bars since it's an admin dashboard -->
+<div class="flex-1 bg-primary-fixed hover:bg-primary transition-colors rounded-t h-[40%]"></div>
+<div class="flex-1 bg-primary-fixed hover:bg-primary transition-colors rounded-t h-[65%]"></div>
+<div class="flex-1 bg-primary-fixed hover:bg-primary transition-colors rounded-t h-[55%]"></div>
+<div class="flex-1 bg-primary-fixed hover:bg-primary transition-colors rounded-t h-[85%]"></div>
+<div class="flex-1 bg-primary hover:bg-primary-container transition-colors rounded-t h-[95%] shadow-lg"></div>
+<div class="flex-1 bg-primary-fixed hover:bg-primary transition-colors rounded-t h-[75%]"></div>
+</div>
+<div class="flex justify-between mt-4 px-2 text-on-surface-variant font-label-lg">
+<span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
+</div>
+</div>
+<!-- Recent Activity Feed -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant shadow-sm overflow-hidden flex flex-col">
+<h4 class="font-title-lg text-title-lg text-on-surface mb-md">System Alerts</h4>
+<div class="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+<div class="flex gap-4 p-3 hover:bg-surface-container rounded-lg transition-colors border-l-4 border-error">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+<div>
+<p class="text-body-md font-bold text-on-surface">Low Stock: Roman Candles</p>
+<p class="text-label-lg text-on-surface-variant">Only 12 units remaining in warehouse A.</p>
+<p class="text-[10px] text-outline mt-1 uppercase font-bold">2 mins ago</p>
+</div>
+</div>
+<div class="flex gap-4 p-3 hover:bg-surface-container rounded-lg transition-colors border-l-4 border-secondary">
+<span class="material-symbols-outlined text-secondary" data-icon="inventory_2">inventory_2</span>
+<div>
+<p class="text-body-md font-bold text-on-surface">Restock Successful</p>
+<p class="text-label-lg text-on-surface-variant">Bulk shipment of 'Dragon Breath' received.</p>
+<p class="text-[10px] text-outline mt-1 uppercase font-bold">1 hour ago</p>
+</div>
+</div>
+<div class="flex gap-4 p-3 hover:bg-surface-container rounded-lg transition-colors border-l-4 border-primary">
+<span class="material-symbols-outlined text-primary" data-icon="verified_user">verified_user</span>
+<div>
+<p class="text-body-md font-bold text-on-surface">New Admin Invited</p>
+<p class="text-label-lg text-on-surface-variant">Sarah Chen added as moderator.</p>
+<p class="text-[10px] text-outline mt-1 uppercase font-bold">4 hours ago</p>
+</div>
+</div>
+</div>
+<button class="mt-md w-full py-2 text-primary font-label-lg border border-primary rounded-lg hover:bg-primary-fixed transition-colors">VIEW ALL LOGS</button>
+</div>
+</section>
+<!-- Recent Orders Table Section -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="p-md flex justify-between items-center border-b border-outline-variant bg-surface-container-low">
+<h4 class="font-title-lg text-title-lg text-on-surface">Recent Orders</h4>
+<button class="text-primary font-bold font-label-lg flex items-center gap-1 hover:underline">
+                        SEE ALL <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-bright border-b border-outline-variant">
+<th class="px-md py-4 font-label-lg text-on-surface-variant uppercase tracking-wider">Order ID</th>
+<th class="px-md py-4 font-label-lg text-on-surface-variant uppercase tracking-wider">Product</th>
+<th class="px-md py-4 font-label-lg text-on-surface-variant uppercase tracking-wider">Customer</th>
+<th class="px-md py-4 font-label-lg text-on-surface-variant uppercase tracking-wider">Date</th>
+<th class="px-md py-4 font-label-lg text-on-surface-variant uppercase tracking-wider">Amount</th>
+<th class="px-md py-4 font-label-lg text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-md py-4 font-label-lg text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-md py-4 font-mono font-bold text-primary">#ORD-8821</td>
+<td class="px-md py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A high-quality studio photograph of premium fireworks packaging, featuring vibrant red and gold patterns with a modern, luxury feel. The lighting is crisp and detailed, showing the texture of the metallic foil on the box. The composition is clean, centered, and reflects a professional retail presentation for a high-end fireworks brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmBLkvOEHTQ8So0YG-lKjWro2YUO_dasGeBnnjlsoP9Cq2Oa7dcttlAPI9w9aYeY7ZPBgSmrKRxX5OiDiiRdZmmzMrbMdXtOslxNOOnUBmuBVcaFvCW6hnSd9KdYq35oXUGWOqsCCziEmEQHiA7-iFsRHqEPCIE5YMPS__EEIUFjDlv9EwhCvjN_4h-dkbngQ0rHY8cmP8QSXnVZiO9gqHtgEflD3ybpDSb6CmaqkgW_H7VcyzD7DC"/>
+</div>
+<span class="text-body-md font-medium">Thunder King Shells</span>
+</div>
+</td>
+<td class="px-md py-4 text-body-md text-on-surface">Marcus Aurelius</td>
+<td class="px-md py-4 text-body-md text-on-surface-variant">Oct 24, 2023</td>
+<td class="px-md py-4 text-body-md font-bold">$450.00</td>
+<td class="px-md py-4">
+<span class="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full text-[10px] font-bold uppercase">Processing</span>
+</td>
+<td class="px-md py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-md py-4 font-mono font-bold text-primary">#ORD-8822</td>
+<td class="px-md py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A detailed product shot of a high-end fountain firework with intricate blue and silver packaging. The design is contemporary and elegant, using a dark mode aesthetic with bright highlights that suggest the energy within. The lighting is cinematic, casting soft shadows on a neutral white surface, emphasizing the premium quality of the item." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqP0nY-tRk_-cUoB1fNR7D76nZ2x0D9_4UWHWu_EJ1SZjsm_FNmBgRgC4dw6tobBaUH-QmrY3uqc4PUfDdx4mIZE_gsn-4oVYogyKreg-5bTjfA2kNL4siKYr6c40i9qfSrFmuLJ2TCONQEeEyRedHLO7Yeq1s5RIBRooB7C6kgVcpNMcsZ45_02XfbFLzDCNQMg5eNA-XCDl9qjulaqgyF8hPAlhycjnKuSGGeGfE_DLQvZh_xafP"/>
+</div>
+<span class="text-body-md font-medium">Sapphire Rain Fountain</span>
+</div>
+</td>
+<td class="px-md py-4 text-body-md text-on-surface">Julia Vesta</td>
+<td class="px-md py-4 text-body-md text-on-surface-variant">Oct 24, 2023</td>
+<td class="px-md py-4 text-body-md font-bold">$125.50</td>
+<td class="px-md py-4">
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase">Shipped</span>
+</td>
+<td class="px-md py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-md py-4 font-mono font-bold text-primary">#ORD-8823</td>
+<td class="px-md py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up image of heavy-duty commercial firework fuses and tubes in a structured array. The materials are rugged and high-quality, showing industrial-grade craftmanship. The color palette is composed of deep reds, charcoal grays, and metallic silver. This image represents the safety and reliability aspect of a professional pyrotechnics supplier." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrjNenx0TgC2KEc-r4ZLbh7mD2CVZ8LxXjhU6LklxidAZBHH8o8fY77hrrMDNs8kCd9hxwaWu-2QV7YkNUZcRQlP_CmXU7daSutyHGN-Hn7UAAYArFVB7BqwBxGwHcW0JFvcN3WWUNgQg2lZcPlhWc0Au7blqkvKTyOODmq0qIFRrFoVBICdHnieL74Azv3U7mFcB8r2Lw3eqCPk5LMDUUI_mcvIcOLQPkzBRXpbM4awys-6tWBWhs"/>
+</div>
+<span class="text-body-md font-medium">Pro-Series Fuse Kit</span>
+</div>
+</td>
+<td class="px-md py-4 text-body-md text-on-surface">Liam Neeson</td>
+<td class="px-md py-4 text-body-md text-on-surface-variant">Oct 23, 2023</td>
+<td class="px-md py-4 text-body-md font-bold">$89.00</td>
+<td class="px-md py-4">
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-[10px] font-bold uppercase">Delivered</span>
+</td>
+<td class="px-md py-4 text-right">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" data-icon="more_vert">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+<!-- Contextual FAB (Only on Dashboard for quick action) -->
+<button class="fixed bottom-margin-desktop right-margin-desktop w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl hover:shadow-2xl transition-all active:scale-90 z-50 flex items-center justify-center group">
+<span class="material-symbols-outlined text-3xl transition-transform group-hover:rotate-90" data-icon="add">add</span>
+<div class="absolute right-full mr-4 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-lg text-body-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">
+            Create New Report
+        </div>
+</button>
+<script>
+        // Micro-interactions for dashboard cards
+        document.querySelectorAll('section > div').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Simple Search Focus Effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('scale-105');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('scale-105');
+        });
+    </script>
+</body></html>

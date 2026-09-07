@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Your Cart - CloudCrackers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#bb152c",
+                    "on-primary-fixed-variant": "#92001c",
+                    "surface-container-low": "#f3f4f5",
+                    "surface": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed": "#410007",
+                    "on-surface": "#191c1d",
+                    "tertiary-container": "#747479",
+                    "surface-dim": "#d9dadb",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b1f",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "surface-bright": "#f8f9fa",
+                    "secondary-fixed-dim": "#ffb950",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "surface-container": "#edeeef",
+                    "background": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "outline": "#8f6f6e",
+                    "on-secondary-fixed": "#291800",
+                    "secondary": "#825500",
+                    "on-secondary-container": "#6b4500",
+                    "secondary-fixed": "#ffddb3",
+                    "tertiary-fixed-dim": "#c7c6cb",
+                    "inverse-primary": "#ffb3b1",
+                    "on-secondary-fixed-variant": "#624000",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5b5c60",
+                    "on-surface-variant": "#5b403f",
+                    "primary": "#b7102a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#fffbff",
+                    "inverse-surface": "#2e3132",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary-fixed-variant": "#46464b",
+                    "on-tertiary-container": "#fefcff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary-fixed": "#e3e2e7",
+                    "secondary-container": "#ffae1d",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-container-highest": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "80px",
+                    "gutter": "16px",
+                    "sm": "12px",
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(225, 227, 228, 0.5);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 duration-150" data-icon="menu">menu</button>
+<h1 class="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed-dim tracking-tight">CloudCrackers</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 duration-150" data-icon="search">search</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- Cart Items Section -->
+<div class="flex-grow space-y-6">
+<header class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-on-background">Your Shopping Cart</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Review your selection before proceeding to secure checkout.</p>
+</header>
+<!-- Cart Item 1 -->
+<div class="glass-card rounded-xl p-4 flex gap-4 md:gap-6 items-center shadow-sm">
+<div class="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A professional studio product photograph of a large multi-colored aerial firework cake box. The packaging features vibrant illustrations of red, gold, and white sparks against a night sky theme. The lighting is clean and premium with soft shadows, highlighting the sturdy cardboard texture and the bold branding. High-end e-commerce style with a pure white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnERdUg2fv3TsYlbwlXmoHnOU4v7JkIG9PuNLs4-a0JuMhnp6QcIJAntPO3u9alafV9-0CodeXeP6MDuFiisdZOmM6K9XjkLmIwpBFHojaxFmEh4Mur2jWQFuUaT66m-zDyI91cigGJIKP-nCaCk1UGryAoqWJ8iqM4xCbozJr56syG_htXmG4eFfeLRn2PIYz_qSQLzNzVAkbwT2O_fSHpZwtJozbLQuPZgs1ironhvMI-iosOa4V"/>
+</div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-2">
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Thunder King Multi-Shot</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Pro-Series Aerial Display</p>
+<span class="inline-block mt-2 font-label-lg text-label-lg px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-full">New Batch</span>
+</div>
+<div class="flex flex-col md:items-end justify-between gap-4">
+<span class="font-title-lg text-title-lg text-primary">$89.99</span>
+<div class="flex items-center gap-3 bg-surface-container-low rounded-lg p-1 border border-outline-variant/30">
+<button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-container-high transition-colors active:scale-90" onclick="decrement(this)">
+<span class="material-symbols-outlined text-on-surface-variant">remove</span>
+</button>
+<span class="font-body-lg text-body-lg w-6 text-center font-bold">1</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-container-high transition-colors active:scale-90" onclick="increment(this)">
+<span class="material-symbols-outlined text-on-surface-variant">add</span>
+</button>
+</div>
+</div>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors p-2" data-icon="delete">delete</button>
+</div>
+<!-- Cart Item 2 -->
+<div class="glass-card rounded-xl p-4 flex gap-4 md:gap-6 items-center shadow-sm">
+<div class="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A macro shot of premium sparkling handheld wands in high-quality packaging. The wands are silver-coated, reflecting soft studio lights that simulate a celebratory atmosphere. The background is a warm, neutral ivory, complementing the energetic and professional brand identity of CloudCrackers. The focus is sharp on the metallic texture and the vibrant safety labels." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUGTvrah_OxFym3QTBFUamAIbS6vIUk9w4pJD2lam-6tdH5SgDPk0NcqJ06tvMNto3rmlr-oV8hsrWHBg9YRHaQMIrSt4tPTwTv9daOkxYOOlt1eZ0hZfs3wMMMLeCsg1x9Bq3la_JC1-fdNrzPNl3nqtlIP7NDYC8VH2XPHxTQbS-Gue5IwbxbfUcoy-vxwmg44AUZwsumJXGRz4Sk74THDvNtSFEp80KbagIDLkVk_PDtUBiIdEo"/>
+</div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-2">
+<div>
+<h3 class="font-title-lg text-title-lg text-on-surface">Neon Sparkler Pack</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">12pc Handheld Glow</p>
+<span class="inline-block mt-2 font-label-lg text-label-lg px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-full">Best Seller</span>
+</div>
+<div class="flex flex-col md:items-end justify-between gap-4">
+<span class="font-title-lg text-title-lg text-primary">$14.50</span>
+<div class="flex items-center gap-3 bg-surface-container-low rounded-lg p-1 border border-outline-variant/30">
+<button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-container-high transition-colors active:scale-90" onclick="decrement(this)">
+<span class="material-symbols-outlined text-on-surface-variant">remove</span>
+</button>
+<span class="font-body-lg text-body-lg w-6 text-center font-bold">2</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-container-high transition-colors active:scale-90" onclick="increment(this)">
+<span class="material-symbols-outlined text-on-surface-variant">add</span>
+</button>
+</div>
+</div>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors p-2" data-icon="delete">delete</button>
+</div>
+</div>
+<!-- Summary Sidebar -->
+<div class="w-full lg:w-96">
+<div class="glass-card rounded-xl p-6 sticky top-24 shadow-md">
+<h3 class="font-headline-lg text-[24px] mb-6 text-on-background">Order Summary</h3>
+<div class="space-y-4 mb-6 border-b border-outline-variant/30 pb-6">
+<div class="flex justify-between items-center">
+<span class="font-body-lg text-body-lg text-on-surface-variant">Subtotal</span>
+<span class="font-title-lg text-title-lg text-on-surface">$118.99</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-lg text-body-lg text-on-surface-variant">Hazmat Shipping</span>
+<span class="font-title-lg text-title-lg text-on-surface">$15.00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-lg text-body-lg text-on-surface-variant">Estimated Tax</span>
+<span class="font-title-lg text-title-lg text-on-surface">$8.32</span>
+</div>
+</div>
+<div class="flex justify-between items-center mb-8">
+<span class="font-headline-lg text-[22px] text-on-background">Total</span>
+<span class="font-headline-lg text-[28px] text-primary">$142.31</span>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary font-bold rounded-lg shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+<span>Proceed to Checkout</span>
+<span class="material-symbols-outlined">shopping_bag</span>
+</button>
+<div class="mt-6 flex items-center justify-center gap-2 text-on-surface-variant font-label-lg text-label-lg uppercase tracking-widest opacity-60">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+                        Secure SSL Encryption
+                    </div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface dark:bg-surface-dim shadow-[0_-4px_15px_rgba(0,0,0,0.06)] md:hidden">
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-label-lg text-label-lg">Categories</span>
+</div>
+<!-- ACTIVE: Cart -->
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-lg px-3 py-1 active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="shopping_cart" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span class="font-label-lg text-label-lg">Cart</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+<span class="font-label-lg text-label-lg">Wishlist</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</div>
+</nav>
+<!-- Desktop Navigation Drawer (Simulated Sidebar Hidden by default) -->
+<aside class="hidden md:flex flex-col h-full w-20 fixed left-0 top-16 z-40 bg-surface dark:bg-surface-dim shadow-xl py-md items-center gap-8 border-r border-outline-variant/30">
+<div class="p-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl cursor-pointer transition-all">
+<span class="material-symbols-outlined text-[28px]" data-icon="dashboard">dashboard</span>
+</div>
+<div class="p-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl cursor-pointer transition-all">
+<span class="material-symbols-outlined text-[28px]" data-icon="inventory_2">inventory_2</span>
+</div>
+<div class="p-3 bg-primary-container text-on-primary-container rounded-xl cursor-pointer shadow-md">
+<span class="material-symbols-outlined text-[28px]" data-icon="shopping_cart" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</div>
+<div class="p-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl cursor-pointer transition-all">
+<span class="material-symbols-outlined text-[28px]" data-icon="receipt_long">receipt_long</span>
+</div>
+<div class="mt-auto p-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl cursor-pointer transition-all">
+<span class="material-symbols-outlined text-[28px]" data-icon="settings">settings</span>
+</div>
+</aside>
+<script>
+        function increment(btn) {
+            const span = btn.parentElement.querySelector('span');
+            let val = parseInt(span.textContent);
+            span.textContent = val + 1;
+            // Interaction effect
+            btn.classList.add('scale-90');
+            setTimeout(() => btn.classList.remove('scale-90'), 150);
+        }
+
+        function decrement(btn) {
+            const span = btn.parentElement.querySelector('span');
+            let val = parseInt(span.textContent);
+            if (val > 1) {
+                span.textContent = val - 1;
+                btn.classList.add('scale-90');
+                setTimeout(() => btn.classList.remove('scale-90'), 150);
+            }
+        }
+        
+        // Add subtle hover effect logic for the cards
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+                card.style.transition = 'transform 0.2s ease-out';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0px)';
+            });
+        });
+    </script>
+</body></html>

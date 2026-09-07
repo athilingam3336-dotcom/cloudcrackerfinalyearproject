@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Success - CloudCrackers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#bb152c",
+                        "on-primary-fixed-variant": "#92001c",
+                        "surface-container-low": "#f3f4f5",
+                        "surface": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "on-primary-fixed": "#410007",
+                        "on-surface": "#191c1d",
+                        "tertiary-container": "#747479",
+                        "surface-dim": "#d9dadb",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#1a1b1f",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e1e3e4",
+                        "surface-bright": "#f8f9fa",
+                        "secondary-fixed-dim": "#ffb950",
+                        "primary-container": "#db313f",
+                        "primary-fixed": "#ffdad8",
+                        "surface-container": "#edeeef",
+                        "background": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "outline": "#8f6f6e",
+                        "on-secondary-fixed": "#291800",
+                        "secondary": "#825500",
+                        "on-secondary-container": "#6b4500",
+                        "secondary-fixed": "#ffddb3",
+                        "tertiary-fixed-dim": "#c7c6cb",
+                        "inverse-primary": "#ffb3b1",
+                        "on-secondary-fixed-variant": "#624000",
+                        "error": "#ba1a1a",
+                        "tertiary": "#5b5c60",
+                        "on-surface-variant": "#5b403f",
+                        "primary": "#b7102a",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "inverse-surface": "#2e3132",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary-fixed-variant": "#46464b",
+                        "on-tertiary-container": "#fefcff",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "tertiary-fixed": "#e3e2e7",
+                        "secondary-container": "#ffae1d",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e4bebc",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-highest": "#e1e3e4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "80px",
+                        "gutter": "16px",
+                        "sm": "12px",
+                        "xs": "4px",
+                        "base": "8px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "margin-desktop": "64px",
+                        "margin-mobile": "20px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["22px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-lg": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["57px", { "lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        
+        @keyframes firework-bloom {
+            0% { transform: scale(0); opacity: 1; }
+            50% { opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .firework-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: firework-bloom 2s ease-out infinite;
+        }
+
+        .floating-card {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high transition-colors active:scale-95 duration-150 p-2 rounded-full">
+                menu
+            </button>
+<h1 class="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed-dim">CloudCrackers</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high transition-colors active:scale-95 duration-150 p-2 rounded-full">
+                search
+            </button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-24 pb-12 px-margin-mobile md:px-margin-desktop flex flex-col items-center justify-center relative overflow-hidden">
+<!-- Background Celebration Effect (Abstract CSS Fireworks) -->
+<div class="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-30">
+<div class="firework-particle bg-primary" style="top: 20%; left: 15%; animation-delay: 0s;"></div>
+<div class="firework-particle bg-secondary" style="top: 15%; left: 80%; animation-delay: 0.5s;"></div>
+<div class="firework-particle bg-primary-container" style="top: 60%; left: 10%; animation-delay: 1.2s;"></div>
+<div class="firework-particle bg-secondary-container" style="top: 70%; left: 85%; animation-delay: 0.8s;"></div>
+<div class="firework-particle bg-primary" style="top: 40%; left: 50%; animation-delay: 1.5s;"></div>
+</div>
+<!-- Success Hero Section -->
+<section class="max-w-2xl w-full z-10 text-center flex flex-col items-center">
+<!-- Celebratory Illustration Placeholder -->
+<div class="relative w-full aspect-video mb-lg rounded-xl overflow-hidden shadow-sm floating-card">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A premium high-fidelity digital illustration celebrating a successful purchase. The scene depicts a vibrant midnight sky filled with explosive, stylized fireworks in deep crimson red and brilliant golden orange. The artistic style is modern minimalism with a soft-focus background, clean lines, and a professional light-mode aesthetic that reflects luxury and excitement." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtE-y9aCBduLxz0Y6Jl_UXiI3J5KmiTIn0IZtUeOgGhe2hKFHrip_tiCGABnnYogahNqSeB5j8RTL3Utp415JtTy45Rw_vK9t7pHDLTvcIDxLhLpCj0-v-KN9e5QNOXZupyQ6ZeWWmgCNY5WXY2WQOP77XH81QUgpv7uh8FAV0lES2A616XbonFdxqiBHX0Pu67UwjMAceTFwZeGWe_YMOU-EJsdOKRqVmijfyfrwCwANsNesA3_iS"/>
+</div>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<div class="w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-lg transform scale-110 border-4 border-surface">
+<span class="material-symbols-outlined text-white text-[48px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+</div>
+<!-- Confirmation Message -->
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-xs">Thank You!</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-md mx-auto mb-md">Your pyrotechnics are locked, loaded, and ready for dispatch. We've sent a confirmation email to your inbox.</p>
+<!-- Order Details Card -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-outline-variant mb-lg text-left">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div>
+<span class="font-label-lg text-label-lg text-on-surface-variant block mb-1">ORDER NUMBER</span>
+<span class="font-title-lg text-title-lg text-on-surface">#CC-99420851</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface-variant block mb-1">ESTIMATED DELIVERY</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">local_shipping</span>
+<span class="font-title-lg text-title-lg text-on-surface">Friday, Oct 27</span>
+</div>
+</div>
+</div>
+<div class="mt-md pt-md border-t border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A small, sharp product thumbnail of a premium fireworks box. The packaging is sleek black with bright red and orange graphics, reflecting a high-end pyrotechnics brand. The lighting is studio-quality, emphasizing the professional build of the product." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_M9selDPsfX6VDIt6f5aRv4wFjzHVp1FR5iCd4KAnGQrK2ht1A_hFfq7ym7jNut70WlvF_qNE7ol8_1fMRHbNQJpxfpE392d8DV3gt9z_GkBomRAMEr5hvdMhkv1p16c-GaIRei2VF-Y97OYMEMXYFCOYX8gMO7PPcpp2FJCPWwrDaZsM7_f-f8JH6uXwNKPZWmh9Ysd5wnLE0ly8E_VILEJonar027K-7mVo-7eUMxsQTjVKYX30"/>
+</div>
+<div>
+<span class="font-body-md text-on-surface font-semibold block">Midnight Spectacle Kit</span>
+<span class="font-body-md text-on-surface-variant">Plus 3 additional items</span>
+</div>
+</div>
+<span class="font-title-lg text-title-lg text-primary">$342.50</span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+<button class="bg-primary text-on-primary font-bold px-lg py-4 rounded-lg shadow-sm hover:brightness-90 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">track_changes</span>
+                    Track Order
+                </button>
+<button class="border-2 border-on-surface text-on-surface font-bold px-lg py-4 rounded-lg hover:bg-surface-container-high transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">shopping_bag</span>
+                    Continue Shopping
+                </button>
+</div>
+</section>
+</main>
+<!-- Success Message Footer -->
+<footer class="w-full py-md px-margin-mobile md:px-margin-desktop bg-surface-container text-center">
+<p class="font-label-lg text-label-lg text-on-surface-variant">Questions about your order? <a class="text-primary hover:underline" href="#">Contact Support</a></p>
+</footer>
+<!-- Interactive micro-interactions script -->
+<script>
+        // Simple confetti-like effect on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const particles = document.querySelectorAll('.firework-particle');
+            particles.forEach((p, i) => {
+                p.style.backgroundColor = i % 2 === 0 ? '#b7102a' : '#825500';
+            });
+        });
+
+        // Hover effect for buttons
+        const primaryBtn = document.querySelector('.bg-primary');
+        primaryBtn.addEventListener('mouseenter', () => {
+            primaryBtn.style.boxShadow = '0 10px 20px rgba(183, 16, 42, 0.2)';
+        });
+        primaryBtn.addEventListener('mouseleave', () => {
+            primaryBtn.style.boxShadow = 'none';
+        });
+    </script>
+</body></html>

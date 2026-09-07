@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wishlist | CloudCrackers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#bb152c",
+                    "on-primary-fixed-variant": "#92001c",
+                    "surface-container-low": "#f3f4f5",
+                    "surface": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed": "#410007",
+                    "on-surface": "#191c1d",
+                    "tertiary-container": "#747479",
+                    "surface-dim": "#d9dadb",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b1f",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "surface-bright": "#f8f9fa",
+                    "secondary-fixed-dim": "#ffb950",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "surface-container": "#edeeef",
+                    "background": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "outline": "#8f6f6e",
+                    "on-secondary-fixed": "#291800",
+                    "secondary": "#825500",
+                    "on-secondary-container": "#6b4500",
+                    "secondary-fixed": "#ffddb3",
+                    "tertiary-fixed-dim": "#c7c6cb",
+                    "inverse-primary": "#ffb3b1",
+                    "on-secondary-fixed-variant": "#624000",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5b5c60",
+                    "on-surface-variant": "#5b403f",
+                    "primary": "#b7102a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#fffbff",
+                    "inverse-surface": "#2e3132",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary-fixed-variant": "#46464b",
+                    "on-tertiary-container": "#fefcff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary-fixed": "#e3e2e7",
+                    "secondary-container": "#ffae1d",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-container-highest": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "80px",
+                    "gutter": "16px",
+                    "sm": "12px",
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f8f9fa;
+            color: #191c1d;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .product-card-shadow {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e1e3e4;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 duration-150">
+                menu
+            </button>
+<h1 class="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed-dim">CloudCrackers</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 duration-150">
+                search
+            </button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-24 pb-28 px-margin-mobile md:px-margin-desktop">
+<!-- Section Header -->
+<div class="mb-lg flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-background">Your Wishlist</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-1">4 items saved for your next celebration</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-outline text-on-surface hover:bg-surface-container transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px]">sort</span>
+<span class="font-label-lg text-label-lg">Sort By</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary hover:brightness-110 transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+<span class="font-label-lg text-label-lg">Add All to Cart</span>
+</button>
+</div>
+</div>
+<!-- Wishlist Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+<!-- Product Card 1 -->
+<div class="group relative flex flex-col bg-surface-container-lowest rounded-lg product-card-shadow overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+<div class="relative aspect-square w-full bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A professional product shot of a high-end pyrotechnic box set, featuring vibrant red and deep black packaging with metallic gold accents. The lighting is dramatic and high-contrast, reminiscent of a luxury brand catalog. The background is a clean, minimalist off-white studio setting. Soft ambient shadows ground the product, maintaining a premium e-commerce aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5IqBtODRv3ncEyz6dMJsALv-ZlWeEziXb8pMNNVEcpn4mmt6G70AE7PfyXIw9vqZfo7tdmREfJ54hI9A3D78PJlkMOoCqVmMPt_MW9G3TBL_0HHxoVTxW5Aq79H6TWwFKevuP8DlcTXC6-W-tjZK_3WeT4eJ6g9j0U1EDoORUwekhJX_nLrgJOclnD6mESkVzWiSC8gpE0MDDaCwba_JYOG7LddkCnwMH0P_42RsEZPR7e2DwQSFR"/>
+<button class="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-surface/90 backdrop-blur-sm rounded-full text-error hover:bg-error hover:text-on-error transition-all active:scale-90 shadow-sm" title="Remove from wishlist">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<div class="absolute top-3 left-3 bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-lg text-label-lg shadow-sm">
+                        SALE
+                    </div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-title-lg text-title-lg text-on-surface line-clamp-1">Crimson Thunder Barrage</h3>
+<div class="flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-lg text-label-lg">4.9</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2">50 shots of brilliant red strobes with crackling dragon tails. Professional grade display.</p>
+<div class="mt-auto flex items-center justify-between gap-4">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">$124.99</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant line-through">$159.99</span>
+</div>
+<button class="flex-grow bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                            Add to Cart
+                        </button>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="group relative flex flex-col bg-surface-container-lowest rounded-lg product-card-shadow overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+<div class="relative aspect-square w-full bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Close-up of a premium fountain firework with intricate silver and midnight blue label design. The scene is bright and airy, using high-key lighting to emphasize the quality materials. The product sits on a reflective white surface, creating a sophisticated boutique feel. The overall mood is professional, safe, and exciting, consistent with a high-end retail experience." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-rBPWr1SEp5C8TVxy4Rj19ElnE-1Ia6wj93pjEcBD3YEfrW_FdPt15mJ6NOkLg3XU3GReAd65BwGzhKHWGY1EZU2vU_Vyr1jb1fYjsBaRtbBYuNQHKbEXDABKezXQQkYFwDrSdIf3QlNzCS4CB77L0qVcEt5hyjrLOUdbfMKMePOaqCQZ3VUVPqHYYR7_wzIEPlebqx8jhl8ZHdCrKlq9fNEKAEgI8GQkGg607xi8OByZwJNT1V7q"/>
+<button class="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-surface/90 backdrop-blur-sm rounded-full text-error hover:bg-error hover:text-on-error transition-all active:scale-90 shadow-sm" title="Remove from wishlist">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-title-lg text-title-lg text-on-surface line-clamp-1">Silver Willow Fountain</h3>
+<div class="flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-lg text-label-lg">4.7</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2">Graceful cascading silver sparks with blue pearl highlights. Lasts 90 seconds.</p>
+<div class="mt-auto flex items-center justify-between gap-4">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">$45.00</span>
+</div>
+<button class="flex-grow bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                            Add to Cart
+                        </button>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="group relative flex flex-col bg-surface-container-lowest rounded-lg product-card-shadow overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+<div class="relative aspect-square w-full bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="An elegant collection of assorted high-end fireworks arranged in an asymmetric, artistic bento grid style. The packaging features vibrant orange and deep slate gray graphics. The lighting is soft and diffused, creating a luxurious and professional atmosphere. The scene communicates variety and quality within a modern, minimalist e-commerce setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAviJFOxT70PdEbbEURAGqqrYUencLEQtwUS115pXxnx1s0N3XJr6QDxU6YTFTPbh6XlTTXwGfyLivN9Qg-R9XIGf-NVza4rrbsIGQd5Mp8BPeeNnlwXlflmWog0gI-gKEYdyBnkiHqcIXcSiMiG4UGc2cRvtS5-j1Hwzzvqcw_nSUp5DgpiRSvGeAx94dLcxPTDFcqq0JCn9-3ta6efkKgjz0-JoWkUqQJKy9zo-gRpoh79z3aVBcj"/>
+<button class="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-surface/90 backdrop-blur-sm rounded-full text-error hover:bg-error hover:text-on-error transition-all active:scale-90 shadow-sm" title="Remove from wishlist">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-title-lg text-title-lg text-on-surface line-clamp-1">Grand Finale Pack</h3>
+<div class="flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-lg text-label-lg">5.0</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2">Everything you need for a 5-minute choreographed show. Curated by experts.</p>
+<div class="mt-auto flex items-center justify-between gap-4">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">$399.99</span>
+</div>
+<button class="flex-grow bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                            Add to Cart
+                        </button>
+</div>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="group relative flex flex-col bg-surface-container-lowest rounded-lg product-card-shadow overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+<div class="relative aspect-square w-full bg-surface-container-low overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Close-up detail of luxury aerial shell firework spheres with intricate golden labeling. The products are set against a pristine, minimalist gray background. Soft side-lighting highlights the texture of the packaging. The design aesthetic is clean, modern, and highly energetic while maintaining a safe, professional brand image for a premium marketplace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpY77_gjN1tkt4KQ6uXSG3BvmKwi0rxb4mFaFQDY-T6MYXZQg9stDBAgeNSdXuClcEzBaRf40ogPhxauPGE4fZcNsBmlWay2L9tyuwcbhNKU5pJDJtdGHKrAkI4M-GGxh-OY7hlhz5vC-1PyxDOsO9Bvn7_7xio9A-Oqa1MlD3VlpS9skqzUl0udI_KT1Ik9js6HalVa08KJXqSPkRafBkqmCHH1O7yH0yVRBnB9tgUt7LwIJDDq9h"/>
+<button class="absolute top-3 right-3 w-10 h-10 flex items-center justify-center bg-surface/90 backdrop-blur-sm rounded-full text-error hover:bg-error hover:text-on-error transition-all active:scale-90 shadow-sm" title="Remove from wishlist">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<div class="absolute top-3 left-3 bg-on-background text-surface px-3 py-1 rounded-full font-label-lg text-label-lg shadow-sm">
+                        NEW
+                    </div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-title-lg text-title-lg text-on-surface line-clamp-1">Golden Phoenix Shells</h3>
+<div class="flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-lg text-label-lg">4.8</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 line-clamp-2">Extra large break diameter with shimmering gold brocade effects. Pack of 6.</p>
+<div class="mt-auto flex items-center justify-between gap-4">
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg text-primary">$89.50</span>
+</div>
+<button class="flex-grow bg-primary text-on-primary py-3 rounded-lg font-label-lg text-label-lg hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                            Add to Cart
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State (Hidden by default) -->
+<div class="hidden flex-col items-center justify-center py-xl text-center" id="empty-wishlist">
+<div class="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-on-surface-variant text-5xl">favorite</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg mb-2">Your wishlist is empty</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-md mx-auto">Start saving items you love to keep track of them for your next big celebration!</p>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-lg font-label-lg text-label-lg hover:brightness-110 transition-all active:scale-95">
+                Explore Products
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface dark:bg-surface-dim shadow-[0_-4px_15px_rgba(0,0,0,0.06)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">grid_view</span>
+<span class="font-label-lg text-label-lg">Categories</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">shopping_cart</span>
+<span class="font-label-lg text-label-lg">Cart</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-lg px-3 py-1 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-label-lg text-label-lg">Wishlist</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1 hover:bg-surface-container dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for removal
+        document.querySelectorAll('button[title="Remove from wishlist"]').forEach(button => {
+            button.addEventListener('click', function() {
+                const card = this.closest('.group');
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                card.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    card.remove();
+                    // Check if wishlist is empty
+                    const remaining = document.querySelectorAll('.grid > div');
+                    if (remaining.length === 0) {
+                        document.querySelector('.grid').classList.add('hidden');
+                        document.getElementById('empty-wishlist').classList.remove('hidden');
+                        document.getElementById('empty-wishlist').classList.add('flex');
+                    }
+                }, 300);
+            });
+        });
+
+        // "Add all to cart" ripple effect simulation
+        document.querySelector('button:has(span:contains("Add All to Cart"))')?.addEventListener('click', function() {
+            this.textContent = "Adding...";
+            setTimeout(() => {
+                this.innerHTML = '<span class="material-symbols-outlined text-[20px]">check</span> <span class="font-label-lg text-label-lg">Added All!</span>';
+                this.classList.replace('bg-primary', 'bg-green-600');
+            }, 800);
+        });
+    </script>
+</body></html>

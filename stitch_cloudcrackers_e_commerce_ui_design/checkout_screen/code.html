@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Checkout | CloudCrackers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#bb152c",
+                    "on-primary-fixed-variant": "#92001c",
+                    "surface-container-low": "#f3f4f5",
+                    "surface": "#f8f9fa",
+                    "on-background": "#191c1d",
+                    "on-primary-fixed": "#410007",
+                    "on-surface": "#191c1d",
+                    "tertiary-container": "#747479",
+                    "surface-dim": "#d9dadb",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#1a1b1f",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e1e3e4",
+                    "surface-bright": "#f8f9fa",
+                    "secondary-fixed-dim": "#ffb950",
+                    "primary-container": "#db313f",
+                    "primary-fixed": "#ffdad8",
+                    "surface-container": "#edeeef",
+                    "background": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "outline": "#8f6f6e",
+                    "on-secondary-fixed": "#291800",
+                    "secondary": "#825500",
+                    "on-secondary-container": "#6b4500",
+                    "secondary-fixed": "#ffddb3",
+                    "tertiary-fixed-dim": "#c7c6cb",
+                    "inverse-primary": "#ffb3b1",
+                    "on-secondary-fixed-variant": "#624000",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5b5c60",
+                    "on-surface-variant": "#5b403f",
+                    "primary": "#b7102a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#fffbff",
+                    "inverse-surface": "#2e3132",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary-fixed-variant": "#46464b",
+                    "on-tertiary-container": "#fefcff",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary-fixed": "#e3e2e7",
+                    "secondary-container": "#ffae1d",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#e4bebc",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-container-highest": "#e1e3e4"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "80px",
+                    "gutter": "16px",
+                    "sm": "12px",
+                    "xs": "4px",
+                    "base": "8px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "title-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .checkout-card { transition: all 0.3s ease; border: 1px solid #e4bebc33; }
+        .checkout-card:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(0,0,0,0.06); }
+        .input-focus:focus { outline: none; border-color: #ffae1d; box-shadow: 0 0 0 2px rgba(255, 174, 29, 0.2); }
+        .step-line { position: relative; }
+        .step-line::after { content: ''; position: absolute; top: 12px; left: 50%; width: 100%; height: 2px; background: #e1e3e4; z-index: -1; }
+        .step-line:last-child::after { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-xl">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150" data-icon="menu">menu</button>
+<span class="text-title-lg font-title-lg font-bold text-primary dark:text-primary-fixed-dim">CloudCrackers</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150" data-icon="search">search</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-24 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto">
+<!-- Progress Indicator -->
+<div class="flex justify-between items-center mb-lg max-w-2xl mx-auto">
+<div class="step-line flex-1 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold mb-2">1</div>
+<span class="font-label-lg text-label-lg text-primary">Shipping</span>
+</div>
+<div class="step-line flex-1 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold mb-2">2</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Payment</span>
+</div>
+<div class="step-line flex-1 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold mb-2">3</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Review</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Checkout Form Section -->
+<div class="lg:col-span-8 space-y-gutter">
+<!-- Shipping Address Card -->
+<section class="checkout-card bg-surface-container-lowest p-md rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)]">
+<div class="flex items-center gap-2 mb-md">
+<span class="material-symbols-outlined text-primary" data-icon="local_shipping">local_shipping</span>
+<h2 class="font-title-lg text-title-lg">Shipping Address</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">First Name</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="John" type="text"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Last Name</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="Doe" type="text"/>
+</div>
+<div class="md:col-span-2 space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Street Address</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="123 Pyrotechnic Way" type="text"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">City</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="Sparkville" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-sm">
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">State</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="NY" type="text"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">ZIP</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="10001" type="text"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Delivery Method Selection -->
+<section class="checkout-card bg-surface-container-lowest p-md rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)]">
+<div class="flex items-center gap-2 mb-md">
+<span class="material-symbols-outlined text-primary" data-icon="speed">speed</span>
+<h2 class="font-title-lg text-title-lg">Delivery Method</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-sm">
+<label class="relative flex items-center p-md rounded-lg border-2 border-outline-variant cursor-pointer hover:bg-surface-container-low transition-colors group">
+<input checked="" class="w-5 h-5 text-primary border-outline focus:ring-primary-container" name="delivery" type="radio"/>
+<div class="ml-4">
+<p class="font-body-lg font-bold">Standard Delivery</p>
+<p class="text-on-surface-variant font-body-md">3-5 business days</p>
+</div>
+<span class="ml-auto font-title-lg text-primary">$0.00</span>
+</label>
+<label class="relative flex items-center p-md rounded-lg border-2 border-outline-variant cursor-pointer hover:bg-surface-container-low transition-colors group">
+<input class="w-5 h-5 text-primary border-outline focus:ring-primary-container" name="delivery" type="radio"/>
+<div class="ml-4">
+<p class="font-body-lg font-bold">Express Rocket</p>
+<p class="text-on-surface-variant font-body-md">Next day delivery</p>
+</div>
+<span class="ml-auto font-title-lg text-primary">$24.99</span>
+</label>
+</div>
+</section>
+<!-- Payment Details Section -->
+<section class="checkout-card bg-surface-container-lowest p-md rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)]">
+<div class="flex items-center gap-2 mb-md">
+<span class="material-symbols-outlined text-primary" data-icon="payments">payments</span>
+<h2 class="font-title-lg text-title-lg">Payment Details</h2>
+</div>
+<div class="flex gap-sm mb-md">
+<button class="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-primary text-primary font-bold transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="credit_card">credit_card</span>
+                            Credit Card
+                        </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-outline-variant text-on-surface-variant font-bold hover:bg-surface-container transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+                            PayPal
+                        </button>
+</div>
+<div class="space-y-md">
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Cardholder Name</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="Johnathan Doe" type="text"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Card Number</label>
+<div class="relative">
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md pr-12" placeholder="0000 0000 0000 0000" type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-3 text-on-surface-variant" data-icon="contactless">contactless</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Expiry Date</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="MM / YY" type="text"/>
+</div>
+<div class="space-y-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">CVV</label>
+<input class="w-full p-3 rounded-lg bg-surface-container border-none input-focus font-body-md text-body-md" placeholder="123" type="text"/>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Order Summary Section -->
+<aside class="lg:col-span-4">
+<div class="sticky top-24 space-y-gutter">
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.06)] border border-outline-variant/30">
+<h3 class="font-title-lg text-title-lg mb-md">Order Summary</h3>
+<div class="space-y-md mb-md">
+<!-- Product Item -->
+<div class="flex gap-4">
+<div class="w-20 h-20 bg-surface-container rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A high-end professional firework box product shot on a clean white studio background. The packaging features vibrant red and gold patterns with the CloudCrackers logo. Soft cinematic lighting highlights the matte texture of the box and the premium metallic accents. Minimalist and energetic atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY4fRu-FzkegjaMqQb6CEuT4SFYYwcfPIwQI6DTKkdGdnYFTfOOv3wJoCMMxp-Ptk1fV898WGxvnp0YRaT3cigUvHpYQOFBQ2e7qMiYYg1Nl5w7Ikt5t-9Yk5RdjeXQ_OkLSOL21eP2rdvN5ZMVVMnsvHLsjZfQTur183M8trhE2dwl2In88Bulb7d2G_LIogDISE1M84T9l3SpKY31BSR48qLIxG9UN88GXn_6dgniFEujS9e4e8O"/>
+</div>
+<div class="flex-1">
+<p class="font-body-lg font-bold">Midnight Thunder XL</p>
+<p class="text-on-surface-variant text-body-md">Qty: 1</p>
+<p class="text-primary font-bold mt-1">$89.99</p>
+</div>
+</div>
+<!-- Product Item -->
+<div class="flex gap-4">
+<div class="w-20 h-20 bg-surface-container rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close-up of a premium pyrotechnic shell designed for high-end retail. The shell is sleek with a modern carbon-fiber texture and vibrant orange safety labels. It is set against a clean, professional grey gradient background with subtle ambient shadows. High-quality e-commerce product photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJtQM8cQT6kppZfzdE-8zw4AMFqNjLnLCvgSFjfbiilJBJhoV0LD13wVVQC3xzIEzgQnNcTjaczeEZkribaIR1GuKIB4Sxw1RcsfsvU0eyK3NLysJnUpdcv52eMMNHWnAekOzwt0fFy7jzPL5-38KyP9MeHp30qokyGi9oGV0E7VmkD2YPXn96kGyVBNzxVleyrp6r5O11BzKo0XFRI5Inq4jI4ci0zaoueUP_-rj6e1rI8-How-NV"/>
+</div>
+<div class="flex-1">
+<p class="font-body-lg font-bold">Golden Willow Shells</p>
+<p class="text-on-surface-variant text-body-md">Qty: 2</p>
+<p class="text-primary font-bold mt-1">$45.00</p>
+</div>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-md space-y-sm">
+<div class="flex justify-between text-on-surface-variant font-body-md">
+<span>Subtotal</span>
+<span>$134.99</span>
+</div>
+<div class="flex justify-between text-on-surface-variant font-body-md">
+<span>Shipping</span>
+<span class="text-secondary font-bold">FREE</span>
+</div>
+<div class="flex justify-between text-on-surface-variant font-body-md">
+<span>Estimated Tax</span>
+<span>$10.80</span>
+</div>
+<div class="flex justify-between pt-sm text-headline-lg font-bold border-t border-outline-variant mt-sm">
+<span>Total</span>
+<span class="text-primary">$145.79</span>
+</div>
+</div>
+<button class="w-full mt-lg bg-primary text-on-primary py-4 rounded-lg font-bold text-lg hover:bg-primary-container transition-all active:scale-95 shadow-lg shadow-primary/20">
+                            Place Order
+                        </button>
+<p class="text-center text-label-lg text-on-surface-variant mt-md flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="lock" style="font-size: 14px;">lock</span>
+                            Secure encrypted checkout
+                        </p>
+</div>
+<!-- Additional Trust Component -->
+<div class="bg-primary-container/10 p-md rounded-xl border border-primary-container/20">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="verified">verified</span>
+<div>
+<p class="font-body-lg font-bold text-primary">Pyrotechnic Safety Guarantee</p>
+<p class="text-on-surface-variant font-body-md">Every order is shipped with legal compliance certification and professional handling instructions.</p>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Success Message Toast (Hidden by default) -->
+<div class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 opacity-0 pointer-events-none transition-all duration-500 translate-y-10 z-[100]" id="success-toast">
+<span class="material-symbols-outlined text-secondary-container" data-icon="check_circle">check_circle</span>
+<span class="font-body-lg">Processing your order... Prepare for brilliance!</span>
+</div>
+<script>
+        // Micro-interactions
+        const placeOrderBtn = document.querySelector('button.bg-primary');
+        const toast = document.getElementById('success-toast');
+
+        placeOrderBtn.addEventListener('click', () => {
+            placeOrderBtn.innerHTML = '<span class="flex items-center justify-center gap-2"><svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Validating...</span>';
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+                toast.classList.add('opacity-100', 'translate-y-0');
+                placeOrderBtn.textContent = 'Order Placed!';
+                placeOrderBtn.classList.remove('bg-primary');
+                placeOrderBtn.classList.add('bg-secondary');
+            }, 1500);
+        });
+
+        // Input effect
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('scale-[1.01]');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('scale-[1.01]');
+            });
+        });
+    </script>
+</body></html>

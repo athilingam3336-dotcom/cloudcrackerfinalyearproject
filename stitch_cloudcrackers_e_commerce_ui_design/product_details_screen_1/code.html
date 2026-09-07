@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudCrackers - Premium Pyrotechnics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline": "#8f6f6e",
+                      "inverse-on-surface": "#f0f1f2",
+                      "primary-container": "#db313f",
+                      "surface-container-low": "#f3f4f5",
+                      "outline-variant": "#e4bebc",
+                      "inverse-surface": "#2e3132",
+                      "on-primary-fixed-variant": "#92001c",
+                      "surface-tint": "#bb152c",
+                      "on-tertiary-fixed": "#1a1b1f",
+                      "on-secondary-fixed-variant": "#624000",
+                      "on-secondary-fixed": "#291800",
+                      "on-tertiary-fixed-variant": "#46464b",
+                      "tertiary-container": "#747479",
+                      "on-tertiary-container": "#fefcff",
+                      "on-primary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "primary-fixed": "#ffdad8",
+                      "primary": "#b7102a",
+                      "surface-container": "#edeeef",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed": "#e3e2e7",
+                      "inverse-primary": "#ffb3b1",
+                      "surface-bright": "#f8f9fa",
+                      "on-surface-variant": "#5b403f",
+                      "on-error-container": "#93000a",
+                      "primary-fixed-dim": "#ffb3b1",
+                      "on-surface": "#191c1d",
+                      "on-background": "#191c1d",
+                      "on-primary-fixed": "#410007",
+                      "surface-container-highest": "#e1e3e4",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed-dim": "#ffb950",
+                      "background": "#f8f9fa",
+                      "on-secondary-container": "#6b4500",
+                      "tertiary": "#5b5c60",
+                      "secondary": "#825500",
+                      "secondary-fixed": "#ffddb3",
+                      "surface": "#f8f9fa",
+                      "surface-dim": "#d9dadb",
+                      "surface-container-high": "#e7e8e9",
+                      "on-secondary": "#ffffff",
+                      "surface-variant": "#e1e3e4",
+                      "error-container": "#ffdad6",
+                      "error": "#ba1a1a",
+                      "on-primary-container": "#fffbff",
+                      "secondary-container": "#ffae1d",
+                      "tertiary-fixed-dim": "#c7c6cb"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "12px",
+                      "lg": "48px",
+                      "xs": "4px",
+                      "margin-desktop": "64px",
+                      "gutter": "16px",
+                      "md": "24px",
+                      "base": "8px",
+                      "xl": "80px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "body-lg": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "label-lg": ["Inter"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "label-lg": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .product-gradient { background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(0,0,0,0.02) 100%); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high transition-colors active:scale-95 duration-150 rounded-full">menu</button>
+<h1 class="text-title-lg font-title-lg font-bold text-primary">CloudCrackers</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors active:scale-95 duration-150 rounded-full">search</button>
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors active:scale-95 duration-150 rounded-full">shopping_cart</button>
+</div>
+</header>
+<main class="pt-16 pb-32">
+<div class="max-w-7xl mx-auto md:px-margin-desktop">
+<div class="flex flex-col md:flex-row gap-lg">
+<!-- Product Gallery Section -->
+<section class="w-full md:w-1/2 lg:w-3/5">
+<div class="relative group">
+<div class="aspect-[4/5] md:aspect-square overflow-hidden bg-surface-container rounded-none md:rounded-xl shadow-sm border border-neutral-100">
+<img class="w-full h-full object-cover" data-alt="A professional product shot of a premium firework box named 'Nebula Burst' sitting on a clean white surface. The packaging features elegant dark paper with metallic red and gold accents, reflecting a high-end boutique aesthetic. Soft daylight illuminates the scene from the side, creating subtle shadows and highlighting the tactile matte texture of the box. The atmosphere is minimalist, sophisticated, and energetic, focusing on the quality of the pyrotechnic product." src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+<div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-on-surface-variant/30"></div>
+<div class="w-2 h-2 rounded-full bg-on-surface-variant/30"></div>
+</div>
+</div>
+<!-- Thumbnail Row -->
+<div class="flex gap-gutter mt-gutter px-margin-mobile md:px-0 overflow-x-auto no-scrollbar">
+<div class="min-w-[80px] h-20 rounded-lg border-2 border-primary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up detail of the Nebula Burst firework packaging, showing the intricate metallic red foil stamping and the CloudCrackers logo. The lighting is crisp and clear, emphasizing the premium printing quality and the vibrant red tones against a dark background. Minimalist and professional style." src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+<div class="min-w-[80px] h-20 rounded-lg border border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A lifestyle shot of the firework box being held by gloved hands, demonstrating scale and the safety-first professional branding. The background is a blurred, high-end outdoor terrace at dusk, hinting at an exclusive celebration. The color palette is dominated by warm golds and deep reds." src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+<div class="min-w-[80px] h-20 rounded-lg border border-outline-variant overflow-hidden">
+</div></div></section></div></div></main></body></html>
