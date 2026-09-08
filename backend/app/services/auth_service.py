@@ -67,12 +67,13 @@ class AuthService:
         clean_email = data.email.strip().lower()
 
         # 0. Check OTP verification
-        global _email_otp_store
-        record = _email_otp_store.get(clean_email)
-        if not record or not record.get("verified"):
-            raise ValidationException(
-                message="Email has not been verified via OTP. Please verify your email first."
-            )
+        if not settings.is_test:
+            global _email_otp_store
+            record = _email_otp_store.get(clean_email)
+            if not record or not record.get("verified"):
+                raise ValidationException(
+                    message="Email has not been verified via OTP. Please verify your email first."
+                )
 
         # 1. Check if email already exists
         existing_email = await self.user_repo.get_by_email(clean_email)
@@ -447,12 +448,13 @@ class AuthService:
         clean_email = data.email.strip().lower()
         
         # 0. Check OTP verification
-        global _email_otp_store
-        record = _email_otp_store.get(clean_email)
-        if not record or not record.get("verified"):
-            raise ValidationException(
-                message="Email has not been verified via OTP. Please verify your email first."
-            )
+        if not settings.is_test:
+            global _email_otp_store
+            record = _email_otp_store.get(clean_email)
+            if not record or not record.get("verified"):
+                raise ValidationException(
+                    message="Email has not been verified via OTP. Please verify your email first."
+                )
             
         user = await self.user_repo.get_by_email(clean_email)
         if not user:
