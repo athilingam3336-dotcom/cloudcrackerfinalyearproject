@@ -74,10 +74,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const [emailCheckStatus, setEmailCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
 
   const isValidEmail = (val: string) => {
-    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(val.trim());
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
   };
 
-  // Debounced Live Email Check effect
+  // Immediate + Debounced Live Email Check effect
   useEffect(() => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
@@ -102,9 +102,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
           setErrors((prev) => ({ ...prev, email: undefined }));
         }
       } catch (err) {
-        setEmailCheckStatus('idle');
+        setEmailCheckStatus('available');
+        setErrors((prev) => ({ ...prev, email: undefined }));
       }
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [email]);
