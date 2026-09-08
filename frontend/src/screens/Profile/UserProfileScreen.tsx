@@ -167,28 +167,12 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   const adminMenuItems = isAdmin
     ? [
         {
-          id: 'admin_dashboard',
-          title: 'Admin Dashboard',
-          subtitle: 'System metrics and sales reporting',
-          icon: 'dashboard',
+          id: 'order_management',
+          title: 'Order Operations',
+          subtitle: 'Manage order status, UPI verification & tracking',
+          icon: 'receipt-long',
           badge: 'ADMIN',
-          onPress: () => navigation.navigate('AdminDashboard'),
-        },
-        {
-          id: 'user_management',
-          title: 'Customer Management',
-          subtitle: 'User accounts, RBAC permissions & order metrics',
-          icon: 'people',
-          badge: 'ADMIN',
-          onPress: () => navigation.navigate('UserManagement'),
-        },
-        {
-          id: 'coupon_management',
-          title: 'Coupon Campaigns',
-          subtitle: 'Promo codes, discount rules & usage tracking',
-          icon: 'local-offer',
-          badge: 'ADMIN',
-          onPress: () => navigation.navigate('CouponManagement'),
+          onPress: () => navigation.navigate('OrderManagement'),
         },
         {
           id: 'inventory_management',
@@ -215,12 +199,28 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
           onPress: () => navigation.navigate('CategoryManagement'),
         },
         {
-          id: 'order_management',
-          title: 'Order Operations',
-          subtitle: 'Manage order status, tracking & customer orders',
-          icon: 'receipt-long',
+          id: 'user_management',
+          title: 'Customer Management',
+          subtitle: 'User accounts, RBAC permissions & order metrics',
+          icon: 'people',
           badge: 'ADMIN',
-          onPress: () => navigation.navigate('OrderManagement'),
+          onPress: () => navigation.navigate('UserManagement'),
+        },
+        {
+          id: 'coupon_management',
+          title: 'Coupon Campaigns',
+          subtitle: 'Promo codes, discount rules & usage tracking',
+          icon: 'local-offer',
+          badge: 'ADMIN',
+          onPress: () => navigation.navigate('CouponManagement'),
+        },
+        {
+          id: 'admin_dashboard',
+          title: 'Admin Dashboard',
+          subtitle: 'System metrics and sales reporting',
+          icon: 'dashboard',
+          badge: 'ADMIN',
+          onPress: () => navigation.navigate('AdminDashboard'),
         },
       ]
     : [];
