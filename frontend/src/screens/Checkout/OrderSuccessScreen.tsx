@@ -42,6 +42,8 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
   const paymentStatus = route.params?.paymentStatus || 'Paid';
   const shippingAddress = route.params?.shippingAddress || '42 Marina Beach Road, Chennai, TN 600004';
   const initialItems = route.params?.items || [];
+  const upiUri = route.params?.upiUri;
+  const qrCodeBase64 = route.params?.qrCodeBase64;
 
   const [orderItems, setOrderItems] = useState<any[]>(initialItems);
 
@@ -111,15 +113,43 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
         </View>
 
         <View style={styles.contentContainer}>
-          <View style={styles.badgeSuccess}>
-            <MaterialIcons name="verified" size={16} color="#2E7D32" />
-            <Text style={styles.badgeSuccessText}>Payment Successful (Test Mode)</Text>
-          </View>
+          {qrCodeBase64 ? (
+            <View style={[styles.badgeSuccess, { backgroundColor: '#FFF3E0' }]}>
+              <MaterialIcons name="pending-actions" size={16} color="#E65100" />
+              <Text style={[styles.badgeSuccessText, { color: '#E65100' }]}>Awaiting Payment</Text>
+            </View>
+          ) : (
+            <View style={styles.badgeSuccess}>
+              <MaterialIcons name="verified" size={16} color="#2E7D32" />
+              <Text style={styles.badgeSuccessText}>Payment Successful</Text>
+            </View>
+          )}
 
-          <Text style={styles.title}>Order Confirmed!</Text>
-          <Text style={styles.subtitle}>
-            Your pyrotechnics are locked, loaded, and ready for dispatch. We've sent an order confirmation to your registered email.
+          <Text style={styles.title}>
+            {qrCodeBase64 ? 'Pending Payment' : 'Order Confirmed!'}
           </Text>
+          <Text style={styles.subtitle}>
+            {qrCodeBase64
+              ? 'Your pyrotechnics are reserved! Please scan the QR code below to complete your payment. Our admin will verify it shortly.'
+              : "Your pyrotechnics are locked, loaded, and ready for dispatch. We've sent an order confirmation to your registered email."}
+          </Text>
+
+          {/* QR Code Section for UPI */}
+          {qrCodeBase64 && (
+            <View style={[styles.purchasedCard, { alignItems: 'center', marginBottom: Spacing.md }]}>
+              <Text style={{ ...Typography.titleLg, marginBottom: 10, color: Colors.primary }}>
+                Scan & Pay Exactly: {formatCurrency(amountPaid || 0)}
+              </Text>
+              <Image 
+                source={{ uri: qrCodeBase64 }}
+                style={{ width: 220, height: 220, borderRadius: 10, borderWidth: 4, borderColor: '#fff' }}
+                resizeMode="contain"
+              />
+              <Text style={{ marginTop: 10, color: Colors.tertiary, fontSize: 13 }}>
+                After payment, your order will be verified manually by our Admin.
+              </Text>
+            </View>
+          )}
 
           {/* Purchased Products Showcase Card */}
           {orderItems.length > 0 && (
@@ -211,11 +241,11 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
               </View>
             </View>
 
-            {paymentId && (
+            {paymentId && !qrCodeBase64 && (
               <>
                 <View style={styles.divider} />
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>RAZORPAY PAYMENT ID</Text>
+                  <Text style={styles.detailLabel}>PAYMENT ID / TRANSACTION REF</Text>
                   <Text style={styles.paymentIdText}>{paymentId}</Text>
                 </View>
               </>

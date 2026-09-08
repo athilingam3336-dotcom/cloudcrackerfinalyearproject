@@ -71,6 +71,10 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [expandedOrderIds, setExpandedOrderIds] = useState<Record<string, boolean>>({});
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+  
+  // For UPI Verification
+  const [pendingPaymentStatus, setPendingPaymentStatus] = useState<AdminOrderItem['paymentStatus'] | null>(null);
+  const [transactionReference, setTransactionReference] = useState('');
 
   const toggleExpand = useCallback((orderId: string) => {
     setExpandedOrderIds((prev) => ({
@@ -146,12 +150,18 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   );
 
   const handleUpdatePaymentStatus = useCallback(
-    async (orderId: string, newStatus: AdminOrderItem['paymentStatus']) => {
+    async (orderId: string, newStatus: AdminOrderItem['paymentStatus'], utr?: string) => {
       try {
-        await adminService.updatePaymentStatus(orderId, newStatus);
+        if (newStatus === 'Paid' && utr) {
+           await adminService.verifyUpiPayment(orderId, utr);
+        } else {
+           await adminService.updatePaymentStatus(orderId, newStatus);
+        }
         setModalVisible(false);
         setSelectedOrder(null);
         setEditType(null);
+        setPendingPaymentStatus(null);
+        setTransactionReference('');
         fetchOrders();
         fetchOrdersOverview();
         Alert.alert('Success', `Payment status updated to "${newStatus}".`);
@@ -399,8 +409,8 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
           <View style={styles.paymentInfoRow}>
             <MaterialIcons name="payment" size={14} color={Colors.primary} />
             <Text style={styles.paymentInfoText}>
-              {item.paymentMethod || 'Razorpay'}
-              {item.razorpayPaymentId ? ` • ID: ${item.razorpayPaymentId}` : ''}
+              {item.paymentMethod || 'Online'}
+              {item.transactionReference ? ` • Ref: ${item.transactionReference}` : ''}
             </Text>
           </View>
 
@@ -546,12 +556,11 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
                 </View>
               ) : null}
 
-              {(item.razorpayOrderId || (item.razorpayPaymentId && item.paymentStatus !== 'Pending')) ? (
+              {(item.transactionReference) ? (
                 <View style={styles.razorpayInfoBox}>
                   <MaterialIcons name="verified" size={14} color="#0284C7" />
                   <Text style={styles.razorpayText}>
-                    {item.razorpayOrderId ? `Order: ${item.razorpayOrderId}` : ''}
-                    {item.razorpayPaymentId ? ` • Pay: ${item.razorpayPaymentId}` : ''}
+                    {item.transactionReference ? `Ref: ${item.transactionReference}` : ''}
                   </Text>
                 </View>
               ) : null}
@@ -658,7 +667,11 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
         visible={modalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => {
+          setModalVisible(false);
+          setPendingPaymentStatus(null);
+          setTransactionReference('');
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -666,7 +679,11 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
               <Text style={styles.modalTitle}>
                 Update {editType === 'order' ? 'Order' : 'Payment'} Status
               </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <TouchableOpacity onPress={() => {
+                setModalVisible(false);
+                setPendingPaymentStatus(null);
+                setTransactionReference('');
+              }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <MaterialIcons name="close" size={20} color={Colors.onSurface} />
               </TouchableOpacity>
             </View>
@@ -699,28 +716,72 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
                       )}
                     </TouchableOpacity>
                   ))
-                : PAYMENT_STATUS_OPTIONS.map((opt) => (
-                    <TouchableOpacity
-                      key={opt}
-                      style={[
-                        styles.modalOptionItem,
-                        selectedOrder?.paymentStatus === opt && styles.selectedModalOption,
-                      ]}
-                      onPress={() => selectedOrder && handleUpdatePaymentStatus(selectedOrder.id, opt)}
-                    >
-                      <Text
-                        style={[
-                          styles.modalOptionText,
-                          selectedOrder?.paymentStatus === opt && styles.selectedModalOptionText,
-                        ]}
-                      >
-                        {opt}
-                      </Text>
-                      {selectedOrder?.paymentStatus === opt && (
-                        <MaterialIcons name="check" size={18} color={Colors.primary} />
+                : (
+                    <>
+                      {PAYMENT_STATUS_OPTIONS.map((opt) => {
+                        const isSelected = pendingPaymentStatus === opt || (!pendingPaymentStatus && selectedOrder?.paymentStatus === opt);
+                        return (
+                          <TouchableOpacity
+                            key={opt}
+                            style={[
+                              styles.modalOptionItem,
+                              isSelected && styles.selectedModalOption,
+                            ]}
+                            onPress={() => {
+                              if (opt === 'Paid' && selectedOrder?.paymentMethod === 'upi') {
+                                setPendingPaymentStatus(opt);
+                              } else if (selectedOrder) {
+                                handleUpdatePaymentStatus(selectedOrder.id, opt);
+                              }
+                            }}
+                          >
+                            <Text
+                              style={[
+                                styles.modalOptionText,
+                                isSelected && styles.selectedModalOptionText,
+                              ]}
+                            >
+                              {opt}
+                            </Text>
+                            {isSelected && (
+                              <MaterialIcons name="check" size={18} color={Colors.primary} />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                      {pendingPaymentStatus === 'Paid' && selectedOrder?.paymentMethod === 'upi' && (
+                        <View style={{ marginTop: 16 }}>
+                          <Text style={{ ...Typography.labelLg, color: Colors.onSurface, marginBottom: 8 }}>
+                            Enter UTR / Transaction Reference
+                          </Text>
+                          <TextInput
+                            style={styles.searchInput}
+                            placeholder="e.g. 312456789012"
+                            value={transactionReference}
+                            onChangeText={setTransactionReference}
+                          />
+                          <TouchableOpacity
+                            style={{
+                              backgroundColor: Colors.primary,
+                              paddingVertical: 10,
+                              borderRadius: 8,
+                              alignItems: 'center',
+                              marginTop: 12
+                            }}
+                            onPress={() => {
+                              if (!transactionReference.trim()) {
+                                Alert.alert('Validation Error', 'UTR is required to verify UPI payment.');
+                                return;
+                              }
+                              handleUpdatePaymentStatus(selectedOrder.id, 'Paid', transactionReference.trim());
+                            }}
+                          >
+                            <Text style={{ color: '#fff', fontFamily: 'Inter-Bold' }}>Verify & Mark as Paid</Text>
+                          </TouchableOpacity>
+                        </View>
                       )}
-                    </TouchableOpacity>
-                  ))}
+                    </>
+                  )}
             </View>
           </View>
         </View>

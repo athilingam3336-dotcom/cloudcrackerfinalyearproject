@@ -158,6 +158,50 @@ export class AuthService {
     };
   }
 
+  async checkEmail(
+    email: string
+  ): Promise<{ exists: boolean; hasPassword: boolean; authProvider?: string }> {
+    if (ENV.ENABLE_MOCK_API) {
+      return { exists: false, hasPassword: false };
+    }
+    try {
+      const { data: res } = await apiClient.post('/auth/check-email', { email });
+      const payload = res.data || res;
+      return {
+        exists: Boolean(payload.exists),
+        hasPassword: Boolean(payload.has_password),
+        authProvider: payload.auth_provider,
+      };
+    } catch (err: any) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.message || err.message || '';
+
+      // If /auth/check-email returns 404 (endpoint not deployed on target server yet), fallback to forgot-password check
+      if (status === 404 && (msg === 'Not Found' || msg.includes('Not Found') || !err.response?.data?.message)) {
+        try {
+          const { data: fpRes } = await apiClient.post('/auth/forgot-password', { email });
+          if (fpRes?.success || fpRes?.message?.includes('dispatched')) {
+            return { exists: true, hasPassword: true };
+          }
+        } catch (fpErr: any) {
+          const fpMsg = fpErr.response?.data?.message || fpErr.message || '';
+          if (fpMsg.includes('No account associated') || fpErr.response?.status === 404) {
+            return { exists: false, hasPassword: false };
+          }
+          if (fpMsg.includes('Google') || fpMsg.includes('Instagram')) {
+            return { exists: true, hasPassword: false, authProvider: 'oauth' };
+          }
+        }
+      }
+
+      if (msg.includes('No account associated') || msg.includes('not found')) {
+        return { exists: false, hasPassword: false };
+      }
+
+      throw err;
+    }
+  }
+
   async register(
     name: string,
     email: string,
@@ -180,9 +224,9 @@ export class AuthService {
       };
     }
     const { data: res } = await apiClient.post('/auth/register', {
-      full_name: name,
+      full_name: name || undefined,
       email,
-      phone: phone || '9876543210',
+      phone: phone || undefined,
       password,
       confirm_password: confirmPassword || password,
     });
@@ -271,7 +315,8 @@ export class AuthService {
   }
 
   async sendEmailOtp(
-    email: string
+    email: string,
+    is_reset: boolean = false
   ): Promise<{ email: string; message: string }> {
     if (ENV.ENABLE_MOCK_API) {
       return {
@@ -279,7 +324,7 @@ export class AuthService {
         message: `Verification OTP code sent successfully to ${email}. Please check your inbox.`,
       };
     }
-    const { data: res } = await apiClient.post('/auth/send-email-otp', { email });
+    const { data: res } = await apiClient.post('/auth/send-email-otp', { email, is_reset });
     const payload = res.data || res;
     return payload;
   }

@@ -36,10 +36,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_DESKTOP = SCREEN_WIDTH >= 900;
 
 interface RegisterErrors {
-  name?: string;
   email?: string;
   otp?: string;
-  phone?: string;
   password?: string;
   confirmPassword?: string;
   terms?: string;
@@ -47,9 +45,8 @@ interface RegisterErrors {
 }
 
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, route }) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const routeParams = route?.params as { initialEmail?: string } | undefined;
+  const [email, setEmail] = useState(routeParams?.initialEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -67,60 +64,14 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const [otpCode, setOtpCode] = useState('');
   const [otpMessage, setOtpMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (routeParams?.initialEmail) {
+      setEmail(routeParams.initialEmail);
+    }
+  }, [routeParams?.initialEmail]);
+
   const isValidEmail = (val: string) => {
     return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(val.trim());
-  };
-
-  const handleSendOtp = async () => {
-    if (!isValidEmail(email)) {
-      setErrors((prev) => ({
-        ...prev,
-        email: 'Please enter a valid email address first.',
-      }));
-      return;
-    }
-
-    setErrors((prev) => ({ ...prev, email: undefined, general: undefined }));
-    setIsSendingOtp(true);
-    setOtpMessage(null);
-
-    try {
-      const res = await authService.sendEmailOtp(email.trim());
-      setIsSendingOtp(false);
-      setOtpSent(true);
-      setOtpMessage(
-        res.message || `Verification OTP code sent to ${email.trim()}. Please check your email inbox.`
-      );
-    } catch (err: any) {
-      setIsSendingOtp(false);
-      const msg = err.response?.data?.message || err.message || 'Failed to send OTP code.';
-      setErrors((prev) => ({ ...prev, email: msg }));
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) {
-      setErrors((prev) => ({ ...prev, otp: 'Please enter a 6-digit OTP code.' }));
-      return;
-    }
-
-    setErrors((prev) => ({ ...prev, otp: undefined, general: undefined }));
-    setIsVerifyingOtp(true);
-
-    try {
-      const success = await authService.verifyEmailOtp(email.trim(), otpCode.trim());
-      setIsVerifyingOtp(false);
-      if (success) {
-        setIsEmailVerified(true);
-        setOtpSent(false);
-        setOtpMessage(null);
-        setErrors((prev) => ({ ...prev, email: undefined }));
-      }
-    } catch (err: any) {
-      setIsVerifyingOtp(false);
-      const msg = err.response?.data?.message || err.message || 'Invalid or expired OTP code.';
-      setErrors((prev) => ({ ...prev, otp: msg }));
-    }
   };
 
   const storeRegister = useAuthStore((state) => state.register);
@@ -178,10 +129,10 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
         errorParam = params.get('error');
         errorReason = params.get('error_reason');
       } else if (route?.params) {
-        const routeParams = route.params as any;
-        code = routeParams.code || null;
-        errorParam = routeParams.error || null;
-        errorReason = routeParams.error_reason || null;
+        const rParams = route.params as any;
+        code = rParams.code || null;
+        errorParam = rParams.error || null;
+        errorReason = rParams.error_reason || null;
       }
 
       if (errorParam || errorReason) {
@@ -217,34 +168,13 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const validateForm = (): boolean => {
     const newErrors: RegisterErrors = {};
 
-    // Full Name validation (Must contain letters only, no pure numbers or special symbols)
-    if (!name.trim()) {
-      newErrors.name = 'Full Name is required';
-    } else if (name.trim().length < 2) {
-      newErrors.name = 'Full Name must be at least 2 characters';
-    } else if (!/^[a-zA-Z\s.'-]+$/.test(name.trim())) {
-      newErrors.name = 'Full Name must only contain letters (numbers and special characters are not allowed)';
-    }
-
-    // Email validation & OTP Verification check
+    // Email validation
     if (!email.trim()) {
       newErrors.email = 'Email address is required';
     } else {
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(email.trim())) {
-        newErrors.email = 'Please enter a valid email address with a valid domain (e.g. yourname@gmail.com)';
-      } else if (!isEmailVerified) {
-        newErrors.email = 'Please verify your email address via OTP before creating your account.';
-      }
-    }
-
-    // Phone Number validation
-    if (!phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else {
-      const phoneClean = phone.replace(/[^0-9]/g, '');
-      if (phoneClean.length < 10) {
-        newErrors.phone = 'Please enter a valid 10-digit phone number';
+        newErrors.email = 'Please enter a valid email address';
       }
     }
 
@@ -282,36 +212,50 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const handleRegister = async () => {
     if (!validateForm()) return;
 
-    setIsLoading(true);
+    // Trigger OTP flow
+    setIsSendingOtp(true);
+    setErrors((prev) => ({ ...prev, general: undefined }));
+    
+    try {
+      const res = await authService.sendEmailOtp(email.trim());
+      setIsSendingOtp(false);
+      setOtpSent(true);
+      setOtpMessage(res.message || `Verification OTP code sent to ${email.trim()}.`);
+    } catch (err: any) {
+      setIsSendingOtp(false);
+      const msg = err.response?.data?.message || err.message || 'Failed to send OTP code.';
+      setErrors((prev) => ({ ...prev, general: msg }));
+    }
+  };
 
-    // TEMPORARY RUNTIME LOGGING
-    console.error('--- REGISTRATION ATTEMPT ---');
-    console.error('API_BASE_URL is:', ENV.API_BASE_URL);
-    console.error('EXPO_PUBLIC_API_URL is:', process.env.EXPO_PUBLIC_API_URL);
+  const handleVerifyAndCreateAccount = async () => {
+    if (otpCode.length !== 6) {
+      setErrors((prev) => ({ ...prev, otp: 'Please enter a 6-digit OTP code.' }));
+      return;
+    }
 
-    const success = await storeRegister(
-      name.trim(),
-      email.trim(),
-      password,
-      phone.trim(),
-      confirmPassword
-    );
-    setIsLoading(false);
+    setIsVerifyingOtp(true);
+    setErrors((prev) => ({ ...prev, otp: undefined, general: undefined }));
 
-    if (success) {
-      navigation.navigate('Home');
-    } else {
-      const storeError = useAuthStore.getState().error || 'Registration failed. Please try again.';
-      if (storeError.toLowerCase().includes('password')) {
-        setErrors({ password: storeError });
-      } else if (storeError.toLowerCase().includes('phone')) {
-        setErrors({ phone: storeError });
-      } else if (storeError.toLowerCase().includes('email')) {
-        setErrors({ email: storeError });
-      } else {
-        // Generic errors like "Network Error"
-        setErrors({ general: storeError });
+    try {
+      const success = await authService.verifyEmailOtp(email.trim(), otpCode.trim());
+      if (success) {
+        // Create account without dummy full name or dummy phone
+        await authService.register(
+          '', // No dummy name passed
+          email.trim(),
+          password,
+          '', // No dummy phone passed
+          confirmPassword
+        );
+        setIsVerifyingOtp(false);
+        alert('Account created successfully! Please log in.');
+        navigation.navigate('Login');
       }
+    } catch (err: any) {
+      setIsVerifyingOtp(false);
+      const msg = err.response?.data?.message || err.message || 'Verification or Registration failed.';
+      setErrors((prev) => ({ ...prev, otp: msg, general: msg }));
     }
   };
 
@@ -421,74 +365,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                 </Text>
               </View>
 
-              {/* Full Name */}
-              <CustomInput
-                label="FULL NAME"
-                placeholder="John Doe"
-                value={name}
-                onChangeText={(text) => {
-                  setName(text);
-                  if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-                }}
-                error={errors.name}
-                leftIcon={
-                  <MaterialIcons name="person-outline" size={20} color={Colors.tertiary} />
-                }
-              />
-
-              {/* Email Address with Verify Button / Verified Badge */}
-              <View style={styles.emailInputWrapper}>
-                <View style={{ flex: 1 }}>
-                  <CustomInput
-                    label="EMAIL ADDRESS"
-                    placeholder="john@example.com"
-                    value={email}
-                    editable={!isEmailVerified}
-                    onChangeText={(text) => {
-                      setEmail(text);
-                      setIsEmailVerified(false);
-                      setOtpSent(false);
-                      setOtpCode('');
-                      if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-                    }}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    error={errors.email}
-                    leftIcon={
-                      <MaterialIcons
-                        name="mail-outline"
-                        size={20}
-                        color={isEmailVerified ? '#2E7D32' : Colors.tertiary}
-                      />
-                    }
-                  />
-                </View>
-
-                {isValidEmail(email) && (
-                  <View style={{ marginTop: 24, marginLeft: 8 }}>
-                    {isEmailVerified ? (
-                      <View style={styles.verifiedBadge}>
-                        <MaterialIcons name="check-circle" size={16} color="#2E7D32" />
-                        <Text style={styles.verifiedBadgeText}>Verified</Text>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        style={[styles.sendOtpBtn, isSendingOtp && { opacity: 0.7 }]}
-                        onPress={handleSendOtp}
-                        disabled={isSendingOtp}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.sendOtpBtnText}>
-                          {isSendingOtp ? 'Sending...' : otpSent ? 'Resend' : 'Verify'}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                )}
-              </View>
-
-              {/* Inline OTP Verification Box */}
-              {otpSent && !isEmailVerified && (
+              {otpSent ? (
                 <View style={styles.otpBox}>
                   <View style={styles.otpBoxHeader}>
                     <MaterialIcons name="mark-email-read" size={20} color={Colors.primary} />
@@ -504,91 +381,87 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                     </View>
                   )}
 
-                  <View style={styles.otpRow}>
-                    <View style={{ flex: 1 }}>
-                      <CustomInput
-                        placeholder="6-digit OTP (e.g. 123456)"
-                        value={otpCode}
-                        onChangeText={(text) => {
-                          setOtpCode(text.replace(/\D/g, '').slice(0, 6));
-                          if (errors.otp) setErrors((prev) => ({ ...prev, otp: undefined }));
-                        }}
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        error={errors.otp}
-                      />
-                    </View>
-                    <TouchableOpacity
-                      style={[
-                        styles.verifyOtpBtn,
-                        (otpCode.length !== 6 || isVerifyingOtp) && { opacity: 0.6 },
-                      ]}
-                      onPress={handleVerifyOtp}
-                      disabled={otpCode.length !== 6 || isVerifyingOtp}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.verifyOtpBtnText}>
-                        {isVerifyingOtp ? 'Verifying...' : 'Verify OTP'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <CustomInput
+                    label="OTP CODE"
+                    placeholder="6-digit OTP (e.g. 123456)"
+                    value={otpCode}
+                    onChangeText={(text) => {
+                      setOtpCode(text.replace(/\D/g, '').slice(0, 6));
+                      if (errors.otp) setErrors((prev) => ({ ...prev, otp: undefined }));
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    error={errors.otp}
+                  />
+
+                  <PrimaryButton
+                    title="Verify & Create Account"
+                    onPress={handleVerifyAndCreateAccount}
+                    loading={isVerifyingOtp}
+                    style={styles.submitButton}
+                  />
+                  
+                  <TouchableOpacity
+                    style={{ marginTop: 16, alignItems: 'center' }}
+                    onPress={() => { setOtpSent(false); setOtpCode(''); }}
+                  >
+                    <Text style={styles.loginLink}>Back to Form</Text>
+                  </TouchableOpacity>
                 </View>
+              ) : (
+                <>
+                  <CustomInput
+                    label="EMAIL ADDRESS"
+                    placeholder="john@example.com"
+                    value={email}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={errors.email}
+                    leftIcon={
+                      <MaterialIcons name="mail-outline" size={20} color={Colors.tertiary} />
+                    }
+                  />
+
+                  <PasswordInput
+                    label="PASSWORD"
+                    placeholder="••••••••"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    error={errors.password}
+                  />
+
+                  <PasswordInput
+                    label="CONFIRM PASSWORD"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChangeText={(text) => {
+                      setConfirmPassword(text);
+                      if (errors.confirmPassword)
+                        setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                    }}
+                    error={errors.confirmPassword}
+                  />
+
+                  <View style={styles.termsContainer}>
+                    <Checkbox
+                      label="I agree to the Terms & Conditions and Privacy Policy"
+                      checked={acceptedTerms}
+                      onChange={(checked) => {
+                        setAcceptedTerms(checked);
+                        if (errors.terms) setErrors((prev) => ({ ...prev, terms: undefined }));
+                      }}
+                    />
+                    {errors.terms && <Text style={styles.errorText}>{errors.terms}</Text>}
+                  </View>
+                </>
               )}
-
-              {/* Phone Number */}
-              <CustomInput
-                label="PHONE NUMBER"
-                placeholder="+1 (555) 000-0000"
-                value={phone}
-                onChangeText={(text) => {
-                  setPhone(text);
-                  if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
-                }}
-                keyboardType="phone-pad"
-                error={errors.phone}
-                leftIcon={
-                  <MaterialIcons name="phone-android" size={20} color={Colors.tertiary} />
-                }
-              />
-
-              {/* Password */}
-              <PasswordInput
-                label="PASSWORD"
-                placeholder="••••••••"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-                }}
-                error={errors.password}
-              />
-
-              {/* Confirm Password */}
-              <PasswordInput
-                label="CONFIRM PASSWORD"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  if (errors.confirmPassword)
-                    setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
-                }}
-                error={errors.confirmPassword}
-              />
-
-              {/* Terms Checkbox */}
-              <View style={styles.termsContainer}>
-                <Checkbox
-                  label="I agree to the Terms & Conditions and Privacy Policy"
-                  checked={acceptedTerms}
-                  onChange={(checked) => {
-                    setAcceptedTerms(checked);
-                    if (errors.terms) setErrors((prev) => ({ ...prev, terms: undefined }));
-                  }}
-                />
-                {errors.terms && <Text style={styles.errorText}>{errors.terms}</Text>}
-              </View>
-
               {/* General Form Error Banner */}
               {errors.general && (
                 <View style={styles.errorBanner}>
@@ -598,16 +471,17 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
               )}
 
               {/* Submit Button */}
-              <PrimaryButton
-                title="Create Account"
-                onPress={handleRegister}
-                loading={isLoading}
-                icon={
-                  <MaterialIcons name="arrow-forward" size={20} color={Colors.onPrimary} />
-                }
-                style={styles.submitButton}
-              />
-
+              {!otpSent && (
+                <PrimaryButton
+                  title="Create Account"
+                  onPress={handleRegister}
+                  loading={isSendingOtp}
+                  icon={
+                    <MaterialIcons name="arrow-forward" size={20} color={Colors.onPrimary} />
+                  }
+                  style={styles.submitButton}
+                />
+              )}
               {/* Divider */}
               <View style={styles.dividerRow}>
                 <View style={styles.dividerLine} />

@@ -22,11 +22,15 @@ from app.schemas.payment import (
     PaymentCreateRequest,
     PaymentResponse,
     PaymentVerifyRequest,
-    RazorpayOrderCreateRequest,
-    RazorpayOrderCreateResponse,
-    RazorpayPaymentVerifyRequest,
+    UpiOrderCreateRequest,
+    UpiOrderCreateResponse,
+    UpiPaymentVerifyAdminRequest,
 )
-from app.services.razorpay_service import RazorpayService
+import urllib.parse
+import base64
+import io
+import qrcode
+from app.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +41,6 @@ class PaymentService:
         self.order_repo = OrderRepository()
         self.cart_repo = CartRepository()
         self.product_repo = ProductRepository()
-        self.razorpay_service = RazorpayService()
 
     async def create_payment(self, user_id: str, data: PaymentCreateRequest) -> Payment:
         """Initiates a payment for an order. Generates mock transaction ID, validates amounts, and blocks duplicates."""
@@ -142,194 +145,192 @@ class PaymentService:
 
         return await self.payment_repo.update_status(payment, update_dict)
 
-    async def create_razorpay_payment_order(
-        self, user_id: str, data: RazorpayOrderCreateRequest
-    ) -> RazorpayOrderCreateResponse:
+    async def create_upi_payment_order(
+        self, user_id: str, data: UpiOrderCreateRequest
+    ) -> UpiOrderCreateResponse:
         """
-        Creates a Razorpay Test Order and registers a pending CloudCrackers Order and Payment.
-        Calculates all financial amounts strictly server-side from active MongoDB records.
-        Inventory deduction and cart clearing are deferred until payment verification.
+        Creates an Order and Payment in Pending state for UPI QR.
+        Calculates all financial amounts strictly server-side.
+        Inventory deduction is deferred until admin verification.
+        Generates dynamic UPI URI and QR code, sends email, and returns them.
         """
-        order: Optional[Order] = None
+        # 1. Load user cart from MongoDB
+        cart_items = await self.cart_repo.list_user_cart(user_id)
+        if not cart_items:
+            raise ValidationException(message="Your cart is empty.")
 
-        if data.order_id:
-            order = await self.order_repo.get_by_id(data.order_id)
-            if not order:
-                raise NotFoundException(message="Order not found.")
-            if str(order.user_id) != user_id:
-                raise BaseAppException(
-                    status_code=403,
-                    message="You do not have permission to pay for this order.",
+        # 2. Validate products
+        products_to_order = []
+        subtotal = 0.0
+        total_discount = 0.0
+        grand_total = 0.0
+
+        for item in cart_items:
+            product = await self.product_repo.get_by_id(str(item.product_id))
+            if not product or not product.is_active or product.status == "deleted":
+                raise ValidationException(
+                    message=f"Product with ID '{item.product_id}' is no longer available."
                 )
-            if order.order_status == "Cancelled":
-                raise ValidationException(message="Cannot pay for a cancelled order.")
-            if order.payment_status in ["Paid", "Success"]:
-                raise ValidationException(message="This order is already paid.")
-        else:
-            # 1. Load user cart from MongoDB
-            cart_items = await self.cart_repo.list_user_cart(user_id)
-            if not cart_items:
-                raise ValidationException(message="Your cart is empty.")
-
-            # 2. Validate products and inventory
-            products_to_order = []
-            subtotal = 0.0
-            total_discount = 0.0
-            grand_total = 0.0
-
-            for item in cart_items:
-                product = await self.product_repo.get_by_id(str(item.product_id))
-                if not product or not product.is_active or product.status == "deleted":
-                    raise ValidationException(
-                        message=f"Product with ID '{item.product_id}' is no longer available."
-                    )
-                if item.quantity > product.stock:
-                    raise ValidationException(
-                        message=f"Insufficient stock for '{product.name}'. Only {product.stock} available."
-                    )
-
-                products_to_order.append((product, item.quantity))
-                subtotal += item.quantity * product.price
-                discount_diff = 0.0
-                if product.discount_price is not None:
-                    discount_diff = product.price - product.discount_price
-                total_discount += item.quantity * discount_diff
-                grand_total += item.total_price
-
-            # 3. Validate and apply coupon if provided
-            applied_coupon_code = None
-            coupon_discount_val = 0.0
-            if data.coupon_code and data.coupon_code.strip():
-                from app.schemas.coupon import CouponValidateRequest
-                from app.services.coupon_service import CouponService
-
-                coupon_service = CouponService()
-                coupon_res = await coupon_service.validate_coupon(
-                    CouponValidateRequest(
-                        coupon_code=data.coupon_code.strip(),
-                        order_total=round(subtotal, 2),
-                    )
+            if item.quantity > product.stock:
+                raise ValidationException(
+                    message=f"Insufficient stock for '{product.name}'. Only {product.stock} available."
                 )
-                applied_coupon_code = coupon_res.coupon_code
-                coupon_discount_val = coupon_res.discount_amount
-                grand_total = max(0.0, grand_total - coupon_discount_val)
 
-            # 4. Calculate shipping and tax
-            shipping = 250.0 if data.delivery_method == "express" else (0.0 if grand_total > 1000.0 else 99.0)
-            if grand_total == 0:
-                shipping = 0.0
+            products_to_order.append((product, item.quantity))
+            subtotal += item.quantity * product.price
+            discount_diff = 0.0
+            if product.discount_price is not None:
+                discount_diff = product.price - product.discount_price
+            total_discount += item.quantity * discount_diff
+            grand_total += item.total_price
 
-            tax = round(0.05 * grand_total, 2)
-            total = round(grand_total + shipping + tax, 2)
+        # 3. Validate and apply coupon if provided
+        applied_coupon_code = None
+        coupon_discount_val = 0.0
+        if data.coupon_code and data.coupon_code.strip():
+            from app.schemas.coupon import CouponValidateRequest
+            from app.services.coupon_service import CouponService
 
-            # 5. Create CloudCrackers Order in Pending status
-            date_str = datetime.utcnow().strftime("%Y%m%d")
-            rand_suffix = random.randint(100000, 999999)
-            order_number = f"ORD-{date_str}-{rand_suffix}"
-
-            shipping_addr = data.shipping_address or "Customer Default Address"
-
-            order_data = {
-                "order_number": order_number,
-                "user_id": user_id,
-                "subtotal": round(subtotal, 2),
-                "discount": round(total_discount, 2),
-                "coupon_code": applied_coupon_code,
-                "coupon_discount": round(coupon_discount_val, 2),
-                "shipping": round(shipping, 2),
-                "tax": tax,
-                "total": total,
-                "payment_method": "Razorpay",
-                "payment_status": "Pending",
-                "order_status": "Pending",
-                "shipping_address": shipping_addr,
-                "status": "active",
-            }
-            order = await self.order_repo.create_order(order_data)
-
-            # 6. Create Order Items (Stock deduction is deferred to verification!)
-            for product, quantity in products_to_order:
-                unit_price = (
-                    product.discount_price
-                    if product.discount_price is not None
-                    else product.price
+            coupon_service = CouponService()
+            coupon_res = await coupon_service.validate_coupon(
+                CouponValidateRequest(
+                    coupon_code=data.coupon_code.strip(),
+                    order_total=round(subtotal, 2),
                 )
-                item_data = {
-                    "order_id": order.id,
-                    "product_id": product.id,
-                    "quantity": quantity,
-                    "price": unit_price,
-                    "status": "active",
-                }
-                await self.order_repo.create_order_item(item_data)
-
-        # 7. Create Razorpay Test Order
-        rzp_notes = {
-            "order_id": str(order.id),
-            "order_number": order.order_number,
-            "user_id": user_id,
-        }
-        rzp_order = self.razorpay_service.create_razorpay_order(
-            amount=order.total,
-            currency="INR",
-            receipt=order.order_number,
-            notes=rzp_notes,
-        )
-
-        razorpay_order_id = rzp_order["id"]
-
-        # 8. Update Order with Razorpay order ID
-        await self.order_repo.update(
-            order,
-            {
-                "razorpay_order_id": razorpay_order_id,
-                "payment_method": "Razorpay",
-            },
-        )
-
-        # 9. Create / Update Payment Record
-        existing_payment = await self.payment_repo.get_by_order(str(order.id))
-        if existing_payment:
-            await self.payment_repo.update_status(
-                existing_payment,
-                {
-                    "razorpay_order_id": razorpay_order_id,
-                    "payment_status": "Pending",
-                    "amount": order.total,
-                    "currency": "INR",
-                    "gateway": "Razorpay",
-                    "payment_method": "Razorpay",
-                    "payment_created_at": datetime.utcnow(),
-                },
             )
-        else:
-            transaction_id = f"TXN-RZP-{order.order_number}"
-            payment_data = {
+            applied_coupon_code = coupon_res.coupon_code
+            coupon_discount_val = coupon_res.discount_amount
+            grand_total = max(0.0, grand_total - coupon_discount_val)
+
+        # 4. Calculate shipping and tax
+        shipping = 250.0 if data.delivery_method == "express" else (0.0 if grand_total > 1000.0 else 99.0)
+        if grand_total == 0:
+            shipping = 0.0
+
+        tax = round(0.05 * grand_total, 2)
+        total = round(grand_total + shipping + tax, 2)
+
+        # 5. Create CloudCrackers Order in Pending status
+        date_str = datetime.utcnow().strftime("%Y%m%d")
+        rand_suffix = random.randint(100000, 999999)
+        order_number = f"CC-{date_str}-{rand_suffix}"
+
+        shipping_addr = data.shipping_address or "Customer Default Address"
+
+        order_data = {
+            "order_number": order_number,
+            "user_id": user_id,
+            "subtotal": round(subtotal, 2),
+            "discount": round(total_discount, 2),
+            "coupon_code": applied_coupon_code,
+            "coupon_discount": round(coupon_discount_val, 2),
+            "shipping": round(shipping, 2),
+            "tax": tax,
+            "total": total,
+            "payment_method": "UPI_QR",
+            "payment_status": "Pending",
+            "order_status": "Pending",
+            "shipping_address": shipping_addr,
+            "status": "active",
+        }
+        order = await self.order_repo.create_order(order_data)
+
+        # 6. Create Order Items (Stock deduction is deferred to verification)
+        for product, quantity in products_to_order:
+            unit_price = (
+                product.discount_price
+                if product.discount_price is not None
+                else product.price
+            )
+            item_data = {
                 "order_id": order.id,
-                "user_id": user_id,
-                "payment_method": "Razorpay",
-                "payment_status": "Pending",
-                "transaction_id": transaction_id,
-                "gateway": "Razorpay",
-                "amount": order.total,
-                "currency": "INR",
-                "razorpay_order_id": razorpay_order_id,
-                "payment_created_at": datetime.utcnow(),
+                "product_id": product.id,
+                "quantity": quantity,
+                "price": unit_price,
                 "status": "active",
             }
-            await self.payment_repo.create_payment(payment_data)
+            await self.order_repo.create_order_item(item_data)
+
+        # 7. Create Payment Record
+        transaction_id = f"TXN-UPI-{order.order_number}"
+        payment_data = {
+            "order_id": order.id,
+            "user_id": user_id,
+            "payment_method": "UPI_QR",
+            "payment_status": "Pending",
+            "transaction_id": transaction_id,
+            "gateway": "UPI",
+            "amount": order.total,
+            "currency": "INR",
+            "payment_created_at": datetime.utcnow(),
+            "status": "active",
+        }
+        payment = await self.payment_repo.create_payment(payment_data)
+
+        # 8. Generate UPI URI and QR Code
+        upi_id = settings.UPI_PAYMENT_ID or "cloudcrackers@upi"
+        payee_name = settings.UPI_PAYEE_NAME or "CloudCrackers"
+        
+        # Ensure proper exact amount to 2 decimal places
+        exact_amount = f"{order.total:.2f}"
+        
+        upi_params = {
+            "pa": upi_id,
+            "pn": payee_name,
+            "am": exact_amount,
+            "cu": "INR",
+            "tn": order_number
+        }
+        
+        query_string = urllib.parse.urlencode(upi_params, safe='@')
+        upi_uri = f"upi://pay?{query_string}"
+        
+        # Generate QR code base64
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(upi_uri)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        qr_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        qr_data_uri = f"data:image/png;base64,{qr_base64}"
+        
+        # 9. Send Email
+        from app.models.user import User
+        user = await User.get(user_id)
+        if user and user.email:
+            try:
+                await EmailService.send_upi_payment_email(
+                    to_email=user.email,
+                    order_number=order.order_number,
+                    amount=exact_amount,
+                    upi_id=upi_id,
+                    qr_base64=qr_base64,
+                    items=products_to_order,
+                    shipping=shipping,
+                    tax=tax,
+                    subtotal=subtotal
+                )
+            except Exception as e:
+                logger.error(f"Failed to send UPI payment email for order {order.order_number}: {e}")
 
         logger.info(
-            f"Created Razorpay payment order: rzp_order_id={razorpay_order_id}, order_number={order.order_number}, total={order.total}"
+            f"Created UPI payment order: order_number={order.order_number}, total={order.total}"
         )
 
-        return RazorpayOrderCreateResponse(
-            razorpay_order_id=razorpay_order_id,
-            razorpay_key_id=settings.RAZORPAY_KEY_ID or "",
-            amount=int(round(order.total * 100)),
-            currency="INR",
+        return UpiOrderCreateResponse(
             order_id=str(order.id),
             order_number=order.order_number,
+            payment_id=str(payment.id),
+            amount=order.total,
+            currency="INR",
+            upi_uri=upi_uri,
+            qr_code_base64=qr_data_uri,
             subtotal=order.subtotal,
             discount=order.discount,
             coupon_discount=order.coupon_discount,
@@ -338,90 +339,46 @@ class PaymentService:
             total=order.total,
         )
 
-    async def verify_razorpay_payment(
+    async def verify_upi_payment_admin(
         self,
-        user_id: str,
-        data: RazorpayPaymentVerifyRequest,
-        is_admin: bool = False,
+        admin_id: str,
+        payment_id: str,
+        data: UpiPaymentVerifyAdminRequest,
     ) -> Dict[str, Any]:
         """
-        Verifies Razorpay payment signature using HMAC SHA256 and RAZORPAY_KEY_SECRET.
-        Upon valid signature:
-          1. Idempotently marks payment as Success and order as Paid & Confirmed.
+        Admin manually verifies a pending UPI payment using a UTR reference.
+        Upon valid verification:
+          1. Idempotently marks payment as Verified and order as Confirmed.
           2. Finalizes inventory deduction.
           3. Increments coupon usage count.
           4. Clears customer cart.
         """
-        # 1. Verify Razorpay HMAC-SHA256 signature
-        is_valid = self.razorpay_service.verify_payment_signature(
-            razorpay_order_id=data.razorpay_order_id,
-            razorpay_payment_id=data.razorpay_payment_id,
-            razorpay_signature=data.razorpay_signature,
-        )
+        payment = await self.payment_repo.get_by_id(payment_id)
+        if not payment:
+            raise NotFoundException(message="Payment not found.")
 
-        # Retrieve Payment and Order records
-        payment = await self.payment_repo.get_by_razorpay_order(data.razorpay_order_id)
-        order: Optional[Order] = None
-
-        if payment:
-            order = await self.order_repo.get_by_id(str(payment.order_id))
-        else:
-            from beanie import PydanticObjectId
-            order = await Order.find_one(Order.razorpay_order_id == data.razorpay_order_id)
-            if order:
-                payment = await self.payment_repo.get_by_order(str(order.id))
-
+        order = await self.order_repo.get_by_id(str(payment.order_id))
         if not order:
-            raise NotFoundException(message="No order associated with this Razorpay order ID.")
+            raise NotFoundException(message="No order associated with this payment.")
 
-        # Permission check
-        if not is_admin and str(order.user_id) != user_id:
-            raise BaseAppException(
-                status_code=403,
-                message="You do not have permission to verify payment for this order.",
-            )
+        # Idempotency check
+        if payment.payment_status == "Verified" or order.payment_status == "Paid":
+            raise ValidationException(message="Payment has already been verified.")
+            
+        if payment.payment_status != "Pending":
+            raise ValidationException(message=f"Cannot verify a payment in {payment.payment_status} state.")
 
-        if not is_valid:
-            logger.warning(
-                f"Razorpay verification FAILED: Invalid signature for razorpay_order_id={data.razorpay_order_id}, razorpay_payment_id={data.razorpay_payment_id}"
-            )
-            # Mark payment and order as Failed
-            if payment:
-                await self.payment_repo.update_status(
-                    payment,
-                    {
-                        "payment_status": "Failed",
-                        "failure_reason": "Invalid Razorpay payment signature",
-                        "razorpay_payment_id": data.razorpay_payment_id,
-                        "razorpay_signature": data.razorpay_signature,
-                    },
-                )
-            await self.order_repo.update(order, {"payment_status": "Failed"})
-            raise ValidationException(
-                message="Invalid Razorpay payment signature. Payment verification failed."
-            )
-
-        # 2. Idempotency check: If already paid, return early safely
-        if order.payment_status == "Paid" and payment and payment.payment_status == "Success":
-            logger.info(
-                f"Razorpay payment already processed (idempotent skip) for order {order.order_number}"
-            )
-            formatted_order = await self._format_order_response(order)
-            return {
-                "order": formatted_order,
-                "payment": PaymentResponse.convert_id(payment),
-                "already_processed": True,
-            }
-
-        # 3. Finalize Inventory Deduction
+        # Finalize Inventory Deduction
         order_items = await self.order_repo.get_order_items(str(order.id))
         for item in order_items:
             product = await self.product_repo.get_by_id(str(item.product_id))
             if product:
+                if product.stock < item.quantity:
+                    raise ValidationException(message=f"Insufficient stock for '{product.name}' to confirm order.")
                 new_stock = max(0, product.stock - item.quantity)
                 await self.product_repo.update(product, {"stock": new_stock})
 
-        # 4. Update Coupon Usage Consistency
+        # Update Coupon Usage
         if order.coupon_code:
             coupon = await Coupon.find_one(Coupon.coupon_code == order.coupon_code)
             if coupon:
@@ -429,67 +386,35 @@ class PaymentService:
                 coupon.updated_at = datetime.utcnow()
                 await coupon.save()
 
-        # 5. Clear User Cart
+        # Clear User Cart
         await self.cart_repo.clear_user_cart(str(order.user_id))
 
-        # 6. Update Payment Document
         completed_time = datetime.utcnow()
-        if payment:
-            await self.payment_repo.update_status(
-                payment,
-                {
-                    "payment_status": "Success",
-                    "razorpay_payment_id": data.razorpay_payment_id,
-                    "razorpay_signature": data.razorpay_signature,
-                    "payment_completed_at": completed_time,
-                    "payment_date": completed_time,
-                    "gateway_response": {
-                        "razorpay_order_id": data.razorpay_order_id,
-                        "razorpay_payment_id": data.razorpay_payment_id,
-                        "razorpay_signature": data.razorpay_signature,
-                        "status": "captured",
-                    },
-                },
-            )
-        else:
-            transaction_id = f"TXN-RZP-{order.order_number}"
-            payment_data = {
-                "order_id": order.id,
-                "user_id": order.user_id,
-                "payment_method": "Razorpay",
-                "payment_status": "Success",
-                "transaction_id": transaction_id,
-                "gateway": "Razorpay",
-                "amount": order.total,
-                "currency": "INR",
-                "razorpay_order_id": data.razorpay_order_id,
-                "razorpay_payment_id": data.razorpay_payment_id,
-                "razorpay_signature": data.razorpay_signature,
-                "payment_created_at": completed_time,
+        
+        # Update Payment
+        await self.payment_repo.update_status(
+            payment,
+            {
+                "payment_status": "Verified",
+                "transaction_reference": data.transaction_reference,
+                "verified_by": admin_id,
+                "verified_at": completed_time,
                 "payment_completed_at": completed_time,
                 "payment_date": completed_time,
-                "gateway_response": {
-                    "razorpay_order_id": data.razorpay_order_id,
-                    "razorpay_payment_id": data.razorpay_payment_id,
-                    "status": "captured",
-                },
-                "status": "active",
-            }
-            payment = await self.payment_repo.create_payment(payment_data)
+            },
+        )
 
-        # 7. Update Order Document
+        # Update Order
         await self.order_repo.update(
             order,
             {
                 "payment_status": "Paid",
                 "order_status": "Confirmed",
-                "razorpay_order_id": data.razorpay_order_id,
-                "razorpay_payment_id": data.razorpay_payment_id,
-                "razorpay_signature": data.razorpay_signature,
             },
         )
+        
         logger.info(
-            f"Razorpay payment verification SUCCESS for order {order.order_number}, razorpay_payment_id={data.razorpay_payment_id}"
+            f"UPI payment verification SUCCESS for order {order.order_number}, UTR={data.transaction_reference}, Admin={admin_id}"
         )
 
         formatted_order = await self._format_order_response(order)
@@ -498,106 +423,6 @@ class PaymentService:
             "payment": PaymentResponse.convert_id(payment),
             "already_processed": False,
         }
-
-    async def handle_razorpay_webhook(
-        self, raw_body: bytes, signature: Optional[str]
-    ) -> Dict[str, Any]:
-        """
-        Handles incoming Razorpay Webhooks idempotently.
-        Verifies HMAC signature with RAZORPAY_WEBHOOK_SECRET.
-        """
-        if not signature:
-            raise ValidationException(message="Missing Razorpay webhook signature header.")
-
-        is_valid = self.razorpay_service.verify_webhook_signature(
-            body=raw_body, signature=signature
-        )
-        if not is_valid:
-            raise ValidationException(message="Invalid Razorpay webhook signature.")
-
-        try:
-            event_data = json.loads(raw_body.decode("utf-8"))
-        except Exception:
-            raise ValidationException(message="Invalid JSON payload in webhook.")
-
-        event = event_data.get("event", "")
-        logger.info("Processing Razorpay webhook event: %s", event)
-
-        payload_payment = (
-            event_data.get("payload", {}).get("payment", {}).get("entity", {})
-        )
-        rzp_order_id = payload_payment.get("order_id")
-        rzp_payment_id = payload_payment.get("id")
-
-        if not rzp_order_id:
-            return {"status": "ignored", "event": event, "message": "No order_id found"}
-
-        payment = await self.payment_repo.get_by_razorpay_order(rzp_order_id)
-        order: Optional[Order] = None
-        if payment:
-            order = await self.order_repo.get_by_id(str(payment.order_id))
-        else:
-            order = await Order.find_one(Order.razorpay_order_id == rzp_order_id)
-            if order:
-                payment = await self.payment_repo.get_by_order(str(order.id))
-
-        if not order:
-            return {"status": "not_found", "event": event, "order_id": rzp_order_id}
-
-        if event in ["payment.captured", "order.paid"]:
-            if order.payment_status != "Paid":
-                # Finalize stock, coupon, cart, and statuses
-                order_items = await self.order_repo.get_order_items(str(order.id))
-                for item in order_items:
-                    product = await self.product_repo.get_by_id(str(item.product_id))
-                    if product:
-                        new_stock = max(0, product.stock - item.quantity)
-                        await self.product_repo.update(product, {"stock": new_stock})
-
-                if order.coupon_code:
-                    coupon = await Coupon.find_one(Coupon.coupon_code == order.coupon_code)
-                    if coupon:
-                        coupon.used_count += 1
-                        await coupon.save()
-
-                await self.cart_repo.clear_user_cart(str(order.user_id))
-
-                completed_time = datetime.utcnow()
-                if payment:
-                    await self.payment_repo.update_status(
-                        payment,
-                        {
-                            "payment_status": "Success",
-                            "razorpay_payment_id": rzp_payment_id,
-                            "payment_completed_at": completed_time,
-                            "payment_date": completed_time,
-                        },
-                    )
-
-                await self.order_repo.update(
-                    order,
-                    {
-                        "payment_status": "Paid",
-                        "order_status": "Confirmed",
-                        "razorpay_payment_id": rzp_payment_id,
-                    },
-                )
-
-        elif event == "payment.failed":
-            if order.payment_status != "Paid":
-                if payment:
-                    await self.payment_repo.update_status(
-                        payment,
-                        {
-                            "payment_status": "Failed",
-                            "failure_reason": payload_payment.get(
-                                "error_description", "Payment failed"
-                            ),
-                        },
-                    )
-                await self.order_repo.update(order, {"payment_status": "Failed"})
-
-        return {"status": "processed", "event": event, "order_id": rzp_order_id}
 
     async def get_payment_details(
         self, user_id: str, payment_id: str, is_admin: bool = False

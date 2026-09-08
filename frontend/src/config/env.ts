@@ -7,9 +7,9 @@ const getApiBaseUrl = (): string => {
 
   // On Native Mobile App (Expo Go on mobile phone via QR code)
   if (Platform.OS !== 'web') {
-    // Mobile phone cannot reach laptop's 'localhost'. Automatically use production API so QR code works 100%!
+    // If testing on a physical device, ensure EXPO_PUBLIC_API_URL in .env is set to your machine's local IP address (e.g., http://192.168.x.x:8000/api/v1) instead of localhost.
     if (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
-      return PROD_API_URL;
+      console.warn("WARNING: You are using 'localhost' on a mobile device. This may fail unless using an Android Emulator. Consider changing EXPO_PUBLIC_API_URL in .env to your computer's LAN IP.");
     }
   }
 

@@ -372,8 +372,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fullImage: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.75,
+    width: '100%',
+    height: '100%',
   },
   footer: {
     position: 'absolute',

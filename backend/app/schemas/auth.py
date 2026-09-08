@@ -5,15 +5,17 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, model_validato
 
 
 class RegisterRequest(BaseModel):
-    full_name: str = Field(..., min_length=2, max_length=100)
+    full_name: Optional[str] = None
     email: EmailStr
-    phone: str
+    phone: Optional[str] = None
     password: str
     confirm_password: str
 
     @field_validator("phone")
     @classmethod
-    def validate_phone(cls, v: str) -> str:
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        if not v:
+            return v
         cleaned = re.sub(r"\D", "", v)
         if len(cleaned) < 10 or len(cleaned) > 15:
             raise ValueError("Phone number must contain between 10 and 15 digits")
@@ -41,6 +43,16 @@ class RegisterRequest(BaseModel):
         return self
 
 
+class CheckEmailRequest(BaseModel):
+    email: EmailStr
+
+
+class CheckEmailResponse(BaseModel):
+    exists: bool
+    has_password: bool
+    auth_provider: Optional[str] = "local"
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -52,6 +64,7 @@ class ForgotPasswordRequest(BaseModel):
 
 class SendEmailOtpRequest(BaseModel):
     email: EmailStr
+    is_reset: bool = False
 
 
 class VerifyEmailOtpRequest(BaseModel):
@@ -138,7 +151,7 @@ class InstagramAuthRequest(BaseModel):
 
 class UserResponse(BaseModel):
     id: str
-    full_name: str
+    full_name: Optional[str] = ""
     email: EmailStr
     phone: Optional[str] = ""
     role: str

@@ -118,8 +118,8 @@ class CustomerOrderDetailData(BaseModel):
     coupon_discount: float = 0.0
     shipping_address: str = ""
     item_count: int = 0
-    razorpay_order_id: Optional[str] = None
-    razorpay_payment_id: Optional[str] = None
+    transaction_reference: Optional[str] = None
+    upi_uri: Optional[str] = None
     payment_completed_at: Optional[str] = None
     items: List[CustomerOrderItemData] = Field(default_factory=list)
 

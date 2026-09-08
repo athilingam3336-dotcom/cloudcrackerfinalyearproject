@@ -28,6 +28,8 @@ export type AppStackParamList = {
         paymentStatus?: string;
         shippingAddress?: string;
         items?: any[];
+        upiUri?: string;
+        qrCodeBase64?: string;
       }
     | undefined;
   UserProfile: undefined;
@@ -73,6 +75,8 @@ export type RootStackParamList = {
         paymentStatus?: string;
         shippingAddress?: string;
         items?: any[];
+        upiUri?: string;
+        qrCodeBase64?: string;
       }
     | undefined;
   UserProfile: undefined;

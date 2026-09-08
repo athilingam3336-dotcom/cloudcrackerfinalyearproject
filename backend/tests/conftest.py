@@ -28,9 +28,21 @@ def event_loop() -> Generator:
 async def db_lifecycle():
     """Initializes the database connection using isolated local test database."""
     from app.core.config import settings
+    import motor.motor_asyncio
+    from mongomock_motor import AsyncMongoMockClient
+    
+    motor.motor_asyncio.AsyncIOMotorClient = AsyncMongoMockClient
+    
     settings.DB_NAME = "cloudcrackers_test"
     settings.ENVIRONMENT = "test"
     settings.MONGODB_URL = "mongodb://localhost:27017"
+    
+    from app.core.database import db_manager
+    
+    # Patch DatabaseManager explicitly as well just in case
+    import app.core.database
+    app.core.database.AsyncIOMotorClient = AsyncMongoMockClient
+
     await db_manager.connect()
     yield
     # Safely disconnect without modifying or deleting live Atlas data

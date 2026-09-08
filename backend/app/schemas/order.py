@@ -58,8 +58,9 @@ class OrderResponse(BaseModel):
     payment_status: str
     order_status: str
     shipping_address: str
-    razorpay_order_id: Optional[str] = None
-    razorpay_payment_id: Optional[str] = None
+    payment_completed_at: Optional[datetime] = None
+    transaction_reference: Optional[str] = None
+    upi_uri: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     items: List[OrderItemResponse] = Field(default_factory=list)
@@ -113,8 +114,9 @@ class AdminOrderListItem(BaseModel):
     payment_status: str
     order_status: str
     shipping_address: str
-    razorpay_order_id: Optional[str] = None
-    razorpay_payment_id: Optional[str] = None
+    payment_completed_at: Optional[str] = None
+    transaction_reference: Optional[str] = None
+    upi_uri: Optional[str] = None
     item_count: int = 0
     created_at: datetime
     updated_at: datetime

@@ -43,9 +43,9 @@ class PaymentResponse(BaseModel):
     gateway: str
     amount: float
     currency: str
-    razorpay_order_id: Optional[str] = None
-    razorpay_payment_id: Optional[str] = None
-    razorpay_signature: Optional[str] = None
+    transaction_reference: Optional[str] = None
+    verified_by: Optional[str] = None
+    verified_at: Optional[datetime] = None
     payment_created_at: Optional[datetime] = None
     payment_completed_at: Optional[datetime] = None
     payment_date: Optional[datetime] = None
@@ -75,20 +75,20 @@ class PaymentResponse(BaseModel):
         return data
 
 
-class RazorpayOrderCreateRequest(BaseModel):
-    order_id: Optional[str] = None
+class UpiOrderCreateRequest(BaseModel):
     shipping_address: Optional[str] = None
     coupon_code: Optional[str] = None
     delivery_method: Optional[str] = "standard"
 
 
-class RazorpayOrderCreateResponse(BaseModel):
-    razorpay_order_id: str
-    razorpay_key_id: str
-    amount: int  # in paise
-    currency: str = "INR"
+class UpiOrderCreateResponse(BaseModel):
     order_id: str
     order_number: str
+    payment_id: str
+    amount: float
+    currency: str = "INR"
+    upi_uri: str
+    qr_code_base64: str
     subtotal: float
     discount: float
     coupon_discount: float
@@ -97,10 +97,8 @@ class RazorpayOrderCreateResponse(BaseModel):
     total: float
 
 
-class RazorpayPaymentVerifyRequest(BaseModel):
-    razorpay_order_id: str = Field(..., min_length=1)
-    razorpay_payment_id: str = Field(..., min_length=1)
-    razorpay_signature: str = Field(..., min_length=1)
+class UpiPaymentVerifyAdminRequest(BaseModel):
+    transaction_reference: str = Field(..., min_length=4)
 
 
 class PaymentStatusResponse(BaseModel):

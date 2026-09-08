@@ -20,9 +20,6 @@ class Order(Document):
     payment_status: str = "Pending"  # "Pending", "Paid", "Failed", "Refunded"
     order_status: str = "Pending"  # "Pending", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"
     shipping_address: str
-    razorpay_order_id: Optional[str] = None
-    razorpay_payment_id: Optional[str] = None
-    razorpay_signature: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     status: str = "active"

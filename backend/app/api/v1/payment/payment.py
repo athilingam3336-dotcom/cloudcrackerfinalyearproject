@@ -10,8 +10,9 @@ from app.schemas.payment import (
     PaymentCreateRequest,
     PaymentResponse,
     PaymentVerifyRequest,
-    RazorpayOrderCreateRequest,
-    RazorpayPaymentVerifyRequest,
+    UpiOrderCreateRequest,
+    UpiOrderCreateResponse,
+    UpiPaymentVerifyAdminRequest,
 )
 from app.services.payment_service import PaymentService
 
@@ -37,75 +38,54 @@ def get_validated_order_id(order_id: str = Path(...)) -> str:
 
 
 # ==========================================
-# Razorpay Test Mode Payment Endpoints
+# UPI QR Payment Endpoints
 # ==========================================
 
-
 @base_router.post(
-    "/create-order",
+    "/upi/create",
     response_model=ApiResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Create Razorpay Test Order (Customer)",
-    description="Creates a Razorpay test order. Calculates payable amount strictly server-side.",
+    summary="Create UPI QR Order (Customer)",
+    description="Creates a UPI test order, calculates amount server-side, and generates QR code.",
 )
-async def create_razorpay_order(
-    data: RazorpayOrderCreateRequest,
+async def create_upi_order(
+    data: UpiOrderCreateRequest,
     current_user: User = Depends(get_current_user),
     payment_service: PaymentService = Depends(),
 ) -> ApiResponse:
-    res = await payment_service.create_razorpay_payment_order(
+    res = await payment_service.create_upi_payment_order(
         str(current_user.id), data
     )
     return ApiResponse(
         success=True,
-        message="Razorpay order created successfully",
+        message="UPI order and QR generated successfully",
         data=res.model_dump(),
     )
 
 
 @base_router.post(
-    "/verify-razorpay",
+    "/admin/upi/verify/{payment_id}",
     response_model=ApiResponse,
     status_code=status.HTTP_200_OK,
-    summary="Verify Razorpay Payment Signature (Customer/Admin)",
-    description="Verifies Razorpay HMAC SHA256 signature, updates order to Paid & Confirmed, deducts stock, and clears cart.",
+    summary="Admin Verify UPI Payment",
+    description="Admin manually verifies a pending UPI payment using UTR.",
 )
-async def verify_razorpay_payment(
-    data: RazorpayPaymentVerifyRequest,
+async def verify_upi_payment_admin(
+    payment_id: str = Path(...),
+    data: UpiPaymentVerifyAdminRequest = None,
     current_user: User = Depends(get_current_user),
     payment_service: PaymentService = Depends(),
 ) -> ApiResponse:
-    is_admin = current_user.role == "ADMIN"
-    result = await payment_service.verify_razorpay_payment(
-        str(current_user.id), data, is_admin=is_admin
+    if current_user.role != "ADMIN":
+        raise ValidationException(message="Only admins can verify UPI payments manually.")
+        
+    result = await payment_service.verify_upi_payment_admin(
+        admin_id=str(current_user.id), payment_id=payment_id, data=data
     )
     return ApiResponse(
         success=True,
-        message="Razorpay payment verified successfully",
+        message="UPI payment verified successfully",
         data=result,
-    )
-
-
-@base_router.post(
-    "/webhook",
-    response_model=ApiResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Razorpay Webhook Handler",
-    description="Idempotent webhook handler to process Razorpay payment events.",
-)
-async def razorpay_webhook(
-    request: Request,
-    x_razorpay_signature: Optional[str] = Header(None, alias="X-Razorpay-Signature"),
-    payment_service: PaymentService = Depends(),
-) -> ApiResponse:
-    raw_body = await request.body()
-    res = await payment_service.handle_razorpay_webhook(
-        raw_body, x_razorpay_signature
-    )
-    return ApiResponse(
-        success=True,
-        message="Webhook processed",
-        data=res,
     )
 
 
@@ -148,21 +128,9 @@ async def verify_payment(
 ) -> ApiResponse:
     is_admin = current_user.role == "ADMIN"
 
-    # Handle Razorpay format
+    # Handle Razorpay legacy (ignore)
     if "razorpay_signature" in payload:
-        data = RazorpayPaymentVerifyRequest(
-            razorpay_order_id=payload.get("razorpay_order_id", ""),
-            razorpay_payment_id=payload.get("razorpay_payment_id", ""),
-            razorpay_signature=payload.get("razorpay_signature", ""),
-        )
-        result = await payment_service.verify_razorpay_payment(
-            str(current_user.id), data, is_admin=is_admin
-        )
-        return ApiResponse(
-            success=True,
-            message="Razorpay payment verified successfully",
-            data=result,
-        )
+        raise ValidationException(message="Razorpay is no longer supported.")
 
     # Handle generic/mock format
     generic_data = PaymentVerifyRequest(**payload)

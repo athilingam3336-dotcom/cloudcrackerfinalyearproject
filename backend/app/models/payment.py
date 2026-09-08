@@ -15,9 +15,9 @@ class Payment(Document):
     gateway: str  # "COD", "UPI", "Card", "Net Banking", "Wallet", "Mock"
     amount: float = Field(..., gt=0)
     currency: str = "USD"
-    razorpay_order_id: Optional[Indexed(str)] = None
-    razorpay_payment_id: Optional[str] = None
-    razorpay_signature: Optional[str] = None
+    transaction_reference: Optional[str] = None
+    verified_by: Optional[str] = None
+    verified_at: Optional[datetime] = None
     payment_created_at: Optional[datetime] = None
     payment_completed_at: Optional[datetime] = None
     payment_date: Optional[datetime] = None

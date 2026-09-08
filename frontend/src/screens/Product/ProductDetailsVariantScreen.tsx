@@ -613,6 +613,14 @@ const styles = StyleSheet.create({
   ctaWrapper: {
     marginTop: Spacing.lg,
   },
+  zoomHint: {
+    position: 'absolute',
+    bottom: Spacing.sm,
+    right: Spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: BorderRadius.full,
+    padding: 6,
+  },
 });
 
 export default ProductDetailsVariantScreen;

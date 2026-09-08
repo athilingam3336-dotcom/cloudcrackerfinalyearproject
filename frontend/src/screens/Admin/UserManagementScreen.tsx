@@ -1006,34 +1006,6 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
                                 </View>
                               </View>
 
-                              {/* Razorpay Transaction Details (Requirements 3 & 10) */}
-                              {(ord.razorpayOrderId || (ord.razorpayPaymentId && ord.paymentStatus !== 'Pending')) ? (
-                                <View style={styles.razorpayBox}>
-                                  <View style={styles.infoBoxHeader}>
-                                    <MaterialIcons name="verified" size={15} color="#0284C7" />
-                                    <Text style={styles.razorpayHeaderTitle}>Razorpay Payment Details</Text>
-                                  </View>
-                                  {ord.razorpayOrderId ? (
-                                    <Text style={styles.razorpayText}>
-                                      <Text style={styles.razorpayLabel}>Order ID: </Text>
-                                      {ord.razorpayOrderId}
-                                    </Text>
-                                  ) : null}
-                                  {ord.razorpayPaymentId ? (
-                                    <Text style={styles.razorpayText}>
-                                      <Text style={styles.razorpayLabel}>Payment ID: </Text>
-                                      {ord.razorpayPaymentId}
-                                    </Text>
-                                  ) : null}
-                                  {ord.paymentCompletedAt ? (
-                                    <Text style={styles.razorpayText}>
-                                      <Text style={styles.razorpayLabel}>Completed: </Text>
-                                      {new Date(ord.paymentCompletedAt).toLocaleString()}
-                                    </Text>
-                                  ) : null}
-                                </View>
-                              ) : null}
-
                               {/* Action Link to Full Order Invoice */}
                               <TouchableOpacity
                                 style={styles.fullOrderDetailsBtn}

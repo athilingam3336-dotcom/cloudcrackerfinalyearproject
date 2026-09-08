@@ -25,7 +25,7 @@ import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { InstagramAccountChooserModal } from '@/components/auth/InstagramAccountChooserModal';
 import { googleAuthService } from '@/services/googleAuthService';
 import { instagramAuthService } from '@/services/instagramAuthService';
-import { GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
+import { authService, GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
 import { RootStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
 import { ENV } from '@/config/env';
@@ -44,7 +44,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isInstagramLoading, setIsInstagramLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
+
+  // 2-Step Login Flow States
+  // step: 'email' (enter email) | 'password' (email exists) | 'unregistered' (email not found)
+  const [step, setStep] = useState<'email' | 'password' | 'unregistered'>('email');
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
   const storeLogin = useAuthStore((state) => state.login);
   const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
@@ -77,9 +82,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           window.history.replaceState({}, document.title, window.location.pathname);
         }
         if (errorParam === 'access_denied' || errorReason === 'user_denied') {
-          setErrors({ email: 'Instagram authorization was cancelled.' });
+          setErrors({ general: 'Instagram authorization was cancelled.' });
         } else {
-          setErrors({ email: 'Instagram authentication error. Please try again.' });
+          setErrors({ general: 'Instagram authentication error. Please try again.' });
         }
         return;
       }
@@ -100,17 +105,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           }
         } else {
           const storeError = useAuthStore.getState().error;
-          setErrors({ email: storeError || 'Instagram authentication failed. Please try again.' });
+          setErrors({ general: storeError || 'Instagram authentication failed. Please try again.' });
         }
       }
     };
     handleMetaInstagramCallback();
   }, [route?.params]);
 
-  const validateForm = (): boolean => {
-    const newErrors: { email?: string; password?: string } = {};
-
-    // Email validation
+  const validateEmailOnly = (): boolean => {
+    const newErrors: { email?: string } = {};
     if (!email.trim()) {
       newErrors.email = 'Email address is required';
     } else {
@@ -119,22 +122,40 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
         newErrors.email = 'Please enter a valid email address';
       }
     }
-
-    // Password validation
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleContinueEmail = async () => {
+    if (!validateEmailOnly()) return;
+
+    setIsCheckingEmail(true);
+    setErrors({});
+
+    try {
+      const result = await authService.checkEmail(email.trim());
+      setIsCheckingEmail(false);
+
+      if (result.exists) {
+        setStep('password');
+      } else {
+        setStep('unregistered');
+      }
+    } catch (err: any) {
+      setIsCheckingEmail(false);
+      const msg = err.response?.data?.message || err.message || 'Error checking email.';
+      setErrors({ general: msg });
+    }
+  };
+
   const handleLogin = async () => {
-    if (!validateForm()) return;
+    if (!password) {
+      setErrors({ password: 'Password is required' });
+      return;
+    }
 
     setIsLoading(true);
+    setErrors({});
     const success = await storeLogin(email.trim(), password);
     setIsLoading(false);
 
@@ -147,7 +168,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       }
     } else {
       const storeError = useAuthStore.getState().error;
-      setErrors({ email: storeError || 'Invalid email or password.' });
+      setErrors({ password: storeError || 'Incorrect password. Please try again.' });
     }
   };
 
@@ -168,12 +189,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           }
         } else {
           const storeError = useAuthStore.getState().error;
-          setErrors({ email: storeError || 'Google authentication failed.' });
+          setErrors({ general: storeError || 'Google authentication failed.' });
         }
       },
       (errorMsg: string) => {
         setIsGoogleLoading(false);
-        setErrors({ email: errorMsg || 'Google authentication error.' });
+        setErrors({ general: errorMsg || 'Google authentication error.' });
       }
     );
   };
@@ -213,7 +234,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       }
     } else {
       const storeError = useAuthStore.getState().error;
-      setErrors({ email: storeError || 'Instagram authentication failed.' });
+      setErrors({ general: storeError || 'Instagram authentication failed.' });
     }
   };
 
@@ -221,8 +242,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
     navigation.navigate('ForgotPassword');
   };
 
-  const handleSignUp = () => {
-    navigation.navigate('Register');
+  const handleNavigateToRegister = () => {
+    navigation.navigate('Register', { initialEmail: email.trim() } as any);
+  };
+
+  const handleResetStep = () => {
+    setStep('email');
+    setPassword('');
+    setErrors({});
   };
 
   return (
@@ -254,66 +281,109 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
 
             {/* Login Form */}
             <View style={styles.formContainer}>
-              {errors.email && (
+              {errors.general && (
                 <View style={styles.errorBanner}>
                   <MaterialIcons name="error-outline" size={20} color={Colors.error} />
                   <View style={styles.errorBannerContent}>
-                    <Text style={styles.errorBannerText}>{errors.email}</Text>
-                    <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
-                      <Text style={styles.errorResetLink}>Click here to Reset Password</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.errorBannerText}>{errors.general}</Text>
                   </View>
                 </View>
               )}
 
-              {/* Email Input */}
-              <CustomInput
-                label="EMAIL ADDRESS"
-                placeholder="name@company.com"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                leftIcon={
-                  <MaterialIcons name="mail-outline" size={20} color={Colors.tertiary} />
-                }
-              />
+              {/* STEP 1: EMAIL ENTRY */}
+              {step === 'email' && (
+                <>
+                  <CustomInput
+                    label="EMAIL ADDRESS"
+                    placeholder="name@company.com"
+                    value={email}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    error={errors.email}
+                    leftIcon={
+                      <MaterialIcons name="mail-outline" size={20} color={Colors.tertiary} />
+                    }
+                  />
 
-              {/* Password Input */}
-              <PasswordInput
-                label="PASSWORD"
-                placeholder="••••••••"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-                }}
-                error={errors.password}
-              />
+                  <PrimaryButton
+                    title="Continue"
+                    onPress={handleContinueEmail}
+                    loading={isCheckingEmail}
+                    style={styles.loginButton}
+                  />
+                </>
+              )}
 
-              {/* Options Row (Remember me + Forgot Password) */}
-              <View style={styles.optionsRow}>
-                <Checkbox
-                  label="Keep me signed in"
-                  checked={rememberMe}
-                  onChange={setRememberMe}
-                />
-                <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                </TouchableOpacity>
-              </View>
+              {/* STEP 2A: REGISTERED EMAIL -> ENTER PASSWORD */}
+              {step === 'password' && (
+                <>
+                  <View style={styles.emailHeaderRow}>
+                    <Text style={styles.activeEmailText}>{email}</Text>
+                    <TouchableOpacity onPress={handleResetStep} activeOpacity={0.7}>
+                      <Text style={styles.changeEmailLink}>Change</Text>
+                    </TouchableOpacity>
+                  </View>
 
-              {/* Login Button */}
-              <PrimaryButton
-                title="Login to Account"
-                onPress={handleLogin}
-                loading={isLoading}
-                style={styles.loginButton}
-              />
+                  <PasswordInput
+                    label="PASSWORD"
+                    placeholder="••••••••"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    error={errors.password}
+                  />
+
+                  <View style={styles.optionsRow}>
+                    <Checkbox
+                      label="Keep me signed in"
+                      checked={rememberMe}
+                      onChange={setRememberMe}
+                    />
+                    <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
+                      <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <PrimaryButton
+                    title="Login to Account"
+                    onPress={handleLogin}
+                    loading={isLoading}
+                    style={styles.loginButton}
+                  />
+                </>
+              )}
+
+              {/* STEP 2B: UNREGISTERED EMAIL -> SHOW MESSAGE & CREATE ACCOUNT BUTTON */}
+              {step === 'unregistered' && (
+                <View style={styles.unregisteredBox}>
+                  <View style={styles.emailHeaderRow}>
+                    <Text style={styles.activeEmailText}>{email}</Text>
+                    <TouchableOpacity onPress={handleResetStep} activeOpacity={0.7}>
+                      <Text style={styles.changeEmailLink}>Change</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.noticeBanner}>
+                    <MaterialIcons name="account-circle" size={22} color={Colors.primary} />
+                    <Text style={styles.noticeText}>
+                      No account found for this email address. Create an account to continue.
+                    </Text>
+                  </View>
+
+                  <PrimaryButton
+                    title="Create Account"
+                    onPress={handleNavigateToRegister}
+                    style={styles.loginButton}
+                  />
+                </View>
+              )}
             </View>
 
             {/* Divider */}
@@ -358,7 +428,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       />
     </SafeAreaView>
   </ResponsiveContainer>
-);
+  );
 };
 
 const styles = StyleSheet.create({
@@ -536,11 +606,48 @@ const styles = StyleSheet.create({
     color: Colors.error,
     lineHeight: 18,
   },
-  errorResetLink: {
+  emailHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surfaceContainerLow,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+  },
+  activeEmailText: {
+    ...Typography.bodyMd,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+    flex: 1,
+  },
+  changeEmailLink: {
     ...Typography.bodyMd,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
-    textDecorationLine: 'underline',
+  },
+  unregisteredBox: {
+    width: '100%',
+  },
+  noticeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm,
+    gap: Spacing.xs,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+  },
+  noticeText: {
+    ...Typography.bodyMd,
+    fontFamily: 'Inter-Medium',
+    color: '#E65100',
+    flex: 1,
+    lineHeight: 18,
   },
 });
 

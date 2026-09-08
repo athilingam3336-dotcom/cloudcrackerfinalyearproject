@@ -71,22 +71,22 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: Optional[str] = None
     CLOUDINARY_API_SECRET: Optional[str] = None
 
-    # Razorpay Settings (Test Mode)
-    RAZORPAY_KEY_ID: Optional[str] = None
-    RAZORPAY_KEY_SECRET: Optional[str] = None
-    RAZORPAY_WEBHOOK_SECRET: Optional[str] = None
+    # UPI Config
+    UPI_MERCHANT_ID: str = "MOCK_MERCHANT_ID"
 
     # Instagram Auth Settings
     INSTAGRAM_CLIENT_ID: Optional[str] = "2262885951230627"
     INSTAGRAM_CLIENT_SECRET: Optional[str] = None
     INSTAGRAM_REDIRECT_URI: Optional[str] = "https://cloudcrackerfinalyearproject-1.onrender.com"
 
-    # SMTP Email Settings
+    # SMTP & Transactional Email Settings
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
     SMTP_USER: Optional[str] = os.getenv("SMTP_USER", None)
     SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD", None)
     SMTP_FROM: Optional[str] = os.getenv("SMTP_FROM", None)
+    RESEND_API_KEY: Optional[str] = os.getenv("RESEND_API_KEY", None)
+    SENDGRID_API_KEY: Optional[str] = os.getenv("SENDGRID_API_KEY", None)
 
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [

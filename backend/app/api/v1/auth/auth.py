@@ -4,6 +4,8 @@ from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.auth import (
     AuthResponseData,
+    CheckEmailRequest,
+    CheckEmailResponse,
     ForgotPasswordRequest,
     GoogleAuthRequest,
     InstagramAuthRequest,
@@ -23,6 +25,24 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post(
+    "/check-email",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Check if email exists in system",
+    description="Returns whether an email is already registered and if it has password credentials.",
+)
+async def check_email(
+    data: CheckEmailRequest, auth_service: AuthService = Depends()
+) -> ApiResponse:
+    result = await auth_service.check_email(data.email)
+    return ApiResponse(
+        success=True,
+        message="Email check completed",
+        data=result,
+    )
+
+
+@router.post(
     "/send-email-otp",
     response_model=ApiResponse,
     status_code=status.HTTP_200_OK,
@@ -32,7 +52,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 async def send_email_otp(
     data: SendEmailOtpRequest, auth_service: AuthService = Depends()
 ) -> ApiResponse:
-    result = await auth_service.send_email_otp(data.email)
+    result = await auth_service.send_email_otp(data.email, is_reset=data.is_reset)
     return ApiResponse(
         success=True,
         message=result["message"],

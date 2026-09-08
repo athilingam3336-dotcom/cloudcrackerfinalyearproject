@@ -5,18 +5,12 @@ export interface UiState {
   isDrawerOpen: boolean;
   toastMessage: string | null;
 
-  // Razorpay WebView Modal State
-  razorpayModalVisible: boolean;
-  razorpayOptions: any | null;
-  
   // Actions
   toggleDarkMode: () => void;
   setDarkMode: (isDarkMode: boolean) => void;
   setDrawerOpen: (open: boolean) => void;
   showToast: (message: string) => void;
   hideToast: () => void;
-  openRazorpayModal: (options: any) => void;
-  closeRazorpayModal: () => void;
   resetUiStore: () => void;
 }
 
@@ -24,8 +18,6 @@ export const useUiStore = create<UiState>((set) => ({
   isDarkMode: false,
   isDrawerOpen: false,
   toastMessage: null,
-  razorpayModalVisible: false,
-  razorpayOptions: null,
 
   toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
 
@@ -37,16 +29,10 @@ export const useUiStore = create<UiState>((set) => ({
 
   hideToast: () => set({ toastMessage: null }),
 
-  openRazorpayModal: (options) => set({ razorpayModalVisible: true, razorpayOptions: options }),
-
-  closeRazorpayModal: () => set({ razorpayModalVisible: false, razorpayOptions: null }),
-
   resetUiStore: () =>
     set({
       isDarkMode: false,
       isDrawerOpen: false,
       toastMessage: null,
-      razorpayModalVisible: false,
-      razorpayOptions: null,
     }),
 }));

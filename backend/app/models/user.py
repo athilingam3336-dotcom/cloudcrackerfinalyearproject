@@ -7,7 +7,7 @@ from app.core.constants import Collections
 
 
 class User(Document):
-    full_name: str
+    full_name: Optional[str] = None
     email: Indexed(EmailStr, unique=True)
     phone: Optional[str] = None
     password_hash: Optional[str] = None

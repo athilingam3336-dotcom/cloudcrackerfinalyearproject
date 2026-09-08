@@ -1,7 +1,15 @@
 import logging
 from typing import Tuple
-import httpx
-from jose import JWTError
+try:
+    import httpx
+except ImportError:
+    httpx = None
+
+try:
+    from jose import JWTError
+except ImportError:
+    class JWTError(Exception):
+        pass
 
 from app.core.config import settings
 from app.exceptions import (
@@ -38,9 +46,33 @@ class AuthService:
     def __init__(self) -> None:
         self.user_repo = UserRepository()
 
+    async def check_email(self, email: str) -> dict:
+        """Checks if an email exists in the system and if it has a password."""
+        clean_email = email.strip().lower()
+        user = await self.user_repo.get_by_email(clean_email)
+        if not user:
+            return {
+                "exists": False,
+                "has_password": False,
+                "auth_provider": None,
+            }
+        return {
+            "exists": True,
+            "has_password": user.password_hash is not None,
+            "auth_provider": getattr(user, "auth_provider", "local") or "local",
+        }
+
     async def register(self, data: RegisterRequest) -> Tuple[User, str, str]:
         """Registers a new user, hashes their password, and issues JWT tokens."""
         clean_email = data.email.strip().lower()
+
+        # 0. Check OTP verification
+        global _email_otp_store
+        record = _email_otp_store.get(clean_email)
+        if not record or not record.get("verified"):
+            raise ValidationException(
+                message="Email has not been verified via OTP. Please verify your email first."
+            )
 
         # 1. Check if email already exists
         existing_email = await self.user_repo.get_by_email(clean_email)
@@ -55,15 +87,20 @@ class AuthService:
                         )
                 
                 password_hash = hash_password(data.password)
+                full_name = data.full_name or existing_email.full_name or clean_email.split("@")[0].capitalize()
                 update_data = {
                     "password_hash": password_hash,
-                    "full_name": data.full_name,
-                    "phone": data.phone,
+                    "full_name": full_name,
+                    "phone": data.phone or existing_email.phone,
                     "is_active": True,
                     "status": "active",
                 }
                 user = await self.user_repo.update(existing_email, update_data)
                 logger.info(f"Upgraded Google user with password credentials: {user.email}")
+                
+                # Delete OTP record after use
+                if clean_email in _email_otp_store:
+                    del _email_otp_store[clean_email]
                 
                 payload = {"sub": str(user.id), "role": user.role}
                 access_token = create_access_token(payload)
@@ -75,21 +112,23 @@ class AuthService:
             )
 
         # 2. Assert phone is unique
-        existing_phone = await self.user_repo.get_by_phone(data.phone)
-        if existing_phone:
-            raise ValidationException(
-                message=f"An account with phone number '{data.phone}' already exists."
-            )
+        if data.phone:
+            existing_phone = await self.user_repo.get_by_phone(data.phone)
+            if existing_phone:
+                raise ValidationException(
+                    message=f"An account with phone number '{data.phone}' already exists."
+                )
 
         # 3. Create user dictionary
         password_hash = hash_password(data.password)
+        full_name = data.full_name or clean_email.split("@")[0].capitalize()
         user_data = {
-            "full_name": data.full_name,
+            "full_name": full_name,
             "email": clean_email,
             "phone": data.phone,
             "password_hash": password_hash,
             "role": "CUSTOMER",  # Default role is Customer
-            "is_verified": False,
+            "is_verified": True, # set to true because OTP verified it
             "is_active": True,
             "status": "active",
         }
@@ -97,6 +136,10 @@ class AuthService:
         # 4. Insert into DB
         user = await self.user_repo.create(user_data)
         logger.info(f"Successfully registered new user: {user.email} (ID: {user.id})")
+        
+        # Delete OTP record after use
+        if clean_email in _email_otp_store:
+            del _email_otp_store[clean_email]
 
         # 5. Issue access/refresh tokens
         payload = {"sub": str(user.id), "role": user.role}
@@ -402,6 +445,15 @@ class AuthService:
     async def reset_password(self, data: ResetPasswordRequest) -> Tuple[User, str, str]:
         """Resets user password, validates account status, hashes new password, and issues JWT tokens."""
         clean_email = data.email.strip().lower()
+        
+        # 0. Check OTP verification
+        global _email_otp_store
+        record = _email_otp_store.get(clean_email)
+        if not record or not record.get("verified"):
+            raise ValidationException(
+                message="Email has not been verified via OTP. Please verify your email first."
+            )
+            
         user = await self.user_repo.get_by_email(clean_email)
         if not user:
             raise NotFoundException(
@@ -421,6 +473,10 @@ class AuthService:
         }
         user = await self.user_repo.update(user, update_data)
         logger.info(f"Successfully reset password for user: {user.email}")
+        
+        # Delete OTP record after use
+        if clean_email in _email_otp_store:
+            del _email_otp_store[clean_email]
 
         # Issue access/refresh tokens
         payload = {"sub": str(user.id), "role": user.role}
@@ -452,33 +508,59 @@ class AuthService:
             
         return await self.user_repo.update(user, update_data)
 
-    async def send_email_otp(self, email: str) -> dict:
+    async def send_email_otp(self, email: str, is_reset: bool = False) -> dict:
         clean_email = email.strip().lower()
         existing = await self.user_repo.get_by_email(clean_email)
-        if existing and existing.password_hash is not None:
-            raise ValidationException(
-                message=f"An account with email '{email}' already exists. Please login instead."
-            )
+        
+        if is_reset:
+            if not existing:
+                raise NotFoundException(message=f"No account associated with email '{email}'.")
+            if existing.password_hash is None:
+                raise ValidationException(
+                    message="This account was registered using Google/Instagram Sign-In. You cannot reset a password for it."
+                )
+        else:
+            if existing and existing.password_hash is not None:
+                raise ValidationException(
+                    message=f"An account with email '{email}' already exists. Please login instead."
+                )
 
-        # Generate 6-digit numeric OTP code
         import random
         from datetime import datetime, timedelta
 
-        otp_code = str(random.randint(100000, 999999))
-        expires_at = datetime.utcnow() + timedelta(minutes=10)
-
         global _email_otp_store
+        now = datetime.utcnow()
+        
+        # Check cooldown
+        if clean_email in _email_otp_store:
+            last_sent = _email_otp_store[clean_email].get("last_sent_at")
+            if last_sent and (now - last_sent).total_seconds() < 60:
+                raise ValidationException(message="Please wait 60 seconds before requesting another OTP.")
+
+        otp_code = str(random.randint(100000, 999999))
+        expires_at = now + timedelta(minutes=10)
+        otp_hash = hash_password(otp_code)
+
         _email_otp_store[clean_email] = {
-            "otp": otp_code,
+            "otp_hash": otp_hash,
             "expires_at": expires_at,
             "verified": False,
+            "attempts": 0,
+            "last_sent_at": now
         }
 
-        logger.info(f"EMAIL OTP GENERATED FOR {clean_email}: {otp_code}")
+        logger.info(f"EMAIL OTP GENERATED FOR {clean_email} (is_reset={is_reset})")
 
-        # Dispatch real SMTP email (if SMTP credentials configured)
+        # Dispatch email and verify provider acceptance before claiming success
         from app.services.email_service import EmailService
-        await EmailService.send_otp_email(clean_email, otp_code)
+        sent = await EmailService.send_otp_email(clean_email, otp_code)
+        if not sent:
+            # Clean up un-sent record so user is not locked in a failed cooldown
+            if clean_email in _email_otp_store:
+                del _email_otp_store[clean_email]
+            raise ValidationException(
+                message="Failed to send verification email. Email provider service is not configured or rejected the request. Please check server email credentials."
+            )
 
         return {
             "email": clean_email,
@@ -501,7 +583,14 @@ class AuthService:
                 message="OTP code has expired. Please request a new verification code."
             )
 
-        if record["otp"] != otp.strip():
+        if record.get("attempts", 0) >= 5:
+            del _email_otp_store[clean_email]
+            raise ValidationException(
+                message="Too many failed attempts. Please request a new verification code."
+            )
+
+        if not verify_password(otp.strip(), record["otp_hash"]):
+            record["attempts"] = record.get("attempts", 0) + 1
             raise ValidationException(
                 message="Invalid OTP code. Please check your email and enter the correct 6-digit code."
             )

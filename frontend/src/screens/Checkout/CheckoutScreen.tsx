@@ -35,7 +35,7 @@ import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 
 type CheckoutScreenProps = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
 
-type PaymentMethod = 'razorpay' | 'cod';
+type PaymentMethod = 'upi' | 'cod';
 
 export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) => {
   const { handleTabPress } = useSmartTabNavigation();
@@ -76,7 +76,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
 
   // Delivery & Payment
   const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>('standard');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('razorpay');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
 
   const { items, clearCart, couponCode, discount: couponDiscount, fetchCart } = useCartStore();
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
@@ -155,7 +155,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
         } else {
           Alert.alert(
             'Login Required',
-            'Please log in or register to complete your order with Razorpay.',
+            'Please log in or register to complete your order with Online Payment.',
             [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Login', onPress: () => navigation.navigate('Login') },
@@ -165,87 +165,40 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
         return;
       }
 
-      // 3. Razorpay Payment Flow
-      if (paymentMethod === 'razorpay') {
-        // Step A: Request server to calculate order amount and create Razorpay test order
-        const rzpOrderData = await paymentService.createRazorpayOrder({
+      // 3. UPI QR Payment Flow
+      if (paymentMethod === 'upi') {
+        // Step A: Request server to calculate order amount and create UPI pending order
+        const upiOrderData = await paymentService.createUpiOrder({
           shipping_address: shippingAddressStr,
           coupon_code: couponCode || undefined,
           delivery_method: deliveryMethod,
         });
 
-        // Step B: Launch Razorpay Checkout Modal
-        await paymentService.openCheckout({
-          keyId: rzpOrderData.razorpay_key_id,
-          amountPaise: rzpOrderData.amount,
-          currency: rzpOrderData.currency || 'INR',
-          orderId: rzpOrderData.razorpay_order_id,
-          orderNumber: rzpOrderData.order_number,
-          customerName: fullName.trim(),
-          customerEmail: email || user?.email || 'customer@cloudcrackers.com',
-          customerPhone: phone || '+919876543210',
-          onSuccess: async (response) => {
-            try {
-              setIsPlacingOrder(true);
-              // Step C: Send signature to server for HMAC SHA-256 verification
-              const verifyRes = await paymentService.verifyRazorpayPayment({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              });
+        const purchasedItems = items.map((ci) => ({
+          id: ci.product?.id,
+          title: ci.product?.title || 'Product',
+          name: ci.product?.title || 'Product',
+          subtitle: ci.product?.subtitle,
+          quantity: ci.quantity || 1,
+          price: ci.product?.price || 0,
+          imageUrl: ci.product?.imageUrl,
+          images: ci.product?.images,
+          product: ci.product,
+        }));
 
-              const backendOrderItems = verifyRes?.order?.items || verifyRes?.data?.order?.items;
-              const purchasedItems = Array.isArray(backendOrderItems) && backendOrderItems.length > 0
-                ? backendOrderItems.map((item: any) => ({
-                    id: item.id || item.product_id || item.product?.id,
-                    title: item.product?.name || item.product?.title || item.title || 'Product',
-                    name: item.product?.name || item.product?.title || item.name || 'Product',
-                    quantity: item.quantity || 1,
-                    price: item.price || item.product?.price || 0,
-                    imageUrl: Array.isArray(item.product?.images) && item.product.images.length > 0 ? item.product.images[0] : (item.product?.image_url || item.product?.imageUrl),
-                    images: item.product?.images,
-                    product: item.product,
-                  }))
-                : items.map((ci) => ({
-                    id: ci.product?.id,
-                    title: ci.product?.title || 'Product',
-                    name: ci.product?.title || 'Product',
-                    subtitle: ci.product?.subtitle,
-                    quantity: ci.quantity || 1,
-                    price: ci.product?.price || 0,
-                    imageUrl: ci.product?.imageUrl,
-                    images: ci.product?.images,
-                    product: ci.product,
-                  }));
-
-              clearCart();
-              navigation.navigate('OrderSuccess', {
-                orderId: rzpOrderData.order_id,
-                orderNumber: rzpOrderData.order_number,
-                paymentId: response.razorpay_payment_id,
-                amountPaid: rzpOrderData.total,
-                paymentStatus: 'Paid',
-                shippingAddress: shippingAddressStr,
-                items: purchasedItems,
-              });
-            } catch (vErr: any) {
-              const errMsg = vErr?.response?.data?.message || vErr?.message || 'Payment signature verification failed.';
-              setPaymentError(errMsg);
-              Alert.alert('Verification Failed', errMsg);
-            } finally {
-              setIsPlacingOrder(false);
-            }
-          },
-          onFailure: (err) => {
-            setIsPlacingOrder(false);
-            const msg = err.description || 'Payment was declined or cancelled.';
-            setPaymentError(msg);
-            Alert.alert('Payment Failed', msg);
-          },
-          onDismiss: () => {
-            setIsPlacingOrder(false);
-          },
+        clearCart();
+        navigation.navigate('OrderSuccess', {
+          orderId: upiOrderData.order_id,
+          orderNumber: upiOrderData.order_number,
+          paymentId: upiOrderData.payment_id,
+          amountPaid: upiOrderData.total,
+          paymentStatus: 'Pending',
+          shippingAddress: shippingAddressStr,
+          items: purchasedItems,
+          upiUri: upiOrderData.upi_uri,
+          qrCodeBase64: upiOrderData.qr_code_base64,
         });
+
       } else {
         // 4. Cash on Delivery (COD) Flow
         const nameParts = fullName.trim().split(' ');
@@ -554,51 +507,36 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   <Text style={styles.sectionTitle}>2. Choose Payment Method</Text>
                 </View>
 
-                {/* Razorpay Option */}
+                {/* UPI QR Option */}
                 <TouchableOpacity
                   style={[
                     styles.paymentOptionCard,
-                    paymentMethod === 'razorpay' && styles.activePaymentOptionCard,
+                    paymentMethod === 'upi' && styles.activePaymentOptionCard,
                   ]}
-                  onPress={() => setPaymentMethod('razorpay')}
+                  onPress={() => setPaymentMethod('upi')}
                   activeOpacity={0.8}
                 >
                   <View style={styles.paymentOptionHeader}>
                     <MaterialIcons
-                      name={paymentMethod === 'razorpay' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                      name={paymentMethod === 'upi' ? 'radio-button-checked' : 'radio-button-unchecked'}
                       size={22}
                       color={Colors.primary}
                     />
                     <View style={styles.paymentOptionTextWrap}>
                       <View style={styles.paymentBadgeRow}>
-                        <Text style={styles.paymentOptionTitle}>Razorpay</Text>
-                        <View style={styles.testModeBadge}>
-                          <Text style={styles.testModeBadgeText}>TEST MODE</Text>
-                        </View>
+                        <Text style={styles.paymentOptionTitle}>UPI QR Payment</Text>
                       </View>
                       <Text style={styles.paymentOptionDesc}>
-                        UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, Net Banking & Wallets
+                        Scan QR Code from Google Pay, PhonePe, Paytm, or any UPI App
                       </Text>
                     </View>
                   </View>
 
-                  {paymentMethod === 'razorpay' && (
+                  {paymentMethod === 'upi' && (
                     <View style={styles.gatewayPillsRow}>
                       <View style={styles.gatewayPill}>
-                        <MaterialIcons name="account-balance-wallet" size={14} color={Colors.primary} />
-                        <Text style={styles.gatewayPillText}>UPI</Text>
-                      </View>
-                      <View style={styles.gatewayPill}>
-                        <MaterialIcons name="credit-card" size={14} color={Colors.primary} />
-                        <Text style={styles.gatewayPillText}>Cards</Text>
-                      </View>
-                      <View style={styles.gatewayPill}>
-                        <MaterialIcons name="account-balance" size={14} color={Colors.primary} />
-                        <Text style={styles.gatewayPillText}>Net Banking</Text>
-                      </View>
-                      <View style={styles.gatewayPill}>
-                        <MaterialIcons name="wallet" size={14} color={Colors.primary} />
-                        <Text style={styles.gatewayPillText}>Wallets</Text>
+                        <MaterialIcons name="qr-code-scanner" size={14} color={Colors.primary} />
+                        <Text style={styles.gatewayPillText}>GPay / PhonePe / Paytm</Text>
                       </View>
                     </View>
                   )}
@@ -669,7 +607,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.summaryPillTitle}>Payment Method</Text>
                     <Text style={styles.summaryPillText}>
-                      {paymentMethod === 'razorpay' ? 'Razorpay (UPI / Card / NetBanking)' : 'Cash on Delivery (COD)'}
+                      {paymentMethod === 'upi' ? 'UPI QR Payment' : 'Cash on Delivery (COD)'}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -722,9 +660,9 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                     <PrimaryButton
                       title={
                         isPlacingOrder
-                          ? 'Processing Payment...'
-                          : paymentMethod === 'razorpay'
-                          ? `Pay Now • ${formatCurrency(total)}`
+                          ? 'Generating UPI QR...'
+                          : paymentMethod === 'upi'
+                          ? `Pay with UPI • ${formatCurrency(total)}`
                           : `Confirm COD Order • ${formatCurrency(total)}`
                       }
                       onPress={handlePlaceOrder}
@@ -736,7 +674,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   {isPlacingOrder && (
                     <View style={styles.loadingIndicatorRow}>
                       <ActivityIndicator size="small" color={Colors.primary} />
-                      <Text style={styles.loadingText}>Securing transaction with Razorpay...</Text>
+                      <Text style={styles.loadingText}>Generating secure UPI QR Code...</Text>
                     </View>
                   )}
                 </View>
@@ -808,7 +746,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   title={
                     isPlacingOrder
                       ? 'Processing Payment...'
-                      : paymentMethod === 'razorpay'
+                      : paymentMethod === 'upi'
                       ? `Pay Now • ${formatCurrency(total)}`
                       : `Confirm COD Order • ${formatCurrency(total)}`
                   }

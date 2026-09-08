@@ -32,13 +32,15 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
   navigation,
 }) => {
-  const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Email verification, 2: New Password, 3: Success
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 1: Email, 2: OTP, 3: New Password, 4: Success
   const [email, setEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
     email?: string;
+    otp?: string;
     password?: string;
     confirmPassword?: string;
     general?: string;
@@ -92,12 +94,32 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
     setErrors({});
 
     try {
-      await authService.forgotPassword(email.trim());
+      await authService.sendEmailOtp(email.trim(), true);
       setIsLoading(false);
       setStep(2);
     } catch (err: any) {
       setIsLoading(false);
-      setErrors({ email: err.message || 'No account associated with this email.' });
+      setErrors({ email: err.response?.data?.message || err.message || 'No account associated with this email.' });
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) {
+      setErrors({ otp: 'Please enter a 6-digit OTP code.' });
+      return;
+    }
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      // In the auth service, this just verifies the OTP in backend state
+      // Once verified, the backend will allow the resetPassword call
+      await authService.verifyEmailOtp(email.trim(), otpCode.trim());
+      setIsLoading(false);
+      setStep(3); // Go to New Password step
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrors({ otp: err.response?.data?.message || err.message || 'Invalid or expired OTP code.' });
     }
   };
 
@@ -114,7 +136,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
     setIsLoading(false);
 
     if (success) {
-      setStep(3);
+      setStep(4);
     } else {
       const storeError = useAuthStore.getState().error;
       setErrors({ general: storeError || 'Failed to reset password. Please try again.' });
@@ -159,14 +181,16 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
               <View style={styles.iconCircle}>
                 <MaterialIcons
                   name={
-                    step === 3
+                    step === 4
                       ? 'verified'
-                      : step === 2
+                      : step === 3
                       ? 'lock-open'
+                      : step === 2
+                      ? 'mark-email-read'
                       : 'lock-reset'
                   }
                   size={52}
-                  color={step === 3 ? '#10B981' : Colors.primary}
+                  color={step === 4 ? '#10B981' : Colors.primary}
                 />
               </View>
             </View>
@@ -220,8 +244,61 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
               </View>
             )}
 
-            {/* STEP 2: Set New Password */}
+            {/* STEP 2: OTP Verification */}
             {step === 2 && (
+              <View style={styles.stepContainer}>
+                <View style={styles.textGroup}>
+                  <Text style={styles.title}>Email Verification</Text>
+                  <Text style={styles.description}>
+                    Enter the 6-digit OTP code sent to{' '}
+                    <Text style={styles.emailHighlight}>{email}</Text>
+                  </Text>
+                </View>
+
+                {errors.general && (
+                  <View style={styles.errorBanner}>
+                    <MaterialIcons name="error-outline" size={18} color={Colors.error} />
+                    <Text style={styles.errorBannerText}>{errors.general}</Text>
+                  </View>
+                )}
+
+                <View style={styles.form}>
+                  <CustomInput
+                    label="OTP CODE"
+                    placeholder="6-digit OTP (e.g. 123456)"
+                    value={otpCode}
+                    onChangeText={(text) => {
+                      setOtpCode(text.replace(/\D/g, '').slice(0, 6));
+                      if (errors.otp) setErrors((prev) => ({ ...prev, otp: undefined }));
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    error={errors.otp}
+                  />
+
+                  <PrimaryButton
+                    title="Verify OTP"
+                    onPress={handleVerifyOtp}
+                    loading={isLoading}
+                    icon={
+                      <MaterialIcons name="arrow-forward" size={20} color={Colors.onPrimary} />
+                    }
+                    style={styles.submitButton}
+                  />
+
+                  <TouchableOpacity
+                    onPress={() => setStep(1)}
+                    style={styles.changeEmailButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.changeEmailText}>Change email address</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* STEP 3: Set New Password */}
+            {step === 3 && (
               <View style={styles.stepContainer}>
                 <View style={styles.textGroup}>
                   <Text style={styles.title}>Create New Password</Text>
@@ -295,8 +372,8 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
               </View>
             )}
 
-            {/* STEP 3: Success Confirmation */}
-            {step === 3 && (
+            {/* STEP 4: Success Confirmation */}
+            {step === 4 && (
               <View style={styles.successContainer}>
                 <View style={styles.successBadge}>
                   <MaterialIcons
@@ -327,7 +404,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
             )}
 
             {/* Back to Login Footer Action */}
-            {step !== 3 && (
+            {step !== 4 && (
               <TouchableOpacity
                 style={styles.backToLoginRow}
                 onPress={handleBackToLogin}

@@ -74,7 +74,7 @@ export const downloadCustomerOrderInvoicePdf = (orderData: InvoiceOrderData) => 
         <div style="text-align: right;">
           <strong>INVOICE NO:</strong> INV-${orderData.orderNumber}<br>
           <strong>DATE:</strong> ${todayStr}<br>
-          <strong>PAYMENT METHOD:</strong> ${orderData.paymentMethod || 'Razorpay Online Payment'}<br>
+          <strong>PAYMENT METHOD:</strong> ${orderData.paymentMethod || 'Online Payment'}<br>
           ${orderData.paymentId ? `<strong>TRANSACTION ID:</strong> ${orderData.paymentId}` : ''}
         </div>
       </div>
