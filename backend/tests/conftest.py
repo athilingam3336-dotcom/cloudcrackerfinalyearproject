@@ -26,17 +26,51 @@ def event_loop() -> Generator:
 
 @pytest.fixture(scope="session", autouse=True)
 async def db_lifecycle():
-    """Initializes the database connection using isolated local test database."""
+    """Initializes the database connection using isolated local test database or mongomock_motor."""
     from app.core.config import settings
     settings.DB_NAME = "cloudcrackers_test"
     settings.ENVIRONMENT = "test"
     settings.MONGODB_URL = "mongodb://localhost:27017"
     
     from app.core.database import db_manager
-    await db_manager.connect()
+    try:
+        await db_manager.connect()
+        # Verify connection
+        await db_manager.client.admin.command('ping')
+    except Exception:
+        import mongomock_motor
+        from beanie import init_beanie
+        from app.models.category import Category
+        from app.models.product import Product
+        from app.models.user import User
+        from app.models.cart import Cart
+        from app.models.wishlist import Wishlist
+        from app.models.order import Order
+        from app.models.order_item import OrderItem
+        from app.models.payment import Payment
+        from app.models.address import Address
+        from app.models.coupon import Coupon
+        from app.models.inventory import Inventory
+        from app.models.review import Review
+        from app.models.image import Image
+        from app.models.notification import Notification
+        from app.models.audit_log import AuditLog
+        from app.models.refresh_token import RefreshToken
+        from app.models.about import About
+
+        db_manager.client = mongomock_motor.AsyncMongoMockClient()
+        db_manager.db = db_manager.client[settings.DB_NAME]
+        await init_beanie(
+            database=db_manager.db,
+            document_models=[
+                User, Category, Product, Cart, Wishlist, Order, OrderItem, Payment,
+                Address, Coupon, Inventory, Review, Image, Notification, AuditLog,
+                RefreshToken, About
+            ]
+        )
     yield
-    # Safely disconnect without modifying or deleting live Atlas data
-    await db_manager.disconnect()
+    if db_manager.client:
+        await db_manager.disconnect()
 
 
 @pytest.fixture(autouse=True)

@@ -1531,7 +1531,9 @@ export class AdminService {
    */
   async verifyUpiPayment(orderId: string, utr: string): Promise<any> {
     try {
-      const { data: res } = await apiClient.post(`/payment/admin/upi/verify/${orderId}`, { utr });
+      const { data: res } = await apiClient.post(`/payment/admin/upi/verify/order/${orderId}`, {
+        transaction_reference: utr,
+      });
       return res;
     } catch (error) {
       console.error('Verify UPI Payment Error:', error);
