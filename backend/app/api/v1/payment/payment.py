@@ -64,14 +64,14 @@ async def create_upi_order(
 
 
 @base_router.post(
-    "/admin/upi/verify/{payment_id}",
+    "/admin/upi/verify/order/{order_id}",
     response_model=ApiResponse,
     status_code=status.HTTP_200_OK,
-    summary="Admin Verify UPI Payment",
-    description="Admin manually verifies a pending UPI payment using UTR.",
+    summary="Admin Verify UPI Payment by Order ID",
+    description="Admin manually verifies a pending UPI payment using UTR, looked up by Order ID.",
 )
 async def verify_upi_payment_admin(
-    payment_id: str = Path(...),
+    order_id: str = Path(...),
     data: UpiPaymentVerifyAdminRequest = None,
     current_user: User = Depends(get_current_user),
     payment_service: PaymentService = Depends(),
@@ -80,7 +80,7 @@ async def verify_upi_payment_admin(
         raise ValidationException(message="Only admins can verify UPI payments manually.")
         
     result = await payment_service.verify_upi_payment_admin(
-        admin_id=str(current_user.id), payment_id=payment_id, data=data
+        admin_id=str(current_user.id), order_id=order_id, data=data
     )
     return ApiResponse(
         success=True,

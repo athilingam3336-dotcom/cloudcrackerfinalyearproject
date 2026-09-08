@@ -62,3 +62,6 @@ frontend/.env
 
 *.env.backup
 *.env
+*.env
+*.env.backup
+.env

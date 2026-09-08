@@ -66,7 +66,7 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
       date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
       customerName: 'Customer',
       shippingAddress: shippingAddress,
-      paymentMethod: paymentId ? 'Razorpay Online Payment (UPI / Card)' : 'Online Payment',
+      paymentMethod: paymentId ? 'Dynamic UPI QR Payment' : 'Online Payment',
       paymentId: paymentId || null,
       paymentStatus: paymentStatus || 'Paid Online',
       items: orderItems,

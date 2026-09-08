@@ -342,24 +342,28 @@ class PaymentService:
     async def verify_upi_payment_admin(
         self,
         admin_id: str,
-        payment_id: str,
+        order_id: str,
         data: UpiPaymentVerifyAdminRequest,
     ) -> Dict[str, Any]:
         """
         Admin manually verifies a pending UPI payment using a UTR reference.
+        Looks up payment by order_id (since admin UI has the order_id).
         Upon valid verification:
           1. Idempotently marks payment as Verified and order as Confirmed.
           2. Finalizes inventory deduction.
           3. Increments coupon usage count.
           4. Clears customer cart.
         """
-        payment = await self.payment_repo.get_by_id(payment_id)
-        if not payment:
-            raise NotFoundException(message="Payment not found.")
+        if not data or not data.transaction_reference:
+            raise ValidationException(message="Transaction reference (UTR) is required to verify UPI payment.")
 
-        order = await self.order_repo.get_by_id(str(payment.order_id))
+        order = await self.order_repo.get_by_id(order_id)
         if not order:
-            raise NotFoundException(message="No order associated with this payment.")
+            raise NotFoundException(message="Order not found.")
+
+        payment = await self.payment_repo.get_by_order(order_id)
+        if not payment:
+            raise NotFoundException(message="No UPI payment record found for this order.")
 
         # Idempotency check
         if payment.payment_status == "Verified" or order.payment_status == "Paid":

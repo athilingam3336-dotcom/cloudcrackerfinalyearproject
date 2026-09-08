@@ -73,6 +73,8 @@ class Settings(BaseSettings):
 
     # UPI Config
     UPI_MERCHANT_ID: str = "MOCK_MERCHANT_ID"
+    UPI_PAYMENT_ID: Optional[str] = None   # e.g. meeracrackers@okaxis
+    UPI_PAYEE_NAME: Optional[str] = None   # e.g. Meera Crackers
 
     # Instagram Auth Settings
     INSTAGRAM_CLIENT_ID: Optional[str] = "2262885951230627"
