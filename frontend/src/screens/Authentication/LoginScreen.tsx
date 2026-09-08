@@ -46,10 +46,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
-  // 2-Step Login Flow States
-  // step: 'email' (enter email) | 'password' (email exists) | 'unregistered' (email not found)
-  const [step, setStep] = useState<'email' | 'password' | 'unregistered'>('email');
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
   const storeLogin = useAuthStore((state) => state.login);
   const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
@@ -112,8 +108,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
     handleMetaInstagramCallback();
   }, [route?.params]);
 
-  const validateEmailOnly = (): boolean => {
-    const newErrors: { email?: string } = {};
+  const validateForm = (): boolean => {
+    const newErrors: { email?: string; password?: string } = {};
     if (!email.trim()) {
       newErrors.email = 'Email address is required';
     } else {
@@ -122,37 +118,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
         newErrors.email = 'Please enter a valid email address';
       }
     }
+    if (!password) {
+      newErrors.password = 'Password is required';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleContinueEmail = async () => {
-    if (!validateEmailOnly()) return;
-
-    setIsCheckingEmail(true);
-    setErrors({});
-
-    try {
-      const result = await authService.checkEmail(email.trim());
-      setIsCheckingEmail(false);
-
-      if (result.exists) {
-        setStep('password');
-      } else {
-        setStep('unregistered');
-      }
-    } catch (err: any) {
-      setIsCheckingEmail(false);
-      const msg = err.response?.data?.message || err.message || 'Error checking email.';
-      setErrors({ general: msg });
-    }
-  };
-
   const handleLogin = async () => {
-    if (!password) {
-      setErrors({ password: 'Password is required' });
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     setErrors({});
@@ -168,7 +142,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       }
     } else {
       const storeError = useAuthStore.getState().error;
-      setErrors({ password: storeError || 'Incorrect password. Please try again.' });
+      setErrors({ general: storeError || 'Invalid email or password. Please try again.' });
     }
   };
 
@@ -246,12 +220,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
     navigation.navigate('Register', { initialEmail: email.trim() } as any);
   };
 
-  const handleResetStep = () => {
-    setStep('email');
-    setPassword('');
-    setErrors({});
-  };
-
   return (
     <ResponsiveContainer maxWidth={MAX_FORM_WIDTH}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -290,100 +258,60 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
                 </View>
               )}
 
-              {/* STEP 1: EMAIL ENTRY */}
-              {step === 'email' && (
-                <>
-                  <CustomInput
-                    label="EMAIL ADDRESS"
-                    placeholder="name@company.com"
-                    value={email}
-                    onChangeText={(text) => {
-                      setEmail(text);
-                      if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-                    }}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    error={errors.email}
-                    leftIcon={
-                      <MaterialIcons name="mail-outline" size={20} color={Colors.tertiary} />
-                    }
-                  />
+              {/* UNIFIED SINGLE FORM: EMAIL & PASSWORD TOGETHER */}
+              <CustomInput
+                label="EMAIL ADDRESS"
+                placeholder="name@company.com"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={errors.email}
+                leftIcon={
+                  <MaterialIcons name="mail-outline" size={20} color={Colors.tertiary} />
+                }
+              />
 
-                  <PrimaryButton
-                    title="Continue"
-                    onPress={handleContinueEmail}
-                    loading={isCheckingEmail}
-                    style={styles.loginButton}
-                  />
-                </>
-              )}
+              <PasswordInput
+                label="PASSWORD"
+                placeholder="••••••••"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                }}
+                error={errors.password}
+              />
 
-              {/* STEP 2A: REGISTERED EMAIL -> ENTER PASSWORD */}
-              {step === 'password' && (
-                <>
-                  <View style={styles.emailHeaderRow}>
-                    <Text style={styles.activeEmailText}>{email}</Text>
-                    <TouchableOpacity onPress={handleResetStep} activeOpacity={0.7}>
-                      <Text style={styles.changeEmailLink}>Change</Text>
-                    </TouchableOpacity>
-                  </View>
+              <View style={styles.optionsRow}>
+                <Checkbox
+                  label="Keep me signed in"
+                  checked={rememberMe}
+                  onChange={setRememberMe}
+                />
+                <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
+                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                </TouchableOpacity>
+              </View>
 
-                  <PasswordInput
-                    label="PASSWORD"
-                    placeholder="••••••••"
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-                    }}
-                    error={errors.password}
-                  />
+              <PrimaryButton
+                title="Login to Account"
+                onPress={handleLogin}
+                loading={isLoading}
+                style={styles.loginButton}
+              />
 
-                  <View style={styles.optionsRow}>
-                    <Checkbox
-                      label="Keep me signed in"
-                      checked={rememberMe}
-                      onChange={setRememberMe}
-                    />
-                    <TouchableOpacity onPress={handleForgotPassword} activeOpacity={0.7}>
-                      <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <PrimaryButton
-                    title="Login to Account"
-                    onPress={handleLogin}
-                    loading={isLoading}
-                    style={styles.loginButton}
-                  />
-                </>
-              )}
-
-              {/* STEP 2B: UNREGISTERED EMAIL -> SHOW MESSAGE & CREATE ACCOUNT BUTTON */}
-              {step === 'unregistered' && (
-                <View style={styles.unregisteredBox}>
-                  <View style={styles.emailHeaderRow}>
-                    <Text style={styles.activeEmailText}>{email}</Text>
-                    <TouchableOpacity onPress={handleResetStep} activeOpacity={0.7}>
-                      <Text style={styles.changeEmailLink}>Change</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={styles.noticeBanner}>
-                    <MaterialIcons name="account-circle" size={22} color={Colors.primary} />
-                    <Text style={styles.noticeText}>
-                      No account found for this email address. Create an account to continue.
-                    </Text>
-                  </View>
-
-                  <PrimaryButton
-                    title="Create Account"
-                    onPress={handleNavigateToRegister}
-                    style={styles.loginButton}
-                  />
-                </View>
-              )}
+              {/* Create Account Link */}
+              <View style={styles.signupRow}>
+                <Text style={styles.signupText}>Don't have an account? </Text>
+                <TouchableOpacity onPress={handleNavigateToRegister} activeOpacity={0.7}>
+                  <Text style={styles.signupLink}>Sign Up</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Divider */}
@@ -430,6 +358,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
   </ResponsiveContainer>
   );
 };
+
 
 const styles = StyleSheet.create({
   safeArea: {
