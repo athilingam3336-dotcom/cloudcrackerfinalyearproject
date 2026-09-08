@@ -70,9 +70,44 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
     }
   }, [routeParams?.initialEmail]);
 
+  // Live Email Availability Check States
+  const [emailCheckStatus, setEmailCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+
   const isValidEmail = (val: string) => {
     return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(val.trim());
   };
+
+  // Debounced Live Email Check effect
+  useEffect(() => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setEmailCheckStatus('idle');
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setEmailCheckStatus('invalid');
+      return;
+    }
+
+    setEmailCheckStatus('checking');
+    const timer = setTimeout(async () => {
+      try {
+        const result = await authService.checkEmail(trimmedEmail);
+        if (result.exists) {
+          setEmailCheckStatus('taken');
+          setErrors((prev) => ({ ...prev, email: 'Account already exists with this email address.' }));
+        } else {
+          setEmailCheckStatus('available');
+          setErrors((prev) => ({ ...prev, email: undefined }));
+        }
+      } catch (err) {
+        setEmailCheckStatus('idle');
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [email]);
 
   const storeRegister = useAuthStore((state) => state.register);
   const storeLoginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
@@ -171,12 +206,12 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
     // Email validation
     if (!email.trim()) {
       newErrors.email = 'Email address is required';
-    } else {
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(email.trim())) {
-        newErrors.email = 'Please enter a valid email address';
-      }
+    } else if (!isValidEmail(email.trim())) {
+      newErrors.email = 'Please enter a valid email address';
+    } else if (emailCheckStatus === 'taken') {
+      newErrors.email = 'Account already exists with this email address.';
     }
+
 
     // Password validation
     if (!password) {
@@ -423,6 +458,15 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                     error={errors.email}
                     leftIcon={
                       <MaterialIcons name="mail-outline" size={20} color={Colors.tertiary} />
+                    }
+                    rightIcon={
+                      emailCheckStatus === 'checking' ? (
+                        <MaterialIcons name="sync" size={20} color={Colors.tertiary} />
+                      ) : emailCheckStatus === 'available' ? (
+                        <MaterialIcons name="check-circle" size={20} color="#16A34A" />
+                      ) : emailCheckStatus === 'taken' ? (
+                        <MaterialIcons name="cancel" size={20} color={Colors.error} />
+                      ) : null
                     }
                   />
 
