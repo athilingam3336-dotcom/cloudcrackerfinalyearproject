@@ -701,7 +701,7 @@ export class AdminService {
     try {
       const [dashRes, ordersRes, productsRes, usersRes] = await Promise.allSettled([
         apiClient.get('/admin/dashboard'),
-        apiClient.get('/admin/orders', { params: { page: 1, limit: 1000 } }),
+        apiClient.get('/admin/orders', { params: { page: 1, limit: 100 } }),
         apiClient.get('/products', { params: { page: 1, limit: 100 } }),
         apiClient.get('/admin/users', { params: { page: 1, limit: 100 } }),
       ]);
@@ -1531,7 +1531,7 @@ export class AdminService {
    */
   async verifyUpiPayment(orderId: string, utr: string): Promise<any> {
     try {
-      const { data: res } = await apiClient.post(`/admin/upi/verify/${orderId}`, { utr });
+      const { data: res } = await apiClient.post(`/payment/admin/upi/verify/${orderId}`, { utr });
       return res;
     } catch (error) {
       console.error('Verify UPI Payment Error:', error);

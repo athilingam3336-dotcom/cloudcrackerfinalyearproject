@@ -34,7 +34,7 @@ class PaymentService {
    * Returns the dynamic UPI URI and the base64 encoded QR Code image.
    */
   async createUpiOrder(payload: UpiOrderPayload): Promise<UpiOrderData> {
-    const { data: res } = await apiClient.post('/payments/upi/create', payload);
+    const { data: res } = await apiClient.post('/payment/upi/create', payload);
     return res.data || res;
   }
 }
