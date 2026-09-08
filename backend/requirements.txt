@@ -19,3 +19,4 @@ passlib[bcrypt]>=1.7.4
 cloudinary>=1.41.0
 qrcode>=7.4.2
 Pillow>=10.2.0
+mongomock_motor>=0.0.35
