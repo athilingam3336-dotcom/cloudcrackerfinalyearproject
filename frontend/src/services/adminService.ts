@@ -1541,6 +1541,19 @@ export class AdminService {
     }
   }
 
+  /**
+   * Reject pending UPI payment.
+   */
+  async rejectUpiPayment(orderId: string): Promise<any> {
+    try {
+      const { data: res } = await apiClient.post(`/payment/admin/upi/reject/order/${orderId}`);
+      return res;
+    } catch (error) {
+      console.error('Reject UPI Payment Error:', error);
+      throw error;
+    }
+  }
+
   async updateOrderStatus(
     orderId: string,
     newStatus: AdminOrderItem['orderStatus']

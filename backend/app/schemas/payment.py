@@ -101,6 +101,10 @@ class UpiPaymentVerifyAdminRequest(BaseModel):
     transaction_reference: str = Field(..., min_length=4)
 
 
+class UpiPaymentSubmitReferenceRequest(BaseModel):
+    transaction_reference: str = Field(..., min_length=4, max_length=50)
+
+
 class PaymentStatusResponse(BaseModel):
     transaction_id: str
     payment_status: str

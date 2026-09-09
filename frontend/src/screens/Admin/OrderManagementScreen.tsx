@@ -150,10 +150,12 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   );
 
   const handleUpdatePaymentStatus = useCallback(
-    async (orderId: string, newStatus: AdminOrderItem['paymentStatus'], utr?: string) => {
+    async (orderId: string, newStatus: AdminOrderItem['paymentStatus'], utr?: string, paymentMethod?: string) => {
       try {
         if (newStatus === 'Paid' && utr) {
            await adminService.verifyUpiPayment(orderId, utr);
+        } else if (newStatus === 'Failed' && paymentMethod === 'upi') {
+           await adminService.rejectUpiPayment(orderId);
         } else {
            await adminService.updatePaymentStatus(orderId, newStatus);
         }
@@ -731,7 +733,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
                               if (opt === 'Paid' && selectedOrder?.paymentMethod === 'upi') {
                                 setPendingPaymentStatus(opt);
                               } else if (selectedOrder) {
-                                handleUpdatePaymentStatus(selectedOrder.id, opt);
+                                handleUpdatePaymentStatus(selectedOrder.id, opt, undefined, selectedOrder.paymentMethod);
                               }
                             }}
                           >
@@ -773,7 +775,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
                                 Alert.alert('Validation Error', 'UTR is required to verify UPI payment.');
                                 return;
                               }
-                              handleUpdatePaymentStatus(selectedOrder.id, 'Paid', transactionReference.trim());
+                              handleUpdatePaymentStatus(selectedOrder.id, 'Paid', transactionReference.trim(), selectedOrder.paymentMethod);
                             }}
                           >
                             <Text style={{ color: '#fff', fontFamily: 'Inter-Bold' }}>Verify & Mark as Paid</Text>
