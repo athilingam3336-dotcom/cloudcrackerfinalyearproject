@@ -207,14 +207,17 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
 
           {currentPaymentStatus === 'Pending' && qrCodeBase64 && (
             <View style={styles.qrContainer}>
-              <Text style={styles.qrAmountText}>
-                Scan & Pay Exactly: {formatCurrency(amountPaid || 0)}
-              </Text>
-              <Image 
-                source={{ uri: qrCodeBase64 }}
-                style={styles.qrImage}
-                resizeMode="contain"
-              />
+              <View style={{ marginVertical: 20, alignItems: 'center' }}>
+                <View style={{ backgroundColor: '#FFEBEE', padding: 20, borderRadius: 50, marginBottom: 15 }}>
+                  <MaterialIcons name="mark-email-read" size={60} color="#D32F2F" />
+                </View>
+                <Text style={{ fontSize: 18, color: '#333', fontWeight: '600', marginBottom: 5 }}>
+                  QR Code Sent to Email
+                </Text>
+                <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', paddingHorizontal: 20 }}>
+                  Please check your registered email inbox for the payment QR code for {formatCurrency(amountPaid || 0)}.
+                </Text>
+              </View>
               <Text style={styles.qrHelpText}>After paying, please submit your UTR below</Text>
               
               <View style={styles.utrForm}>
