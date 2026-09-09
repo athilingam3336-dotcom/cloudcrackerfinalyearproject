@@ -129,14 +129,14 @@ class EmailService:
 
             msg.attach(MIMEText(html_content, "html"))
 
-            # Optimized fast timeout (5s) for SMTP TLS handshakes
+            # Optimized fast timeout (15s) for SMTP TLS handshakes
             try:
-                with smtplib.SMTP_SSL(smtp_host, 465, timeout=5) as server:
+                with smtplib.SMTP_SSL(smtp_host, 465, timeout=15) as server:
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, [to_email], msg.as_string())
             except Exception as ssl_err:
                 logger.warning(f"SMTP SSL 465 failed ({ssl_err}), trying Port {smtp_port} STARTTLS...")
-                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=5) as server:
+                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=15) as server:
                     server.starttls()
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, [to_email], msg.as_string())
@@ -392,12 +392,12 @@ class EmailService:
 
             # 5. Send Email via SMTP
             try:
-                with smtplib.SMTP_SSL(smtp_host, 465, timeout=10) as server:
+                with smtplib.SMTP_SSL(smtp_host, 465, timeout=15) as server:
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, admin_emails, msg.as_string())
             except Exception as ssl_err:
                 logger.warning(f"Admin report email SSL 465 failed ({ssl_err}), trying 587 STARTTLS...")
-                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=10) as server:
+                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=15) as server:
                     server.starttls()
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, admin_emails, msg.as_string())
@@ -515,7 +515,7 @@ class EmailService:
             img.add_header('Content-Disposition', 'inline', filename=f"payment-qr-{order_number}.png")
             msg.attach(img)
 
-            with smtplib.SMTP_SSL(smtp_host, 465, timeout=10) as server:
+            with smtplib.SMTP_SSL(smtp_host, 465, timeout=15) as server:
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(smtp_from, [to_email], msg.as_string())
 
