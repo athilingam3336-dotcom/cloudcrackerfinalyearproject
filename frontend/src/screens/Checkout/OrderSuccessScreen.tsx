@@ -7,6 +7,9 @@ import {
   Image,
   ImageSourcePropType,
   TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -21,6 +24,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { LOCAL_PRODUCT_IMAGES, resolveProductImage } from '@/constants/productImages';
 import { formatCurrency } from '@/utils/currency';
 import { orderService } from '@/services/orderService';
+import { paymentService } from '@/services/paymentService';
 import { downloadCustomerOrderInvoicePdf } from '@/utils/invoiceGenerator';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
@@ -46,6 +50,56 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
   const qrCodeBase64 = route.params?.qrCodeBase64;
 
   const [orderItems, setOrderItems] = useState<any[]>(initialItems);
+  const [currentPaymentStatus, setCurrentPaymentStatus] = useState<string>(paymentStatus);
+  const [utr, setUtr] = useState('');
+  const [isSubmittingUtr, setIsSubmittingUtr] = useState(false);
+
+  // Poll status if pending/under review
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval>;
+    
+    if (orderId && ['Pending', 'Under Review'].includes(currentPaymentStatus)) {
+      intervalId = setInterval(async () => {
+        try {
+          const res = await paymentService.getUpiPaymentStatus(orderId);
+          if (res && res.payment_status) {
+            setCurrentPaymentStatus(res.payment_status);
+            if (['Paid', 'Confirmed', 'Verified', 'Success', 'Rejected', 'Failed'].includes(res.payment_status)) {
+              clearInterval(intervalId);
+            }
+          }
+        } catch (error) {
+          // Silent catch for polling
+        }
+      }, 5000);
+    }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [orderId, currentPaymentStatus]);
+
+  const handleSubmitUtr = useCallback(async () => {
+    if (!orderId) {
+      Alert.alert('Error', 'Order ID is missing.');
+      return;
+    }
+    if (!utr.trim() || utr.trim().length < 4) {
+      Alert.alert('Validation Error', 'Please enter a valid UTR / Transaction Reference.');
+      return;
+    }
+    setIsSubmittingUtr(true);
+    try {
+      await paymentService.submitUpiReference(orderId, utr);
+      setCurrentPaymentStatus('Under Review');
+      Alert.alert('Success', 'Payment reference submitted successfully. Please wait for admin verification.');
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Failed to submit UTR.';
+      Alert.alert('Error', msg);
+    } finally {
+      setIsSubmittingUtr(false);
+    }
+  }, [utr, orderId]);
 
   // If items weren't passed in route params, fetch the completed order from backend
   useEffect(() => {
@@ -113,10 +167,20 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
         </View>
 
         <View style={styles.contentContainer}>
-          {qrCodeBase64 ? (
+          {currentPaymentStatus === 'Pending' && qrCodeBase64 ? (
             <View style={[styles.badgeSuccess, { backgroundColor: '#FFF3E0' }]}>
               <MaterialIcons name="pending-actions" size={16} color="#E65100" />
               <Text style={[styles.badgeSuccessText, { color: '#E65100' }]}>Awaiting Payment</Text>
+            </View>
+          ) : currentPaymentStatus === 'Under Review' ? (
+            <View style={[styles.badgeSuccess, { backgroundColor: '#E3F2FD' }]}>
+              <MaterialIcons name="hourglass-empty" size={16} color="#1565C0" />
+              <Text style={[styles.badgeSuccessText, { color: '#1565C0' }]}>Under Review</Text>
+            </View>
+          ) : ['Rejected', 'Failed'].includes(currentPaymentStatus) ? (
+            <View style={[styles.badgeSuccess, { backgroundColor: '#FFEBEE' }]}>
+              <MaterialIcons name="error" size={16} color="#C62828" />
+              <Text style={[styles.badgeSuccessText, { color: '#C62828' }]}>Payment Failed / Rejected</Text>
             </View>
           ) : (
             <View style={styles.badgeSuccess}>
@@ -126,28 +190,53 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
           )}
 
           <Text style={styles.title}>
-            {qrCodeBase64 ? 'Pending Payment' : 'Order Confirmed!'}
+            {currentPaymentStatus === 'Pending' && qrCodeBase64 ? 'Pending Payment' :
+             currentPaymentStatus === 'Under Review' ? 'Payment Submitted' :
+             ['Rejected', 'Failed'].includes(currentPaymentStatus) ? 'Payment Failed' :
+             'Order Confirmed!'}
           </Text>
           <Text style={styles.subtitle}>
-            {qrCodeBase64
-              ? 'Your pyrotechnics are reserved! Please scan the QR code below to complete your payment. Our admin will verify it shortly.'
+            {currentPaymentStatus === 'Pending' && qrCodeBase64
+              ? "A payment QR has been sent to your registered email. Please scan the QR code to complete your payment."
+              : currentPaymentStatus === 'Under Review'
+              ? "Your payment reference has been submitted. We are verifying the payment. You will be notified shortly."
+              : ['Rejected', 'Failed'].includes(currentPaymentStatus)
+              ? "Your payment verification failed. Please contact support or try placing a new order."
               : "Your pyrotechnics are locked, loaded, and ready for dispatch. We've sent an order confirmation to your registered email."}
           </Text>
 
-          {/* QR Code Section for UPI */}
-          {qrCodeBase64 && (
-            <View style={[styles.purchasedCard, { alignItems: 'center', marginBottom: Spacing.md }]}>
-              <Text style={{ ...Typography.titleLg, marginBottom: 10, color: Colors.primary }}>
+          {currentPaymentStatus === 'Pending' && qrCodeBase64 && (
+            <View style={styles.qrContainer}>
+              <Text style={styles.qrAmountText}>
                 Scan & Pay Exactly: {formatCurrency(amountPaid || 0)}
               </Text>
               <Image 
                 source={{ uri: qrCodeBase64 }}
-                style={{ width: 220, height: 220, borderRadius: 10, borderWidth: 4, borderColor: '#fff' }}
+                style={styles.qrImage}
                 resizeMode="contain"
               />
-              <Text style={{ marginTop: 10, color: Colors.tertiary, fontSize: 13 }}>
-                After payment, your order will be verified manually by our Admin.
-              </Text>
+              <Text style={styles.qrHelpText}>After paying, please submit your UTR below</Text>
+              
+              <View style={styles.utrForm}>
+                <TextInput
+                  style={styles.utrInput}
+                  placeholder="Enter 12-digit UTR or Reference No."
+                  placeholderTextColor="#999"
+                  value={utr}
+                  onChangeText={setUtr}
+                />
+                <TouchableOpacity
+                  style={[styles.utrSubmitBtn, isSubmittingUtr && styles.utrSubmitBtnDisabled]}
+                  onPress={handleSubmitUtr}
+                  disabled={isSubmittingUtr}
+                >
+                  {isSubmittingUtr ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.utrSubmitBtnText}>I HAVE PAID</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           )}
 
@@ -556,6 +645,62 @@ const styles = StyleSheet.create({
   },
   actionCta: {
     width: '100%',
+  },
+  qrContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+    padding: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eeeeee',
+    width: '100%',
+  },
+  qrAmountText: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#333333',
+    marginBottom: 15,
+  },
+  qrImage: {
+    width: 220,
+    height: 220,
+  },
+  qrHelpText: {
+    ...Typography.bodyMd,
+    color: Colors.onSurfaceVariant,
+    marginTop: 15,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  utrForm: {
+    width: '100%',
+    marginTop: 10,
+  },
+  utrInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    backgroundColor: '#FAFAFA',
+    marginBottom: 10,
+  },
+  utrSubmitBtn: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  utrSubmitBtnDisabled: {
+    opacity: 0.7,
+  },
+  utrSubmitBtnText: {
+    color: '#ffffff',
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
   },
 });
 

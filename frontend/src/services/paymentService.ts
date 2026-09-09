@@ -37,6 +37,24 @@ class PaymentService {
     const { data: res } = await apiClient.post('/payment/upi/create', payload);
     return res.data || res;
   }
+
+  /**
+   * Submit the UTR for a pending UPI payment.
+   */
+  async submitUpiReference(orderId: string, utr: string): Promise<any> {
+    const { data: res } = await apiClient.post(`/payment/upi/submit-reference/${orderId}`, {
+      transaction_reference: utr,
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Poll/Get the current payment status for an order.
+   */
+  async getUpiPaymentStatus(orderId: string): Promise<{ transaction_id: string; payment_status: string }> {
+    const { data: res } = await apiClient.get(`/payment/upi/status/${orderId}`);
+    return res.data || res;
+  }
 }
 
 export const paymentService = new PaymentService();

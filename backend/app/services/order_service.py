@@ -131,9 +131,10 @@ class OrderService:
             }
             order_item = await self.order_repo.create_order_item(item_data)
 
-            # Update product stock in DB
-            new_stock = product.stock - quantity
-            await self.product_repo.update(product, {"stock": new_stock})
+            # Update product stock in DB (Bypass for UPI as it's deducted at Admin Verification)
+            if data.payment_method != "upi":
+                new_stock = product.stock - quantity
+                await self.product_repo.update(product, {"stock": new_stock})
 
             # Format item response
             item_resp = OrderItemResponse.convert_id(order_item)

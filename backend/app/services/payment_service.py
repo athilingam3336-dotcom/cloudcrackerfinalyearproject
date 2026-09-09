@@ -4,6 +4,7 @@ import logging
 import random
 from typing import Any, Dict, List, Optional
 
+from fastapi import BackgroundTasks
 from app.core.config import settings
 from app.exceptions import (
     BaseAppException,
@@ -146,7 +147,7 @@ class PaymentService:
         return await self.payment_repo.update_status(payment, update_dict)
 
     async def create_upi_payment_order(
-        self, user_id: str, data: UpiOrderCreateRequest
+        self, user_id: str, data: UpiOrderCreateRequest, background_tasks: BackgroundTasks
     ) -> UpiOrderCreateResponse:
         """
         Creates an Order and Payment in Pending state for UPI QR.
@@ -305,11 +306,14 @@ class PaymentService:
         user = await User.get(user_id)
         if user and user.email:
             try:
-                await EmailService.send_upi_payment_email(
+                background_tasks.add_task(
+                    EmailService.send_upi_payment_email,
                     to_email=user.email,
+                    customer_name=user.full_name or "Customer",
                     order_number=order.order_number,
+                    order_id=str(order.id),
                     amount=exact_amount,
-                    upi_id=upi_id,
+                    upi_payee_name=payee_name,
                     qr_base64=qr_base64,
                     items=products_to_order,
                     shipping=shipping,
@@ -317,7 +321,7 @@ class PaymentService:
                     subtotal=subtotal
                 )
             except Exception as e:
-                logger.error(f"Failed to send UPI payment email for order {order.order_number}: {e}")
+                logger.error(f"Failed to queue UPI payment email for order {order.order_number}: {e}")
 
         logger.info(
             f"Created UPI payment order: order_number={order.order_number}, total={order.total}"
@@ -427,6 +431,79 @@ class PaymentService:
             "payment": PaymentResponse.convert_id(payment),
             "already_processed": False,
         }
+
+    async def submit_upi_reference(
+        self, user_id: str, order_id: str, transaction_reference: str
+    ) -> Dict[str, Any]:
+        """
+        Customer submits their UTR after scanning the QR code.
+        Updates payment status to Under Review.
+        """
+        payment = await self.payment_repo.get_by_order(order_id)
+        if not payment:
+            raise NotFoundException(message="Payment not found for this order.")
+            
+        if str(payment.user_id) != user_id:
+            raise ValidationException(message="You can only submit references for your own orders.")
+            
+        if payment.payment_status not in ["Pending", "Under Review"]:
+            raise ValidationException(
+                message=f"Cannot submit reference. Payment is already in {payment.payment_status} state."
+            )
+
+        await self.payment_repo.update_status(
+            payment,
+            {
+                "payment_status": "Under Review",
+                "transaction_reference": transaction_reference.strip(),
+            },
+        )
+        logger.info(f"Customer {user_id} submitted UTR {transaction_reference} for order {order_id}")
+        return {"success": True, "payment_status": "Under Review"}
+
+    async def get_upi_payment_status(self, user_id: str, order_id: str) -> Dict[str, Any]:
+        """
+        Fetches the current payment status for an order.
+        """
+        payment = await self.payment_repo.get_by_order(order_id)
+        if not payment:
+            raise NotFoundException(message="Payment not found.")
+            
+        if str(payment.user_id) != user_id:
+            raise ValidationException(message="Unauthorized access.")
+            
+        return {
+            "transaction_id": str(payment.id),
+            "payment_status": payment.payment_status,
+        }
+
+    async def reject_upi_payment_admin(self, admin_id: str, order_id: str) -> Dict[str, Any]:
+        """
+        Admin rejects a pending/under review UPI payment due to invalid UTR.
+        """
+        order = await self.order_repo.get_by_id(order_id)
+        if not order:
+            raise NotFoundException(message="Order not found.")
+
+        payment = await self.payment_repo.get_by_order(order_id)
+        if not payment:
+            raise NotFoundException(message="Payment not found.")
+
+        if payment.payment_status in ["Verified", "Success"]:
+            raise ValidationException(message="Cannot reject an already verified payment.")
+
+        await self.payment_repo.update_status(
+            payment,
+            {
+                "payment_status": "Rejected",
+                "verified_by": admin_id,
+                "verified_at": datetime.utcnow(),
+            },
+        )
+        
+        await self.order_repo.update(order, {"payment_status": "Failed"})
+        logger.info(f"Admin {admin_id} REJECTED UPI payment for order {order_id}")
+        return {"success": True, "payment_status": "Rejected"}
 
     async def get_payment_details(
         self, user_id: str, payment_id: str, is_admin: bool = False

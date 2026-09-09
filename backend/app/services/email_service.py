@@ -415,9 +415,11 @@ class EmailService:
     @staticmethod
     def send_upi_payment_email_sync(
         to_email: str,
+        customer_name: str,
         order_number: str,
+        order_id: str,
         amount: str,
-        upi_id: str,
+        upi_payee_name: str,
         qr_base64: str,
         items: list,
         shipping: float,
@@ -434,12 +436,8 @@ class EmailService:
             logger.warning(f"[SMTP NOT CONFIGURED] Cannot send UPI QR email to {to_email}.")
             return False
 
-        subject = f"Your CloudCrackers Order Payment QR - {order_number}"
+        subject = f"Payment Pending — Order {order_number} — Meera Crackers"
         
-        items_html = ""
-        for product, quantity in items:
-            items_html += f"<tr><td style='padding:8px;'>{product.name} (x{quantity})</td><td style='padding:8px; text-align:right;'>₹{product.price * quantity:.2f}</td></tr>"
-
         html_body = f"""
         <!DOCTYPE html>
         <html>
@@ -447,34 +445,47 @@ class EmailService:
             <table width="100%" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
               <tr>
                 <td style="background-color: #D32F2F; padding: 20px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 22px;">CloudCrackers</h1>
-                  <p style="color: #ffebee; margin: 5px 0 0 0; font-size: 13px;">Order Confirmation & Payment</p>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 1px;">MEERA CRACKERS</h1>
+                  <p style="color: #ffebee; margin: 5px 0 0 0; font-size: 13px;">Sivakasi Pyrotechnics Store</p>
                 </td>
               </tr>
               <tr>
                 <td style="padding: 24px;">
-                  <p style="font-size: 15px; color: #555;">Hello,</p>
-                  <p style="font-size: 14px; color: #555;">Thank you for your order <strong>{order_number}</strong>! To complete your purchase, please scan the QR code below and pay the exact amount using any UPI app.</p>
+                  <p style="font-size: 15px; color: #555;">Hello {customer_name},</p>
+                  <p style="font-size: 14px; color: #555;">Thank you for placing your order with Meera Crackers.</p>
+                  <p style="font-size: 14px; color: #555;">Your order has been successfully created and is currently awaiting payment verification.</p>
+                  
+                  <h3 style="font-size: 15px; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">ORDER DETAILS</h3>
+                  <p style="margin: 4px 0; font-size: 13px;"><strong>Order Number:</strong> {order_number}</p>
+                  <p style="margin: 4px 0; font-size: 13px;"><strong>Order ID:</strong> {order_id}</p>
+                  <p style="margin: 4px 0; font-size: 13px;"><strong>Amount to Pay:</strong> ₹{amount}</p>
+                  <p style="margin: 4px 0; font-size: 13px;"><strong>Payment Method:</strong> UPI QR Payment</p>
+                  <p style="margin: 4px 0; font-size: 13px;"><strong>Payment Status:</strong> Payment Pending</p>
+
+                  <h3 style="font-size: 15px; margin-top:20px; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">SCAN & PAY</h3>
+                  <p style="font-size: 14px; color: #555;">Please scan the QR code below using GPay, PhonePe, Paytm, or another supported UPI application.</p>
                   
                   <div style="background-color: #FFF3E0; border: 1px solid #E65100; border-radius: 6px; padding: 15px; text-align: center; margin: 20px 0;">
-                    <h3 style="margin: 0 0 10px 0; color: #D32F2F;">Pay ₹{amount}</h3>
-                    <p style="margin: 4px 0; font-size: 13px; color: #555;">UPI ID: {upi_id}</p>
-                    <img src="cid:qrcode_img" alt="UPI QR Code" style="width: 200px; height: 200px; margin-top:10px; border-radius:8px; border:4px solid #fff;" />
-                    <p style="font-size: 12px; color: #777; margin-top: 10px;">Once paid, our Admin will verify the transaction and confirm your order.</p>
+                    <img src="cid:qrcode_img" alt="UPI QR Code" style="width: 200px; height: 200px; border-radius:8px; border:4px solid #fff;" />
+                    <p style="margin: 15px 0 5px 0; font-size: 14px; color: #333;"><strong>Amount to Pay:</strong><br/>₹{amount}</p>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #333;"><strong>UPI Payee:</strong><br/>{upi_payee_name}</p>
                   </div>
 
-                  <h3 style="font-size: 15px; margin-bottom:10px;">Order Summary</h3>
-                  <table width="100%" style="border-collapse: collapse; font-size: 13px;">
-                    {items_html}
-                    <tr><td colspan="2"><hr/></td></tr>
-                    <tr><td style="padding:4px 8px;">Subtotal</td><td style="padding:4px 8px; text-align:right;">₹{subtotal:.2f}</td></tr>
-                    <tr><td style="padding:4px 8px;">Shipping</td><td style="padding:4px 8px; text-align:right;">₹{shipping:.2f}</td></tr>
-                    <tr><td style="padding:4px 8px;">Tax (5%)</td><td style="padding:4px 8px; text-align:right;">₹{tax:.2f}</td></tr>
-                    <tr><td style="padding:8px; font-weight:bold;">TOTAL</td><td style="padding:8px; text-align:right; font-weight:bold;">₹{amount}</td></tr>
-                  </table>
+                  <div style="background-color: #f9f9f9; border-left: 4px solid #D32F2F; padding: 10px; margin-bottom: 20px;">
+                    <p style="margin: 0 0 5px 0; font-size: 13px; font-weight: bold; color: #D32F2F;">IMPORTANT:</p>
+                    <p style="margin: 0; font-size: 13px; color: #555;">Please pay the exact amount shown above.</p>
+                  </div>
+
+                  <p style="font-size: 13px; color: #555;">After completing the payment, keep your transaction reference / UTR number safely.</p>
+                  <p style="font-size: 13px; color: #555;">Our admin team will verify your payment manually and update your order status.</p>
+                  <p style="font-size: 13px; color: #555;">If payment has already been completed, please do not make another payment.</p>
+                  
+                  <p style="font-size: 13px; color: #333; margin-top: 15px;"><strong>Order Number:</strong><br/>{order_number}</p>
+
+                  <p style="font-size: 14px; color: #555; margin-top: 25px;">Thank you,<br/>Meera Crackers<br/>Sivakasi Pyrotechnics Store</p>
                   
                   <hr style="border: none; border-top: 1px solid #eeeeee; margin: 25px 0;" />
-                  <p style="font-size: 12px; color: #999; text-align: center;">&copy; 2026 CloudCrackers</p>
+                  <p style="font-size: 12px; color: #999; text-align: center;">&copy; 2026 Meera Crackers</p>
                 </td>
               </tr>
             </table>
@@ -490,7 +501,7 @@ class EmailService:
 
             msg = MIMEMultipart("related")
             msg["Subject"] = subject
-            msg["From"] = f"CloudCrackers <{smtp_from}>"
+            msg["From"] = f"Meera Crackers <{smtp_from}>"
             msg["To"] = to_email
 
             msg_alternative = MIMEMultipart("alternative")
@@ -499,9 +510,9 @@ class EmailService:
 
             # Attach QR inline
             qr_bytes = base64.b64decode(qr_base64)
-            img = MIMEImage(qr_bytes, name="qr.png")
+            img = MIMEImage(qr_bytes, name=f"payment-qr-{order_number}.png")
             img.add_header('Content-ID', '<qrcode_img>')
-            img.add_header('Content-Disposition', 'inline', filename="qr.png")
+            img.add_header('Content-Disposition', 'inline', filename=f"payment-qr-{order_number}.png")
             msg.attach(img)
 
             with smtplib.SMTP_SSL(smtp_host, 465, timeout=10) as server:
@@ -515,6 +526,6 @@ class EmailService:
             return False
 
     @classmethod
-    async def send_upi_payment_email(cls, to_email: str, order_number: str, amount: str, upi_id: str, qr_base64: str, items: list, shipping: float, tax: float, subtotal: float) -> bool:
-        return await asyncio.to_thread(cls.send_upi_payment_email_sync, to_email, order_number, amount, upi_id, qr_base64, items, shipping, tax, subtotal)
+    async def send_upi_payment_email(cls, to_email: str, customer_name: str, order_number: str, order_id: str, amount: str, upi_payee_name: str, qr_base64: str, items: list, shipping: float, tax: float, subtotal: float) -> bool:
+        return await asyncio.to_thread(cls.send_upi_payment_email_sync, to_email, customer_name, order_number, order_id, amount, upi_payee_name, qr_base64, items, shipping, tax, subtotal)
 

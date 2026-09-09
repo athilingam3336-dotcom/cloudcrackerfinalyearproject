@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from bson import ObjectId
-from fastapi import APIRouter, Depends, Header, Path, Request, status
+from fastapi import APIRouter, Depends, Header, Path, Request, status, BackgroundTasks
 
 from app.core.dependencies import get_current_user
 from app.exceptions import ValidationException
@@ -13,6 +13,7 @@ from app.schemas.payment import (
     UpiOrderCreateRequest,
     UpiOrderCreateResponse,
     UpiPaymentVerifyAdminRequest,
+    UpiPaymentSubmitReferenceRequest,
 )
 from app.services.payment_service import PaymentService
 
@@ -50,11 +51,12 @@ def get_validated_order_id(order_id: str = Path(...)) -> str:
 )
 async def create_upi_order(
     data: UpiOrderCreateRequest,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     payment_service: PaymentService = Depends(),
 ) -> ApiResponse:
     res = await payment_service.create_upi_payment_order(
-        str(current_user.id), data
+        str(current_user.id), data, background_tasks
     )
     return ApiResponse(
         success=True,
@@ -85,6 +87,80 @@ async def verify_upi_payment_admin(
     return ApiResponse(
         success=True,
         message="UPI payment verified successfully",
+        data=result,
+    )
+
+
+@base_router.post(
+    "/upi/submit-reference/{order_id}",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Customer Submit UTR Reference",
+    description="Customer submits their UTR after paying the UPI QR code.",
+)
+async def submit_upi_reference(
+    data: UpiPaymentSubmitReferenceRequest,
+    order_id: str = Depends(get_validated_order_id),
+    current_user: User = Depends(get_current_user),
+    payment_service: PaymentService = Depends(),
+) -> ApiResponse:
+    result = await payment_service.submit_upi_reference(
+        user_id=str(current_user.id),
+        order_id=order_id,
+        transaction_reference=data.transaction_reference,
+    )
+    return ApiResponse(
+        success=True,
+        message="Payment reference submitted successfully",
+        data=result,
+    )
+
+
+@base_router.get(
+    "/upi/status/{order_id}",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get UPI Payment Status",
+    description="Customer fetches the latest status of their UPI payment.",
+)
+async def get_upi_payment_status(
+    order_id: str = Depends(get_validated_order_id),
+    current_user: User = Depends(get_current_user),
+    payment_service: PaymentService = Depends(),
+) -> ApiResponse:
+    result = await payment_service.get_upi_payment_status(
+        user_id=str(current_user.id),
+        order_id=order_id,
+    )
+    return ApiResponse(
+        success=True,
+        message="Payment status retrieved",
+        data=result,
+    )
+
+
+@base_router.post(
+    "/admin/upi/reject/order/{order_id}",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Admin Reject UPI Payment",
+    description="Admin manually rejects a pending UPI payment.",
+)
+async def reject_upi_payment_admin(
+    order_id: str = Depends(get_validated_order_id),
+    current_user: User = Depends(get_current_user),
+    payment_service: PaymentService = Depends(),
+) -> ApiResponse:
+    if current_user.role != "ADMIN":
+        raise ValidationException(message="Only admins can reject UPI payments.")
+        
+    result = await payment_service.reject_upi_payment_admin(
+        admin_id=str(current_user.id),
+        order_id=order_id,
+    )
+    return ApiResponse(
+        success=True,
+        message="UPI payment rejected",
         data=result,
     )
 
