@@ -11,9 +11,9 @@ logger = logging.getLogger("app.services.email")
 class EmailService:
     @classmethod
     async def send_otp_email(cls, to_email: str, otp_code: str) -> bool:
-        """Sends OTP verification email via high-speed Transactional API (Resend/SendGrid) or optimized SMTP background thread."""
+        """Sends OTP verification email via high-speed Transactional API (Resend SDK/HTTP) or optimized SMTP background thread."""
         smtp_from = settings.SMTP_FROM or settings.SMTP_USER or "noreply@meeracrackersworld.com"
-        subject = "Your Meera Crackers Email Verification Code"
+        subject = "CloudCrackers - Email Verification OTP"
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -25,22 +25,23 @@ class EmailService:
             <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
               <tr>
                 <td style="background-color: #D32F2F; padding: 24px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">Meera Crackers World</h1>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">CloudCrackers</h1>
                 </td>
               </tr>
               <tr>
                 <td style="padding: 30px 24px;">
-                  <h2 style="color: #222; font-size: 20px; margin-top: 0;">Email Verification Required</h2>
+                  <h2 style="color: #222; font-size: 20px; margin-top: 0;">Email Verification</h2>
                   <p style="font-size: 15px; line-height: 1.5; color: #555;">Hello,</p>
-                  <p style="font-size: 15px; line-height: 1.5; color: #555;">Thank you for registering with <strong>Meera Crackers World</strong>. Please use the 6-digit OTP code below to verify your email address and complete registration:</p>
+                  <p style="font-size: 15px; line-height: 1.5; color: #555;">Your verification OTP is:</p>
                   
                   <div style="background-color: #FFF3E0; border: 2px dashed #E65100; border-radius: 10px; padding: 18px; text-align: center; margin: 25px 0;">
                     <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #D32F2F; font-family: monospace;">{otp_code}</span>
                   </div>
                   
-                  <p style="font-size: 13px; color: #777; line-height: 1.4;">This verification code is valid for <strong>10 minutes</strong>. If you did not initiate this registration request, please ignore this email.</p>
+                  <p style="font-size: 13px; color: #777; line-height: 1.4;">This OTP will expire in <strong>5 minutes</strong>.</p>
+                  <p style="font-size: 13px; color: #777; line-height: 1.4;">If you did not request this verification, please ignore this email.</p>
                   <hr style="border: none; border-top: 1px solid #eeeeee; margin: 25px 0;" />
-                  <p style="font-size: 12px; color: #999999; text-align: center; margin: 0;">&copy; 2026 Meera Crackers World. All rights reserved.</p>
+                  <p style="font-size: 12px; color: #999999; text-align: center; margin: 0;">&copy; 2026 CloudCrackers. All rights reserved.</p>
                 </td>
               </tr>
             </table>
@@ -48,31 +49,71 @@ class EmailService:
         </html>
         """
 
-        # 1. High-speed Resend HTTP API (Primary if configured)
+        # 1. High-speed Resend Python SDK / API
         if settings.RESEND_API_KEY:
+            clean_api_key = settings.RESEND_API_KEY.strip().strip("'\"")
+            resend_sender = settings.EMAIL_FROM or settings.RESEND_FROM or "onboarding@resend.dev"
+            clean_sender = resend_sender.strip().strip("'\"")
+
+            # First attempt with configured sender
             try:
-                import httpx
-                async with httpx.AsyncClient(timeout=5.0) as client:
-                    res = await client.post(
-                        "https://api.resend.com/emails",
-                        headers={
-                            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
-                            "Content-Type": "application/json",
-                        },
-                        json={
-                            "from": f"Meera Crackers World <{smtp_from}>",
+                import resend
+                resend.api_key = clean_api_key
+
+                params = {
+                    "from": clean_sender,
+                    "to": [to_email],
+                    "subject": subject,
+                    "html": html_content,
+                }
+                await resend.Emails.send_async(params)
+                logger.info(f"OTP email sent via Resend SDK to {to_email}")
+                return True
+            except Exception as sdk_err:
+                logger.warning(f"Resend SDK attempt warning for {to_email}: {sdk_err}.")
+                
+                # If custom sender failed or was rejected, fallback to default onboarding@resend.dev
+                if clean_sender != "onboarding@resend.dev":
+                    try:
+                        logger.info("Attempting Resend retry with default onboarding@resend.dev sender...")
+                        fallback_params = {
+                            "from": "onboarding@resend.dev",
                             "to": [to_email],
                             "subject": subject,
                             "html": html_content,
-                        },
-                    )
-                    if res.status_code in (200, 201, 202):
-                        logger.info(f"OTP email sent via Resend API to {to_email}")
+                        }
+                        await resend.Emails.send_async(fallback_params)
+                        logger.info(f"OTP email sent via Resend SDK (onboarding@resend.dev fallback) to {to_email}")
                         return True
-                    else:
-                        logger.warning(f"Resend API error ({res.status_code}): {res.text}")
-            except Exception as e:
-                logger.error(f"Resend API exception for {to_email}: {e}")
+                    except Exception as fallback_err:
+                        logger.warning(f"Resend SDK fallback error for {to_email}: {fallback_err}")
+                
+                # Try direct HTTP API call as secondary fallback
+                try:
+                    import httpx
+                    async with httpx.AsyncClient(timeout=8.0) as client:
+                        res = await client.post(
+                            "https://api.resend.com/emails",
+                            headers={
+                                "Authorization": f"Bearer {clean_api_key}",
+                                "Content-Type": "application/json",
+                            },
+                            json={
+                                "from": "onboarding@resend.dev",
+                                "to": [to_email],
+                                "subject": subject,
+                                "html": html_content,
+                            },
+                        )
+                        if res.status_code in (200, 201, 202):
+                            logger.info(f"OTP email sent via Resend HTTP API to {to_email}")
+                            return True
+                        else:
+                            logger.warning(f"Resend HTTP API error ({res.status_code}): {res.text}")
+                except Exception as http_err:
+                    logger.error(f"Resend HTTP API exception for {to_email}: {http_err}")
+
+
 
         # 2. SendGrid HTTP API (Secondary if configured)
         if settings.SENDGRID_API_KEY:
@@ -527,5 +568,116 @@ class EmailService:
 
     @classmethod
     async def send_upi_payment_email(cls, to_email: str, customer_name: str, order_number: str, order_id: str, amount: str, upi_payee_name: str, qr_base64: str, items: list, shipping: float, tax: float, subtotal: float) -> bool:
-        return await asyncio.to_thread(cls.send_upi_payment_email_sync, to_email, customer_name, order_number, order_id, amount, upi_payee_name, qr_base64, items, shipping, tax, subtotal)
+        """Sends UPI payment QR code email via Resend API (fastest) or fallback to SMTP."""
+        if settings.RESEND_API_KEY:
+            try:
+                import httpx
+                clean_api_key = settings.RESEND_API_KEY.strip().strip("'\"")
+                resend_from = settings.RESEND_FROM or settings.SMTP_FROM or "onboarding@resend.dev"
+                formatted_from = resend_from if "<" in resend_from else f"Meera Crackers <{resend_from}>"
+                subject = f"Payment Pending — Order {order_number} — Meera Crackers"
+
+                html_resend = f"""
+                <!DOCTYPE html>
+                <html>
+                  <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px; color: #333;">
+                    <table width="100%" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                      <tr>
+                        <td style="background-color: #D32F2F; padding: 20px; text-align: center;">
+                          <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 1px;">MEERA CRACKERS</h1>
+                          <p style="color: #ffebee; margin: 5px 0 0 0; font-size: 13px;">Sivakasi Pyrotechnics Store</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 24px;">
+                          <p style="font-size: 15px; color: #555;">Hello {customer_name},</p>
+                          <p style="font-size: 14px; color: #555;">Thank you for placing your order with Meera Crackers.</p>
+                          <p style="font-size: 14px; color: #555;">Your order has been successfully created and is currently awaiting payment verification.</p>
+                          
+                          <h3 style="font-size: 15px; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">ORDER DETAILS</h3>
+                          <p style="margin: 4px 0; font-size: 13px;"><strong>Order Number:</strong> {order_number}</p>
+                          <p style="margin: 4px 0; font-size: 13px;"><strong>Order ID:</strong> {order_id}</p>
+                          <p style="margin: 4px 0; font-size: 13px;"><strong>Amount to Pay:</strong> ₹{amount}</p>
+                          <p style="margin: 4px 0; font-size: 13px;"><strong>Payment Method:</strong> UPI QR Payment</p>
+                          <p style="margin: 4px 0; font-size: 13px;"><strong>Payment Status:</strong> Payment Pending</p>
+
+                          <h3 style="font-size: 15px; margin-top:20px; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">SCAN & PAY</h3>
+                          <p style="font-size: 14px; color: #555;">Please scan the QR code below using GPay, PhonePe, Paytm, or another supported UPI application.</p>
+                          
+                          <div style="background-color: #FFF3E0; border: 1px solid #E65100; border-radius: 6px; padding: 15px; text-align: center; margin: 20px 0;">
+                            <img src="data:image/png;base64,{qr_base64}" alt="UPI QR Code" style="width: 200px; height: 200px; border-radius:8px; border:4px solid #fff;" />
+                            <p style="margin: 15px 0 5px 0; font-size: 14px; color: #333;"><strong>Amount to Pay:</strong><br/>₹{amount}</p>
+                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #333;"><strong>UPI Payee:</strong><br/>{upi_payee_name}</p>
+                          </div>
+
+                          <div style="background-color: #f9f9f9; border-left: 4px solid #D32F2F; padding: 10px; margin-bottom: 20px;">
+                            <p style="margin: 0 0 5px 0; font-size: 13px; font-weight: bold; color: #D32F2F;">IMPORTANT:</p>
+                            <p style="margin: 0; font-size: 13px; color: #555;">Please pay the exact amount shown above.</p>
+                          </div>
+
+                          <p style="font-size: 13px; color: #555;">After completing the payment, keep your transaction reference / UTR number safely.</p>
+                          <p style="font-size: 13px; color: #555;">Our admin team will verify your payment manually and update your order status.</p>
+                          
+                          <p style="font-size: 14px; color: #555; margin-top: 25px;">Thank you,<br/>Meera Crackers<br/>Sivakasi Pyrotechnics Store</p>
+                          
+                          <hr style="border: none; border-top: 1px solid #eeeeee; margin: 25px 0;" />
+                          <p style="font-size: 12px; color: #999; text-align: center;">&copy; 2026 Meera Crackers</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                </html>
+                """
+
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    res = await client.post(
+                        "https://api.resend.com/emails",
+                        headers={
+                            "Authorization": f"Bearer {clean_api_key}",
+                            "Content-Type": "application/json",
+                        },
+                        json={
+                            "from": formatted_from,
+                            "to": [to_email],
+                            "subject": subject,
+                            "html": html_resend,
+                            "attachments": [
+                                {
+                                    "content": qr_base64,
+                                    "filename": f"payment-qr-{order_number}.png",
+                                }
+                            ]
+                        },
+                    )
+                    if res.status_code in (200, 201, 202):
+                        logger.info(f"UPI QR email sent via Resend API to {to_email}")
+                        return True
+                    else:
+                        logger.warning(f"Resend API error sending QR ({res.status_code}): {res.text}")
+                        if resend_from != "onboarding@resend.dev" and res.status_code in (400, 403, 422):
+                            logger.info("Retrying UPI QR email via Resend onboarding domain...")
+                            fallback_res = await client.post(
+                                "https://api.resend.com/emails",
+                                headers={
+                                    "Authorization": f"Bearer {clean_api_key}",
+                                    "Content-Type": "application/json",
+                                },
+                                json={
+                                    "from": "Meera Crackers <onboarding@resend.dev>",
+                                    "to": [to_email],
+                                    "subject": subject,
+                                    "html": html_resend,
+                                },
+                            )
+                            if fallback_res.status_code in (200, 201, 202):
+                                logger.info(f"UPI QR email sent via Resend API (onboarding fallback) to {to_email}")
+                                return True
+            except Exception as e:
+                logger.error(f"Resend API exception for UPI QR email {to_email}: {e}")
+
+        # Fallback to SMTP thread
+        return await asyncio.to_thread(
+            cls.send_upi_payment_email_sync,
+            to_email, customer_name, order_number, order_id, amount, upi_payee_name, qr_base64, items, shipping, tax, subtotal
+        )
 

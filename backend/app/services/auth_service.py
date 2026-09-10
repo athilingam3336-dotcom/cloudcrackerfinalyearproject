@@ -170,12 +170,19 @@ class AuthService:
             logger.warning(f"Authentication failed: Incorrect password for email '{clean_email}'")
             raise UnauthorizedException(message="Invalid email or password.")
 
-        # 4. Verify user is active
+        # 4. Verify user is verified and active
+        if not getattr(user, "is_verified", True) and user.role != "ADMIN" and getattr(user, "auth_provider", "local") == "local":
+            logger.warning(f"Authentication failed: Email unverified for '{clean_email}'")
+            raise UnauthorizedException(
+                message="Please verify your email before logging in."
+            )
+
         if not user.is_active or user.status != "active":
             logger.warning(f"Authentication failed: Account deactivated for email '{clean_email}'")
             raise UnauthorizedException(
                 message="Your account has been deactivated. Please contact support."
             )
+
 
         logger.info(f"User logged in successfully: {user.email}")
 
@@ -527,20 +534,21 @@ class AuthService:
                     message=f"An account with email '{email}' already exists. Please login instead."
                 )
 
-        import random
+        import secrets
         from datetime import datetime, timedelta
 
         global _email_otp_store
         now = datetime.utcnow()
         
-        # Check cooldown
+        # Check cooldown (60s)
         if clean_email in _email_otp_store:
             last_sent = _email_otp_store[clean_email].get("last_sent_at")
             if last_sent and (now - last_sent).total_seconds() < 60:
                 raise ValidationException(message="Please wait 60 seconds before requesting another OTP.")
 
-        otp_code = str(random.randint(100000, 999999))
-        expires_at = now + timedelta(minutes=10)
+        # Cryptographically secure 6-digit OTP (preserving leading zeros)
+        otp_code = "".join(secrets.choice("0123456789") for _ in range(6))
+        expires_at = now + timedelta(minutes=5)
         otp_hash = hash_password(otp_code)
 
         _email_otp_store[clean_email] = {
@@ -548,6 +556,7 @@ class AuthService:
             "expires_at": expires_at,
             "verified": False,
             "attempts": 0,
+            "created_at": now,
             "last_sent_at": now
         }
 
@@ -561,7 +570,7 @@ class AuthService:
             if clean_email in _email_otp_store:
                 del _email_otp_store[clean_email]
             raise ValidationException(
-                message="Failed to send verification email. Email provider service is not configured or rejected the request. Please check server email credentials."
+                message="Unable to send verification email. Please try again."
             )
 
         return {
@@ -571,32 +580,43 @@ class AuthService:
 
     async def verify_email_otp(self, email: str, otp: str) -> bool:
         clean_email = email.strip().lower()
+        clean_otp = otp.strip()
         global _email_otp_store
         record = _email_otp_store.get(clean_email)
 
         if not record:
             raise ValidationException(
-                message="No OTP request found for this email address. Please click 'Verify' to request an OTP."
+                message="No OTP request found for this email address. Please request a new OTP."
             )
 
         from datetime import datetime
         if record["expires_at"] < datetime.utcnow():
+            if clean_email in _email_otp_store:
+                del _email_otp_store[clean_email]
             raise ValidationException(
-                message="OTP code has expired. Please request a new verification code."
+                message="OTP expired. Please request a new OTP."
             )
 
         if record.get("attempts", 0) >= 5:
-            del _email_otp_store[clean_email]
+            if clean_email in _email_otp_store:
+                del _email_otp_store[clean_email]
             raise ValidationException(
-                message="Too many failed attempts. Please request a new verification code."
+                message="Too many incorrect attempts. Please request a new OTP."
             )
 
-        if not verify_password(otp.strip(), record["otp_hash"]):
+        if not verify_password(clean_otp, record["otp_hash"]):
             record["attempts"] = record.get("attempts", 0) + 1
+            if record["attempts"] >= 5:
+                if clean_email in _email_otp_store:
+                    del _email_otp_store[clean_email]
+                raise ValidationException(
+                    message="Too many incorrect attempts. Please request a new OTP."
+                )
             raise ValidationException(
-                message="Invalid OTP code. Please check your email and enter the correct 6-digit code."
+                message="Invalid OTP. Please check the code and try again."
             )
 
         record["verified"] = True
         logger.info(f"EMAIL VERIFIED VIA OTP: {clean_email}")
         return True
+

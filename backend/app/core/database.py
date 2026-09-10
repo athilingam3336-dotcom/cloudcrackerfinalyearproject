@@ -113,13 +113,13 @@ class DatabaseManager:
 
         for url_idx, target_url in enumerate(urls_to_try):
             is_curr_local = "localhost" in target_url or "127.0.0.1" in target_url
-            timeout_ms = 4000 if not is_curr_local else 3000
+            timeout_ms = 30000 if not is_curr_local else 3000
 
             for attempt in range(2):
                 try:
                     client_kwargs: Dict[str, Any] = {
                         "serverSelectionTimeoutMS": timeout_ms,
-                        "connectTimeoutMS": 5000,
+                        "connectTimeoutMS": 15000 if not is_curr_local else 3000,
                         "maxPoolSize": 50,
                         "minPoolSize": 5,
                         "maxIdleTimeMS": 45000,
@@ -128,7 +128,8 @@ class DatabaseManager:
                     if not is_curr_local:
                         client_kwargs["tlsCAFile"] = certifi.where()
                         client_kwargs["retryWrites"] = True
-                        client_kwargs["w"] = "majority"
+                        client_kwargs["readPreference"] = "primaryPreferred"
+
 
                     self.client = AsyncIOMotorClient(
                         target_url,

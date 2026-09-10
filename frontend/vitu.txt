@@ -1,0 +1,58 @@
+முடியாது, Render தரும் Free .onrender.com Domain-ஐ வைத்து Email Verification செய்ய முடியாது.
+
+❌ ஏன் .onrender.com Domain பயன்படுத்த முடியாது?
+Resend, SendGrid போன்ற Email சேவைகளில் Domain Verify செய்ய DNS Records (DKIM, SPF TXT Records) சேர்க்க வேண்டும்.
+.onrender.com என்பது Render நிறுவனத்தின் சொந்த Domain என்பதால், அதன் DNS Settings-ல் நம்மால் எந்த மாற்றமும் செய்ய முடியாது.
+💡 உங்களுக்கு இருக்கக்கூடிய சிறந்த இலவச (Free) வழி:
+Gmail App Password (100% இலவசம் - Domain தேவையில்லை!):
+
+உங்களிடம் சொந்த Domain இல்லை என்றாலும், உங்கள் சொந்த Gmail ID மூலமாகவே எந்த வாடிக்கையாளருக்கும் (Gmail, Yahoo, Outlook) 100% ரியல் OTP & QR Code Emails அனுப்பலாம்!
+
+இதை எப்படி செய்வது? (2 Min Setup):
+உங்கள் Gmail Account -> Security -> 2-Step Verification-ஐ Turn ON செய்யவும்.
+Google App Passwords பக்கத்திற்குச் செல்லவும்.
+App Name-ல் CloudCrackers என்று கொடுத்து Create கிளிக் செய்தால், 16 எழுத்து கொண்ட App Password கிடைக்கும்.
+Render Backend Environment Variables-ல் இவற்றைச் சேர்க்கவும்:
+SMTP_HOST: smtp.gmail.com
+SMTP_PORT: 587
+SMTP_USER: your_email@gmail.com (உங்கள் Gmail ID)
+SMTP_PASSWORD: xxxx xxxx xxxx xxxx (16-digit App Password)
+SMTP_FROM: your_email@gmail.com
+இதைச் செய்து Render Redeploy செய்துவிட்டால், எந்த ஒரு கட்டணமும் இன்றி அனைத்து வாடிக்கையாளர்களுக்கும் உடனடியாக OTP & QR Code Email சென்றுவிடும்!
+
+7:43 PM
+APA REAL AA AMOUNNTT KUTUTHU PANANUM NA
+7:45 PM
+ரியல் பிசினஸாக (Real Production) பணம் செலவழித்து மிக பிராண்டிங்காக, ப்ரொபஷனலாக செய்ய விரும்புமானால், அதற்குரிய படிநிலைகள் & செலவு விவரங்கள் (Budget & Steps) கீழே கொடுக்கப்பட்டுள்ளன:
+
+💵 செலவு விவரங்கள் (Estimated Budget)
+சேவை (Service)	எது சிறந்தது?	ஆரம்ப செலவு (Cost)
+1. Domain Name	Hostinger / Namecheap / Cloudflare	₹199 - ₹799 / ஆண்டு (.in / .com)
+2. Email Provider	Resend.com (Verified Domain)	₹0 Free (3,000 Emails/Month) / $20/மாதம் (50,000 Emails)
+3. Server Hosting	Render Starter Plan (Always Active)	$7/மாதம் (~₹580/மாதம்) (Cold start இருக்காது)
+4. Database	MongoDB Atlas Cloud	₹0 Free (512MB) / $9/மாதம்
+💡 குறைந்தபட்ச செலவு: வெறும் ₹200 - ₹800 (Domain மட்டும்) செலவழித்தால் போதும்! Resend மற்றும் Render-ன் இலவச சேவைகளையே பயன்படுத்தி ரியல் பிசினஸ் நடத்தலாம்.
+
+🛠️ Step-by-Step ரியல் Setup செய்யும் முறைகள்
+Step 1: சொந்த Domain வாங்குதல்
+Hostinger.in அல்லது Namecheap.com செல்லவும்.
+உங்கள் கடை பெயர் (எ.கா. meeracrackers.com அல்லது cloudcrackers.in) வாங்கி கொள்ளவும்.
+Step 2: Resend-ல் Domain சேர்ப்பது
+Resend.com Dashboard-ல் Add Domain கொடுத்து உங்கள் Domain Name உள்ளிடவும்.
+Resend 3 DNS Records (DKIM, SPF, DMARC) வழங்கும்:
+MX record
+TXT records (2 Nos)
+நீங்கள் Domain வாங்கிய இடத்தின் (Hostinger DNS Management) சென்று இந்த 3 Records-ஐ Add செய்யவும்.
+2 நிமிடங்களில் Resend-ல் Verified ஆகிவிடும்.
+Step 3: Render Environment Variables மாற்றுவது
+Render Backend -> Environment சென்று:
+
+env
+RESEND_API_KEY=re_your_real_api_key
+RESEND_FROM=noreply@meeracrackers.com
+🔥 இதன் மூலம் கிடைக்கும் நன்மைகள் (Benefits of Paid Setup):
+100% Instant Delivery (< 1 Second): Customer OTP பட்டனை தொட்ட 1 வினாடியில் Email சென்றுவிடும்.
+No Spam Folder: noreply@yourdomain.com மூலம் செல்வதால் Spam-ல் விழாமல் Primary Inbox-க்கு நேராக செல்லும்.
+Professional Look: Customer-க்கு onboarding@resend.dev அல்லது gmail.com என்று போகாமல் உங்கள் சொந்த பிராண்ட் பெயரில் (Meera Crackers <noreply@meeracrackers.com>) Email செல்லும்.
+
+re_xxxxxxxxxxxxxxxxxxxxxxxx
