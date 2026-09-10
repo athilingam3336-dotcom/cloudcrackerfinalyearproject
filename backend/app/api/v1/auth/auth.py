@@ -61,6 +61,25 @@ async def send_email_otp(
 
 
 @router.post(
+    "/resend-email-otp",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Resend OTP code to email",
+    description="Resends a 6-digit OTP code subject to a 60-second rate limit cooldown.",
+)
+async def resend_email_otp(
+    data: SendEmailOtpRequest, auth_service: AuthService = Depends()
+) -> ApiResponse:
+    result = await auth_service.send_email_otp(data.email, is_reset=data.is_reset)
+    return ApiResponse(
+        success=True,
+        message=result["message"],
+        data=result,
+    )
+
+
+
+@router.post(
     "/verify-email-otp",
     response_model=ApiResponse,
     status_code=status.HTTP_200_OK,

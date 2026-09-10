@@ -329,6 +329,21 @@ export class AuthService {
     return payload;
   }
 
+  async resendEmailOtp(
+    email: string,
+    is_reset: boolean = false
+  ): Promise<{ email: string; message: string }> {
+    if (ENV.ENABLE_MOCK_API) {
+      return {
+        email,
+        message: `Verification OTP code sent successfully to ${email}. Please check your inbox.`,
+      };
+    }
+    const { data: res } = await apiClient.post('/auth/resend-email-otp', { email, is_reset });
+    const payload = res.data || res;
+    return payload;
+  }
+
   async verifyEmailOtp(email: string, otp: string): Promise<boolean> {
     if (ENV.ENABLE_MOCK_API) {
       return true;
@@ -338,6 +353,7 @@ export class AuthService {
     return Boolean(payload.verified ?? res.success);
   }
 }
+
 
 export const authService = new AuthService();
 export default authService;

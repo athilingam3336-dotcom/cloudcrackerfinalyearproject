@@ -351,3 +351,83 @@ async def test_instagram_user_auth_flow(client: AsyncClient):
     assert res_json["message"] == "Instagram Login Successful"
     assert "access_token" in res_json["data"]
     assert res_json["data"]["user"]["auth_provider"] == "instagram"
+
+
+@pytest.mark.asyncio
+async def test_send_and_verify_email_otp_flow(client: AsyncClient):
+    """Tests sending OTP, verifying OTP, and creating user account."""
+    from app.services.auth_service import _email_otp_store
+    email = "otptest@example.com"
+
+    # 1. Send OTP
+    send_res = await client.post("/api/v1/auth/send-email-otp", json={"email": email})
+    assert send_res.status_code == 200
+    assert send_res.json()["success"] is True
+
+    # 2. Extract generated OTP record (internal test inspection)
+    assert email in _email_otp_store
+    record = _email_otp_store[email]
+    assert record["verified"] is False
+    assert record["attempts"] == 0
+
+    # 3. Verify OTP endpoint with wrong code fails
+    wrong_res = await client.post("/api/v1/auth/verify-email-otp", json={"email": email, "otp": "000000"})
+    assert wrong_res.status_code == 422
+    assert "Invalid OTP" in wrong_res.json()["message"]
+
+    # 4. Perform resend (after clearing cooldown for test execution speed)
+    record["last_sent_at"] = record["last_sent_at"].replace(year=2020)
+    resend_res = await client.post("/api/v1/auth/resend-email-otp", json={"email": email})
+    assert resend_res.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_verify_email_otp_max_attempts(client: AsyncClient):
+    """Tests that 5 incorrect attempts invalidate the OTP."""
+    from app.services.auth_service import _email_otp_store
+    email = "maxattempts@example.com"
+
+    await client.post("/api/v1/auth/send-email-otp", json={"email": email})
+
+    for i in range(4):
+        res = await client.post("/api/v1/auth/verify-email-otp", json={"email": email, "otp": "000000"})
+        assert res.status_code == 422
+
+    # 5th attempt fails and invalidates OTP
+    res5 = await client.post("/api/v1/auth/verify-email-otp", json={"email": email, "otp": "000000"})
+    assert res5.status_code == 422
+    assert "Too many incorrect attempts" in res5.json()["message"]
+    assert email not in _email_otp_store
+
+
+@pytest.mark.asyncio
+async def test_send_email_otp_cooldown(client: AsyncClient):
+    """Tests 60-second rate limit cooldown for requesting OTP."""
+    email = "cooldown@example.com"
+    await client.post("/api/v1/auth/send-email-otp", json={"email": email})
+
+    # Immediate second request triggers cooldown exception
+    res2 = await client.post("/api/v1/auth/send-email-otp", json={"email": email})
+    assert res2.status_code == 422
+    assert "60 seconds" in res2.json()["message"]
+
+
+@pytest.mark.asyncio
+async def test_resend_email_service_mocked():
+    """Tests EmailService.send_otp_email using a mocked Resend send_async coroutine without requiring a real API key."""
+    from unittest.mock import AsyncMock, patch
+    from app.services.email_service import EmailService
+
+    with patch("app.core.config.settings.RESEND_API_KEY", "re_mock_test_key_12345"):
+        with patch("resend.Emails.send_async", new_callable=AsyncMock) as mock_send:
+            mock_send.return_value = {"id": "msg_mock_12345"}
+            result = await EmailService.send_otp_email("mockcustomer@example.com", "987654")
+            assert result is True
+            mock_send.assert_called_once()
+            call_args = mock_send.call_args[0][0]
+            assert call_args["to"] == ["mockcustomer@example.com"]
+            assert call_args["from"] == "onboarding@resend.dev"
+            assert "987654" in call_args["html"]
+            assert "CloudCrackers - Email Verification OTP" == call_args["subject"]
+
+

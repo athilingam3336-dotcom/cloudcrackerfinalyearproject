@@ -87,8 +87,11 @@ class Settings(BaseSettings):
     SMTP_USER: Optional[str] = os.getenv("SMTP_USER", None)
     SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD", None)
     SMTP_FROM: Optional[str] = os.getenv("SMTP_FROM", None)
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "onboarding@resend.dev")
     RESEND_API_KEY: Optional[str] = os.getenv("RESEND_API_KEY", None)
+    RESEND_FROM: str = os.getenv("RESEND_FROM") or os.getenv("EMAIL_FROM") or "onboarding@resend.dev"
     SENDGRID_API_KEY: Optional[str] = os.getenv("SENDGRID_API_KEY", None)
+
 
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [

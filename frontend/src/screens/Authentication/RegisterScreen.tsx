@@ -36,6 +36,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_DESKTOP = SCREEN_WIDTH >= 900;
 
 interface RegisterErrors {
+  name?: string;
   email?: string;
   otp?: string;
   password?: string;
@@ -46,6 +47,7 @@ interface RegisterErrors {
 
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, route }) => {
   const routeParams = route?.params as { initialEmail?: string } | undefined;
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState(routeParams?.initialEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -63,12 +65,46 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [otpMessage, setOtpMessage] = useState<string | null>(null);
+  const [otpExpirySeconds, setOtpExpirySeconds] = useState(300); // 5 minutes
+  const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0); // 60s cooldown
 
   useEffect(() => {
     if (routeParams?.initialEmail) {
       setEmail(routeParams.initialEmail);
     }
   }, [routeParams?.initialEmail]);
+
+  // 5-Minute OTP Expiry Countdown Effect
+  useEffect(() => {
+    let timer: any = null;
+    if (otpSent && otpExpirySeconds > 0) {
+      timer = setInterval(() => {
+        setOtpExpirySeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [otpSent, otpExpirySeconds]);
+
+  // 60-Second Resend Cooldown Countdown Effect
+  useEffect(() => {
+    let timer: any = null;
+    if (resendCooldownSeconds > 0) {
+      timer = setInterval(() => {
+        setResendCooldownSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [resendCooldownSeconds]);
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Live Email Availability Check States
   const [emailCheckStatus, setEmailCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
@@ -213,7 +249,6 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
       newErrors.email = 'Account already exists with this email address.';
     }
 
-
     // Password validation
     if (!password) {
       newErrors.password = 'Password is required';
@@ -256,11 +291,30 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
       const res = await authService.sendEmailOtp(email.trim());
       setIsSendingOtp(false);
       setOtpSent(true);
-      setOtpMessage(res.message || `Verification OTP code sent to ${email.trim()}.`);
+      setOtpExpirySeconds(300);
+      setResendCooldownSeconds(60);
+      setOtpMessage(res.message || `Verification OTP sent to ${email.trim()}.`);
     } catch (err: any) {
       setIsSendingOtp(false);
-      const msg = err.response?.data?.message || err.message || 'Failed to send OTP code.';
+      const msg = err.response?.data?.message || err.message || 'Unable to send verification email. Please try again.';
       setErrors((prev) => ({ ...prev, general: msg }));
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldownSeconds > 0 || isSendingOtp) return;
+    setIsSendingOtp(true);
+    setErrors((prev) => ({ ...prev, otp: undefined, general: undefined }));
+    try {
+      const res = await authService.resendEmailOtp(email.trim());
+      setIsSendingOtp(false);
+      setOtpExpirySeconds(300);
+      setResendCooldownSeconds(60);
+      setOtpMessage(res.message || `New verification OTP sent to ${email.trim()}.`);
+    } catch (err: any) {
+      setIsSendingOtp(false);
+      const msg = err.response?.data?.message || err.message || 'Unable to send verification email. Please try again.';
+      setErrors((prev) => ({ ...prev, otp: msg, general: msg }));
     }
   };
 
@@ -270,18 +324,22 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
       return;
     }
 
+    if (otpExpirySeconds <= 0) {
+      setErrors((prev) => ({ ...prev, otp: 'OTP expired. Please request a new OTP.' }));
+      return;
+    }
+
     setIsVerifyingOtp(true);
     setErrors((prev) => ({ ...prev, otp: undefined, general: undefined }));
 
     try {
       const success = await authService.verifyEmailOtp(email.trim(), otpCode.trim());
       if (success) {
-        // Create account without dummy full name or dummy phone
         await authService.register(
-          '', // No dummy name passed
+          fullName.trim(),
           email.trim(),
           password,
-          '', // No dummy phone passed
+          '',
           confirmPassword
         );
         setIsVerifyingOtp(false);
@@ -290,10 +348,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
       }
     } catch (err: any) {
       setIsVerifyingOtp(false);
-      const msg = err.response?.data?.message || err.message || 'Verification or Registration failed.';
+      const msg = err.response?.data?.message || err.message || 'Invalid OTP. Please check the code and try again.';
       setErrors((prev) => ({ ...prev, otp: msg, general: msg }));
     }
   };
+
 
   const handleGoogleLoginClick = async () => {
     setErrors({});
@@ -404,11 +463,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
               {otpSent ? (
                 <View style={styles.otpBox}>
                   <View style={styles.otpBoxHeader}>
-                    <MaterialIcons name="mark-email-read" size={20} color={Colors.primary} />
-                    <Text style={styles.otpBoxTitle}>Email Verification Code</Text>
+                    <MaterialIcons name="mark-email-read" size={24} color={Colors.primary} />
+                    <Text style={styles.otpBoxTitle}>Verify Your Email</Text>
                   </View>
                   <Text style={styles.otpBoxSubtitle}>
-                    Enter the 6-digit OTP code sent to <Text style={{ fontFamily: 'Inter-Bold' }}>{email}</Text>
+                    We sent a 6-digit OTP to <Text style={{ fontFamily: 'Inter-Bold', color: Colors.primary }}>{email}</Text>
                   </Text>
 
                   {otpMessage && (
@@ -418,8 +477,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                   )}
 
                   <CustomInput
-                    label="OTP CODE"
-                    placeholder="6-digit OTP (e.g. 123456)"
+                    label="OTP"
+                    placeholder="_ _ _ _ _ _"
                     value={otpCode}
                     onChangeText={(text) => {
                       setOtpCode(text.replace(/\D/g, '').slice(0, 6));
@@ -430,13 +489,36 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                     error={errors.otp}
                   />
 
+                  <View style={styles.timerContainer}>
+                    <Text style={styles.timerText}>
+                      OTP expires in:{' '}
+                      <Text style={[styles.timerCountdown, otpExpirySeconds === 0 && { color: Colors.error }]}>
+                        {formatTimer(otpExpirySeconds)}
+                      </Text>
+                    </Text>
+                  </View>
+
                   <PrimaryButton
-                    title="Verify & Create Account"
+                    title="Verify Email"
                     onPress={handleVerifyAndCreateAccount}
                     loading={isVerifyingOtp}
+                    disabled={isVerifyingOtp || otpExpirySeconds === 0}
                     style={styles.submitButton}
                   />
                   
+                  <View style={styles.resendRow}>
+                    <Text style={styles.resendText}>Didn't receive the code? </Text>
+                    <TouchableOpacity
+                      onPress={handleResendOtp}
+                      disabled={resendCooldownSeconds > 0 || isSendingOtp}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.resendLink, (resendCooldownSeconds > 0 || isSendingOtp) && { color: Colors.tertiary }]}>
+                        {resendCooldownSeconds > 0 ? `Resend OTP (${resendCooldownSeconds}s)` : 'Resend OTP'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
                   <TouchableOpacity
                     style={{ marginTop: 16, alignItems: 'center' }}
                     onPress={() => { setOtpSent(false); setOtpCode(''); }}
@@ -446,6 +528,20 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                 </View>
               ) : (
                 <>
+                  <CustomInput
+                    label="FULL NAME"
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChangeText={(text) => {
+                      setFullName(text);
+                      if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                    }}
+                    leftIcon={
+                      <MaterialIcons name="person-outline" size={20} color={Colors.tertiary} />
+                    }
+                    error={errors.name}
+                  />
+
                   <CustomInput
                     label="EMAIL ADDRESS"
                     placeholder="john@example.com"
@@ -470,6 +566,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                       ) : null
                     }
                   />
+
 
                   <PasswordInput
                     label="PASSWORD"
@@ -753,6 +850,39 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#E65100',
   },
+  timerContainer: {
+    marginVertical: 4,
+    alignItems: 'center',
+  },
+  timerText: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    color: Colors.onSurfaceVariant,
+    fontFamily: 'Inter-Regular',
+  },
+  timerCountdown: {
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+  },
+  resendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  resendText: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    color: Colors.onSurfaceVariant,
+    fontFamily: 'Inter-Regular',
+  },
+  resendLink: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    color: Colors.primary,
+    fontFamily: 'Inter-Bold',
+  },
+
   otpRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
