@@ -243,7 +243,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           Happy & Safety Guarantee • Wholesale & Retailer
         </Animated.Text>
 
-        {/* Prominent Kids Diwali Celebration Showcase Image */}
+        {/* Prominent Theri Diwali Celebration Showcase Image */}
         <Animated.View
           style={[
             styles.kidsShowcaseCard,
@@ -254,7 +254,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           ]}
         >
           <Image
-            source={LOCAL_PRODUCT_IMAGES.FESTIVE_KIDS_FIREWORKS}
+            source={LOCAL_PRODUCT_IMAGES.THERI_DIWALI}
             style={styles.kidsShowcaseImage}
             resizeMode="cover"
           />
