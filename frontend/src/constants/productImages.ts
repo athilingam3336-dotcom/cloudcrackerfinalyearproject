@@ -29,7 +29,8 @@ export const LOCAL_PRODUCT_IMAGES = {
   ROCKETS: require('../../assets/products/rockets_fireworks.png'),
 
   // Festive Mascot & Celebration Artwork
-  FESTIVE_KIDS_FIREWORKS: require('../../assets/diwali_kids_fireworks.png'),
+  FESTIVE_KIDS_FIREWORKS: require('../../assets/theri_diwali.jpg'),
+  THERI_DIWALI: require('../../assets/theri_diwali.jpg'),
   KID_BOY_SPARKLER: require('../../assets/kid_sparkler_mascot.png'),
   KID_GIRL_SPARKLER: require('../../assets/girl_sparkler_mascot.png'),
   LOGO: require('../../assets/logo.png'),
