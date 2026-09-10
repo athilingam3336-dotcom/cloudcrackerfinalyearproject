@@ -157,6 +157,9 @@ class EmailService:
                 f"[SMTP NOT CONFIGURED] Cannot send real email to {to_email}. "
                 f"Set SMTP_USER / SMTP_PASSWORD or RESEND_API_KEY in environment."
             )
+            if settings.is_test or settings.ENVIRONMENT in ("test", "development"):
+                logger.info(f"[TEST/DEV MODE] Simulating successful OTP email delivery to {to_email}")
+                return True
             return False
 
         try:
