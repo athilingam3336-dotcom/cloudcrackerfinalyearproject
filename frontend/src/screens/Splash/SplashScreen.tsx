@@ -289,6 +289,13 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    ...(Platform.OS === 'web'
+      ? ({
+          minHeight: '100vh',
+          width: '100%',
+          boxSizing: 'border-box',
+        } as any)
+      : {}),
     backgroundColor: Colors.splashBackground,
     alignItems: 'center',
     justifyContent: 'space-between',
