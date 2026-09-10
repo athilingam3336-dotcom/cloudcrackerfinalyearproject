@@ -68,6 +68,9 @@ function ThemeAppController({ children }: { children: React.ReactNode }) {
           html, body, #root {
             background-color: #121316 !important;
             color: #f3f4f6 !important;
+            min-height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           div[style*="background-color: rgb(248, 249, 250)"],
           div[style*="background-color: #f8f9fa"],
@@ -103,6 +106,9 @@ function ThemeAppController({ children }: { children: React.ReactNode }) {
           html, body, #root {
             background-color: #f8f9fa !important;
             color: #191c1d !important;
+            min-height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
         `;
       }
