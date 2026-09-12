@@ -265,6 +265,9 @@ const styles = StyleSheet.create({
     minHeight: 32,
   },
   priceContainer: {
+    flex: 1,
+    flexShrink: 1,
+    maxWidth: '68%',
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
@@ -274,12 +277,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
+    flexShrink: 1,
   },
   originalPrice: {
     ...Typography.bodyMd,
     fontSize: 11,
     color: Colors.tertiary,
     textDecorationLine: 'line-through',
+    flexShrink: 1,
   },
   addButtonWrapper: {
     position: 'absolute',

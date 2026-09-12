@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
   ImageBackground,
   TouchableOpacity,
   Platform,
@@ -25,16 +25,16 @@ interface BannerCarouselProps {
   speedSec?: number; // Speed of complete cycle in seconds
 }
 
-const { width: WINDOW_WIDTH } = Dimensions.get('window');
-const isWebPlatform = Platform.OS === 'web';
-const CARD_WIDTH = isWebPlatform && WINDOW_WIDTH >= 900
-  ? Math.min(Math.max(WINDOW_WIDTH * 0.42, 380), 650)
-  : Math.min(Math.max(WINDOW_WIDTH * 0.82, 310), 520);
-const CARD_GAP = 16;
-const CARD_TOTAL = CARD_WIDTH + CARD_GAP;
-
 export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
   ({ banners, onBannerPress, speedSec = 25 }) => {
+    const { width: windowWidth } = useWindowDimensions();
+    const isWebPlatform = Platform.OS === 'web';
+    const cardWidth = isWebPlatform && windowWidth >= 900
+      ? Math.min(Math.max(windowWidth * 0.42, 380), 650)
+      : Math.min(Math.max(windowWidth * 0.84, 250), windowWidth - 32);
+    const cardGap = 12;
+    const cardTotal = cardWidth + cardGap;
+
     const [isPaused, setIsPaused] = useState(false);
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [activeIdx, setActiveIdx] = useState(0);
@@ -53,7 +53,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
       return [...banners, ...banners, ...banners, ...banners];
     }, [banners]);
 
-    const singleSetWidth = banners.length * CARD_TOTAL;
+    const singleSetWidth = banners.length * cardTotal;
 
     // WEB: Smooth Auto-Gliding using requestAnimationFrame on scrollLeft
     useEffect(() => {
@@ -153,7 +153,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
       (direction: 'next' | 'prev') => {
         handlePause();
         if (Platform.OS === 'web' && webContainerRef.current) {
-          const delta = direction === 'next' ? CARD_TOTAL : -CARD_TOTAL;
+          const delta = direction === 'next' ? cardTotal : -cardTotal;
           webContainerRef.current.scrollBy({ left: delta, behavior: 'smooth' });
         } else {
           setActiveIdx((prev) => {
@@ -238,7 +238,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
               style={{
                 display: 'flex',
                 flexDirection: 'row',
-                gap: `${CARD_GAP}px`,
+                gap: `${cardGap}px`,
                 overflowX: 'auto',
                 cursor: isMouseDown ? 'grabbing' : 'grab',
                 userSelect: 'none',
@@ -247,7 +247,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
               }}
             >
               {loopedBanners.map((item, idx) => (
-                <View key={`${item.id}-${idx}`} style={[styles.bannerSlide, { width: CARD_WIDTH, flexShrink: 0 }]}>
+                <View key={`${item.id}-${idx}`} style={[styles.bannerSlide, { width: cardWidth, flexShrink: 0 }]}>
                   <ImageBackground
                     source={resolveProductImage(item)}
                     style={styles.bannerImage}
@@ -297,7 +297,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
               {loopedBanners.map((item, idx) => (
                 <View
                   key={`${item.id}-${idx}`}
-                  style={[styles.bannerSlide, { width: CARD_WIDTH, marginRight: CARD_GAP }]}
+                  style={[styles.bannerSlide, { width: cardWidth, marginRight: cardGap }]}
                 >
                   <ImageBackground
                     source={resolveProductImage(item)}

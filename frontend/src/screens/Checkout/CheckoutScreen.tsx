@@ -40,6 +40,8 @@ type PaymentMethod = 'upi' | 'cod';
 export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) => {
   const { handleTabPress } = useSmartTabNavigation();
   const { isDesktopWeb: isDesktop } = useAppLayout();
+  const { width: windowWidth } = useWindowDimensions();
+  const isSmallMobile = windowWidth < 380;
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
   const user = useAuthStore((state) => state.user);
@@ -302,6 +304,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
             const isCompleted = currentStep > step;
             const isCurrent = currentStep === step;
             const isActive = currentStep >= step;
+            const showLabel = !isSmallMobile || isCurrent;
             return (
               <React.Fragment key={step}>
                 {idx > 0 && (
@@ -332,12 +335,14 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                       </Text>
                     )}
                   </View>
-                  <Text
-                    style={[styles.stepLabelHorizontal, isActive && styles.activeStepLabelHorizontal]}
-                    numberOfLines={1}
-                  >
-                    {label}
-                  </Text>
+                  {showLabel && (
+                    <Text
+                      style={[styles.stepLabelHorizontal, isActive && styles.activeStepLabelHorizontal]}
+                      numberOfLines={1}
+                    >
+                      {label}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </React.Fragment>
             );

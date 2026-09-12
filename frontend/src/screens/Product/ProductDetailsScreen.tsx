@@ -31,6 +31,7 @@ import { getProductGalleryItems, resolveProductImage } from '@/constants/product
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { useProductStore } from '@/store/productStore';
+import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 
 type ProductDetailsScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -256,7 +257,8 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <ResponsiveContainer>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       {/* Header Bar with Back Button */}
       <HomeHeader
         onLogoPress={() => navigation.navigate('Home')}
@@ -372,148 +374,154 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
             <Text style={styles.ratingText}>
               {currentDisplayItem.rating.toFixed(1)} ({currentDisplayItem.reviewCount || 128} reviews)
             </Text>
-          </View>
-
-          {/* Price & Stock */}
-          <View style={styles.priceRow}>
-            <Text style={styles.price}>{formatCurrency(currentDisplayItem.price)}</Text>
-            {currentDisplayItem.originalPrice && (
-              <Text style={styles.originalPrice}>{formatCurrency(currentDisplayItem.originalPrice)}</Text>
-            )}
-          </View>
-          {currentDisplayItem.stock !== undefined && currentDisplayItem.stock <= 0 ? (
-            <Text style={[styles.stockText, { color: '#dc2626', fontWeight: 'bold' }]}>
-              Out of Stock • Back in stock soon
-            </Text>
-          ) : (
-            <Text style={styles.stockText}>
-              In Stock ({currentDisplayItem.stock ?? 100} available) • Ready to ship
-            </Text>
-          )}
-
-          {/* Description */}
-          <View style={styles.descriptionSection}>
-            <Text style={styles.sectionHeader}>DESCRIPTION</Text>
-            <Text style={styles.descriptionText}>
-              {(currentDisplayItem as any).description || currentDisplayItem.subtitle}
-            </Text>
-          </View>
-
-          {/* Quantity Selector */}
-          <View style={styles.quantitySection}>
-            <Text style={styles.sectionHeader}>QUANTITY</Text>
-            <View style={styles.quantitySelector}>
-              <TouchableOpacity
-                style={styles.quantityBtn}
-                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-                activeOpacity={0.7}
-                disabled={currentDisplayItem.stock !== undefined && currentDisplayItem.stock <= 0}
-              >
-                <MaterialIcons name="remove" size={20} color={Colors.onSurface} />
-              </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity
-                style={[
-                  styles.quantityBtn,
-                  currentDisplayItem.stock !== undefined && quantity >= currentDisplayItem.stock && { opacity: 0.4 },
-                ]}
-                onPress={() => {
-                  const maxStock = currentDisplayItem.stock ?? 999;
-                  if (quantity >= maxStock) {
-                    Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
-                    return;
-                  }
-                  setQuantity((q) => Math.min(maxStock, q + 1));
-                }}
-                activeOpacity={0.7}
-                disabled={currentDisplayItem.stock !== undefined && (currentDisplayItem.stock <= 0 || quantity >= currentDisplayItem.stock)}
-              >
-                <MaterialIcons name="add" size={20} color={Colors.onSurface} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Action CTA Buttons */}
-          <View style={styles.ctaRow}>
-            <PrimaryButton
-              title={product.stock !== undefined && product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-              onPress={handleAddToCart}
-              disabled={product.stock !== undefined && product.stock <= 0}
-              style={styles.addToCartCta}
-            />
-            <PrimaryButton
-              title="Buy Now"
-              variant="secondary"
-              onPress={handleBuyNow}
-              disabled={product.stock !== undefined && product.stock <= 0}
-              style={styles.buyNowCta}
-            />
-          </View>
-
-          {/* Product Perks Row */}
-          <View style={styles.perksRow}>
-            <View style={styles.perkItem}>
-              <MaterialIcons name="local-shipping" size={24} color={Colors.primary} />
-              <View>
-                <Text style={styles.perkTitle}>Free Delivery</Text>
-                <Text style={styles.perkSubtitle}>Orders over {formatCurrency(1000)}</Text>
-              </View>
-            </View>
-            <View style={styles.perkItem}>
-              <MaterialIcons name="verified-user" size={24} color={Colors.primary} />
-              <View>
-                <Text style={styles.perkTitle}>Hazmat Safe</Text>
-                <Text style={styles.perkSubtitle}>Certified Handling</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Related Products Carousel Section */}
-        <View style={styles.relatedSection}>
-          <View style={styles.relatedHeaderRow}>
-            <Text style={styles.relatedTitle}>You May Also Like</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('ProductListing')} activeOpacity={0.7}>
-              <Text style={styles.viewAllText}>View All</Text>
+            <TouchableOpacity
+              style={styles.wishlistButton}
+              onPress={handleToggleWishlist}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons
+                name={isWishlisted ? 'favorite' : 'favorite-border'}
+                size={24}
+                color={isWishlisted ? Colors.primary : Colors.onSurfaceVariant}
+              />
             </TouchableOpacity>
           </View>
-          <FlatList
-            horizontal
-            data={relatedProducts}
-            keyExtractor={(item) => item.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.relatedList}
-            renderItem={({ item }) => (
-              <View style={styles.relatedCardWrapper}>
-                <ProductCard
-                  id={item.id}
-                  title={item.title}
-                  category={item.category}
-                  price={item.price}
-                  rating={item.rating}
-                  imageUrl={item.imageUrl}
-                  isWishlisted={wishlistItems.some((w) => w.id === item.id)}
-                  onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}
-                  onAddToCart={() => addToCart(item, 1)}
-                  onWishlistToggle={() => toggleWishlist(item)}
-                />
-              </View>
+
+            {/* Price & Stock Status */}
+            <View style={styles.priceRow}>
+              <Text style={styles.price}>{formatCurrency(currentDisplayItem.price)}</Text>
+              {currentDisplayItem.originalPrice && (
+                <Text style={styles.originalPrice}>{formatCurrency(currentDisplayItem.originalPrice)}</Text>
+              )}
+            </View>
+            {currentDisplayItem.stock !== undefined && currentDisplayItem.stock <= 0 ? (
+              <Text style={[styles.stockText, { color: '#dc2626', fontWeight: 'bold' }]}>
+                Out of Stock • Back in stock soon
+              </Text>
+            ) : (
+              <Text style={styles.stockText}>
+                In Stock ({currentDisplayItem.stock ?? 100} available) • Ready to ship
+              </Text>
             )}
-          />
-        </View>
-      </ScrollView>
 
-      {/* Bottom Navigation Bar */}
-      <BottomNavBar activeTab="Categories" onTabPress={handleTabPress} />
+            {/* Description */}
+            <View style={styles.descriptionSection}>
+              <Text style={styles.sectionHeader}>DESCRIPTION</Text>
+              <Text style={styles.descriptionText}>
+                {(currentDisplayItem as any).description || currentDisplayItem.subtitle}
+              </Text>
+            </View>
 
-      {/* Full-screen Image Zoom Viewer */}
-      <ImageZoomViewer
-        visible={isZoomViewerOpen}
-        imageSource={galleryItems[activeImageIndex]?.uri || resolveProductImage(product)}
-        onClose={() => setIsZoomViewerOpen(false)}
-        title={currentDisplayItem.title}
-      />
-    </SafeAreaView>
+            {/* Quantity Selector */}
+            <View style={styles.quantitySection}>
+              <Text style={styles.sectionHeader}>QUANTITY</Text>
+              <View style={styles.quantitySelector}>
+                <TouchableOpacity
+                  style={styles.quantityBtn}
+                  onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                  activeOpacity={0.7}
+                  disabled={currentDisplayItem.stock !== undefined && currentDisplayItem.stock <= 0}
+                >
+                  <MaterialIcons name="remove" size={20} color={Colors.onSurface} />
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{quantity}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.quantityBtn,
+                    currentDisplayItem.stock !== undefined && quantity >= currentDisplayItem.stock && { opacity: 0.4 },
+                  ]}
+                  onPress={() => {
+                    const maxStock = currentDisplayItem.stock ?? 999;
+                    if (quantity >= maxStock) {
+                      Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                      return;
+                    }
+                    setQuantity((q) => Math.min(maxStock, q + 1));
+                  }}
+                  activeOpacity={0.7}
+                  disabled={currentDisplayItem.stock !== undefined && (currentDisplayItem.stock <= 0 || quantity >= currentDisplayItem.stock)}
+                >
+                  <MaterialIcons name="add" size={20} color={Colors.onSurface} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Action CTA Buttons */}
+            <View style={styles.ctaRow}>
+              <PrimaryButton
+                title={product.stock !== undefined && product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                onPress={handleAddToCart}
+                disabled={product.stock !== undefined && product.stock <= 0}
+                style={styles.addToCartCta}
+              />
+              <PrimaryButton
+                title="Buy Now"
+                variant="secondary"
+                onPress={handleBuyNow}
+                disabled={product.stock !== undefined && product.stock <= 0}
+                style={styles.buyNowCta}
+              />
+            </View>
+
+            {/* Product Perks Row */}
+            <View style={styles.perksRow}>
+              <View style={styles.perkItem}>
+                <MaterialIcons name="local-shipping" size={24} color={Colors.primary} />
+                <View>
+                  <Text style={styles.perkTitle}>Free Delivery</Text>
+                  <Text style={styles.perkSubtitle}>Orders over {formatCurrency(1000)}</Text>
+                </View>
+              </View>
+              <View style={styles.perkItem}>
+                <MaterialIcons name="verified-user" size={24} color={Colors.primary} />
+                <View>
+                  <Text style={styles.perkTitle}>100% Genuine</Text>
+                  <Text style={styles.perkSubtitle}>Direct from Sivakasi</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Related Pyrotechnics Grid */}
+          <View style={styles.relatedSection}>
+            <Text style={styles.relatedTitle}>You May Also Like</Text>
+            <FlatList
+              data={relatedProducts}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.relatedList}
+              renderItem={({ item }) => (
+                <View style={styles.relatedCardWrapper}>
+                  <ProductCard
+                    id={item.id}
+                    title={item.title}
+                    category={item.category}
+                    price={item.price}
+                    originalPrice={item.originalPrice}
+                    badge={item.badge}
+                    imageUrl={item.imageUrl}
+                    onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}
+                    onAddToCart={() => addToCart(item, 1)}
+                  />
+                </View>
+              )}
+            />
+          </View>
+        </ScrollView>
+
+        {/* Bottom Navigation Bar */}
+        <BottomNavBar activeTab="Categories" onTabPress={handleTabPress} />
+
+        {/* Full-screen Image Zoom Viewer */}
+        <ImageZoomViewer
+          visible={isZoomViewerOpen}
+          imageSource={galleryItems[activeImageIndex]?.uri || resolveProductImage(product)}
+          onClose={() => setIsZoomViewerOpen(false)}
+          title={currentDisplayItem.title}
+        />
+      </SafeAreaView>
+    </ResponsiveContainer>
   );
 };
 
@@ -730,12 +738,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     marginTop: Spacing.lg,
+    flexWrap: 'wrap',
   },
   addToCartCta: {
     flex: 1,
+    minWidth: 130,
   },
   buyNowCta: {
     flex: 1,
+    minWidth: 130,
   },
   perksRow: {
     flexDirection: 'row',
@@ -744,6 +755,8 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
     borderTopWidth: 1,
     borderTopColor: Colors.surfaceContainerHigh,
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
   },
   perkItem: {
     flexDirection: 'row',
