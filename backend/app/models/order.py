@@ -17,10 +17,10 @@ class Order(Document):
     tax: float
     total: float
     payment_method: str
-    payment_status: str = "Pending"  # "Pending", "Paid", "Failed", "Refunded"
-    order_status: str = "Pending"  # "Pending", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"
+    payment_status: Indexed(str) = "Pending"  # "Pending", "Paid", "Failed", "Refunded"
+    order_status: Indexed(str) = "Pending"  # "Pending", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"
     shipping_address: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: Indexed(datetime) = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     status: str = "active"
     customer_deleted_at: Optional[datetime] = None

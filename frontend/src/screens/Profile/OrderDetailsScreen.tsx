@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  TextInput,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -25,6 +28,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
 import { downloadCustomerOrderInvoicePdf } from '@/utils/invoiceGenerator';
+import { paymentService } from '@/services/paymentService';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 
@@ -44,6 +48,8 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [utr, setUtr] = useState('');
+  const [isSubmittingUtr, setIsSubmittingUtr] = useState(false);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
 
   const fetchDetails = useCallback(async () => {
@@ -60,6 +66,28 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
   useEffect(() => {
     fetchDetails();
   }, [fetchDetails]);
+
+
+
+  const handleSubmitUtr = useCallback(async () => {
+    if (!order) return;
+    if (!utr.trim() || utr.trim().length < 4) {
+      Alert.alert('Validation Error', 'Please enter a valid 12-digit UTR / Transaction Reference number.');
+      return;
+    }
+    setIsSubmittingUtr(true);
+    try {
+      await paymentService.submitUpiReference(order.id, utr);
+      setOrder((prev) => prev ? { ...prev, paymentStatus: 'Under Review' } : prev);
+      Alert.alert('Success', 'Payment reference submitted successfully. Our admin team will verify your payment.');
+      setUtr('');
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Failed to submit UTR reference.';
+      Alert.alert('Error', msg);
+    } finally {
+      setIsSubmittingUtr(false);
+    }
+  }, [order, utr]);
 
   const handleDownloadInvoice = useCallback(() => {
     if (!order) return;
@@ -354,6 +382,80 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
             <Text style={styles.grandTotalLabel}>Grand Total</Text>
             <Text style={styles.grandTotalValue}>{formatCurrency(order.totalPrice)}</Text>
           </View>
+
+          {/* PENDING PAYMENT ACTION CARD WITH UTR INPUT */}
+          {(order.paymentStatus === 'Pending' || order.paymentStatus === 'Payment Pending' || !order.paymentStatus) && (
+            <View style={{ backgroundColor: '#FFF3E0', padding: 14, borderRadius: 12, marginTop: 14, borderWidth: 1, borderColor: '#FFE0B2' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                <MaterialIcons name="account-balance-wallet" size={20} color="#E65100" style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#E65100' }}>
+                  Action Required: Pay {formatCurrency(order.totalPrice)}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 12, color: '#555', lineHeight: 17, marginBottom: 12 }}>
+                Please check your registered email for the payment QR code and complete payment. After completing payment, enter your 12-digit UTR transaction reference below:
+              </Text>
+
+              {/* UTR Input Form */}
+              <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#333', marginBottom: 6 }}>
+                Submit 12-Digit Payment UTR Reference:
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#ffffff',
+                    borderWidth: 1,
+                    borderColor: '#ddd',
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 8,
+                    fontSize: 13,
+                    color: '#333',
+                  }}
+                  placeholder="e.g. 425689123456"
+                  placeholderTextColor="#999"
+                  value={utr}
+                  onChangeText={setUtr}
+                  keyboardType="number-pad"
+                />
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: isSubmittingUtr ? '#ccc' : Colors.primary,
+                    paddingHorizontal: 14,
+                    borderRadius: 8,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                  onPress={handleSubmitUtr}
+                  disabled={isSubmittingUtr}
+                >
+                  {isSubmittingUtr ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={{ color: '#fff', fontFamily: 'Inter-Bold', fontSize: 12 }}>
+                      SUBMIT UTR
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* UNDER REVIEW STATUS CARD */}
+          {order.paymentStatus === 'Under Review' && (
+            <View style={{ backgroundColor: '#E3F2FD', padding: 12, borderRadius: 12, marginTop: 14, borderWidth: 1, borderColor: '#90CAF9', flexDirection: 'row', alignItems: 'center' }}>
+              <MaterialIcons name="hourglass-empty" size={22} color="#1565C0" style={{ marginRight: 8 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: '#1565C0' }}>
+                  Payment UTR Reference Submitted
+                </Text>
+                <Text style={{ fontSize: 12, color: '#333', marginTop: 2 }}>
+                  Our admin team is verifying your payment. Status will update automatically once verified.
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Customer Download Invoice CTA Button */}

@@ -139,7 +139,8 @@ class ReviewRepository:
         if results and results[0].get("stats"):
             stats = results[0]["stats"][0]
             total_reviews = stats.get("total_reviews", 0)
-            average_rating = round(stats.get("average_rating", 0.0), 1)
+            raw_avg = stats.get("average_rating")
+            average_rating = round(raw_avg, 1) if raw_avg is not None else 0.0
             verified_purchases = stats.get("verified_purchases", 0)
 
         if results and results[0].get("breakdown"):

@@ -102,6 +102,9 @@ export interface AnalyticsOrderBreakdown {
   completedOrders: number;
   pendingOrders: number;
   cancelledOrders: number;
+  paidRevenue?: number;
+  pendingRevenue?: number;
+  cancelledRevenue?: number;
 }
 
 export interface AnalyticsTopProduct {
@@ -143,6 +146,9 @@ export interface AnalyticsSeasonalPoint {
 
 export interface BusinessAnalyticsData {
   totalRevenue: number;
+  todayRevenue?: number;
+  pendingRevenue?: number;
+  failedRevenue?: number;
   totalOrders: number;
   hasOrderData: boolean;
   salesTrend: AnalyticsSalesPoint[];
@@ -728,9 +734,33 @@ export class AdminService {
       const counters = dashData?.counters || {};
       const revenueInfo = dashData?.revenue || {};
 
-      const totalRevenue = typeof revenueInfo.total_revenue === 'number'
-        ? revenueInfo.total_revenue
-        : rawOrders.reduce((sum, o) => sum + (o.total || o.totalAmount || 0), 0);
+      let todayRevenue = typeof revenueInfo.today_revenue === 'number' ? revenueInfo.today_revenue : 0;
+      let pendingRevenue = typeof revenueInfo.pending_revenue === 'number' ? revenueInfo.pending_revenue : 0;
+      let failedRevenue = typeof revenueInfo.failed_revenue === 'number' ? revenueInfo.failed_revenue : 0;
+
+      let paidRevenue = 0;
+      if (typeof revenueInfo.total_revenue === 'number') {
+        paidRevenue = revenueInfo.total_revenue;
+      } else if (rawOrders.length > 0) {
+        paidRevenue = 0;
+        pendingRevenue = 0;
+        failedRevenue = 0;
+        for (const o of rawOrders) {
+          const pst = String(o.payment_status || o.paymentStatus || '').toLowerCase();
+          const ost = String(o.order_status || o.orderStatus || '').toLowerCase();
+          const amt = Number(o.total || o.totalAmount || 0);
+
+          if (['paid', 'confirmed', 'verified', 'success'].includes(pst) || ['delivered', 'completed'].includes(ost)) {
+            paidRevenue += amt;
+          } else if (['cancelled', 'canceled', 'failed', 'rejected'].includes(pst) || ['cancelled', 'canceled'].includes(ost)) {
+            failedRevenue += amt;
+          } else {
+            pendingRevenue += amt;
+          }
+        }
+      }
+
+      const totalRevenue = Math.round(paidRevenue * 100) / 100;
 
       const totalOrdersCount = typeof counters.total_orders === 'number'
         ? counters.total_orders
@@ -798,6 +828,9 @@ export class AdminService {
         completedOrders,
         pendingOrders,
         cancelledOrders,
+        paidRevenue: totalRevenue,
+        pendingRevenue: Math.round(pendingRevenue * 100) / 100,
+        cancelledRevenue: Math.round(failedRevenue * 100) / 100,
       };
 
       // 4. Products (Top 5)
@@ -936,6 +969,9 @@ export class AdminService {
 
       const analyticsData: BusinessAnalyticsData = {
         totalRevenue: Math.round(totalRevenue * 100) / 100,
+        todayRevenue: Math.round(todayRevenue * 100) / 100,
+        pendingRevenue: Math.round(pendingRevenue * 100) / 100,
+        failedRevenue: Math.round(failedRevenue * 100) / 100,
         totalOrders: totalOrdersCount,
         hasOrderData,
         salesTrend,
@@ -1554,10 +1590,20 @@ export class AdminService {
     }
   }
 
+  clearAnalyticsCache() {
+    this.analyticsCache = null;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.removeItem('cc_cache_business_analytics');
+      } catch {}
+    }
+  }
+
   async updateOrderStatus(
     orderId: string,
     newStatus: AdminOrderItem['orderStatus']
   ): Promise<AdminOrderItem> {
+    this.clearAnalyticsCache();
     const { data } = await apiClient.put(`/admin/orders/${orderId}/status`, {
       order_status: newStatus,
     });
@@ -1568,6 +1614,7 @@ export class AdminService {
     orderId: string,
     newStatus: AdminOrderItem['paymentStatus']
   ): Promise<AdminOrderItem> {
+    this.clearAnalyticsCache();
     const { data } = await apiClient.put(`/admin/orders/${orderId}/payment-status`, {
       payment_status: newStatus,
     });

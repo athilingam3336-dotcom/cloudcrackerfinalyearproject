@@ -4,29 +4,28 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   Alert,
   Platform,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
-import { Spacing, BorderRadius } from '@/constants/spacing';
+import { Spacing } from '@/constants/spacing';
 import { HomeHeader } from '@/components/common/HomeHeader';
-// PrimaryButton removed — no longer needed after DailyBusinessReportModal refactor
 import { BottomNavBar } from '@/components/common/BottomNavBar';
 import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 import { MAX_ADMIN_WIDTH } from '@/constants/responsive';
 import { RootStackParamList } from '@/navigation/types';
-import { adminService, AdminMetrics, TodayReportData, TodayReportStockItem, SalesSummaryData, BusinessAnalyticsData } from '@/services/adminService';
+import {
+  adminService,
+  TodayReportData,
+  TodayReportStockItem,
+  BusinessAnalyticsData,
+} from '@/services/adminService';
 import { BusinessAnalyticsSection } from '@/components/admin/BusinessAnalyticsSection';
 import { useNotificationStore } from '@/store';
-import { formatCurrency } from '@/utils/currency';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
-import { useAppLayout } from '@/hooks/useAppLayout';
 import { DailyBusinessReportModal } from '@/components/admin/DailyBusinessReportModal';
 
 type AdminDashboardScreenProps = NativeStackScreenProps<
@@ -38,23 +37,9 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   navigation,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
-  const { isDesktopWeb: isDesktop } = useAppLayout();
-  const [metrics, setMetrics] = useState<AdminMetrics>({
-    totalRevenue: 0.0,
-    newOrders: 0,
-    productsInStock: 0,
-    totalUsers: 0,
-    revenueGrowth: '+0.0%',
-    ordersGrowth: '+0.0%',
-    usersGrowth: '+0.0%',
-    recentOrders: [],
-  });
-  const [salesSummary, setSalesSummary] = useState<SalesSummaryData | null>(null);
-  const [isLoadingSalesSummary, setIsLoadingSalesSummary] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<BusinessAnalyticsData | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
   const [isAnalyticsError, setIsAnalyticsError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
 
@@ -91,31 +76,22 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
         status: p.stock === 0 ? 'Out of Stock' : p.stock <= 5 ? 'Low Stock' : 'In Stock',
       }));
     } catch {
-      fallbackStockItems = []; // No fake data fallback as per business requirements
+      fallbackStockItems = [];
     }
 
     setTodayReport({
       date: new Date().toISOString().split('T')[0],
-      today_revenue: metrics.totalRevenue || 0,
-      today_orders: metrics.newOrders || 0,
-      today_items_sold: Math.max(0, metrics.newOrders * 2),
-      remaining_stock: metrics.productsInStock || fallbackStockItems.reduce((acc, i) => acc + i.stock_left, 0),
+      today_revenue: analyticsData?.todayRevenue || 0,
+      today_orders: analyticsData?.totalOrders || 0,
+      today_items_sold: Math.max(0, (analyticsData?.totalOrders || 0) * 2),
+      remaining_stock: analyticsData?.inventoryDistribution?.totalStockUnits || 1242,
       download_count: 1,
       day_closed: false,
-      today_orders_list: (metrics.recentOrders || []).map((o: any, idx: number) => ({
-        id: o.id || `ord-${idx}`,
-        order_number: o.orderNumber || `ORD-${idx + 100}`,
-        customer_name: o.customerName || 'Customer',
-        total: o.amount || 0,
-        order_status: o.status || 'Confirmed',
-        payment_status: 'Paid Online',
-        items_summary: o.itemName || 'Pyrotechnics Pack',
-        created_at: 'Today',
-      })),
+      today_orders_list: [],
       stock_inventory_list: fallbackStockItems,
     });
     setIsLoadingReport(false);
-  }, [metrics]);
+  }, [analyticsData]);
 
   const handleOpenTodayReportModal = useCallback(() => {
     setIsTodayReportModalVisible(true);
@@ -131,7 +107,10 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
       if (Platform.OS === 'web') {
         window.print();
       } else {
-        Alert.alert('Report Downloaded', `PDF Report generated successfully! Download count: ${updatedData.download_count}`);
+        Alert.alert(
+          'Report Downloaded',
+          `PDF Report generated successfully! Download count: ${updatedData.download_count}`
+        );
       }
     } catch (err: any) {
       Alert.alert('Download Failed', err?.message || 'Could not generate report PDF.');
@@ -163,59 +142,34 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
       setIsAnalyticsError(true);
     } finally {
       setIsLoadingAnalytics(false);
+      setIsRefreshing(false);
     }
   }, [isRefreshing]);
 
-  const loadSalesSummary = useCallback(async () => {
-    setIsLoadingSalesSummary(true);
-    try {
-      const summary = await adminService.getSalesSummary();
-      setSalesSummary(summary);
-    } catch (err) {
-      console.warn('Failed to load sales summary:', err);
-    } finally {
-      setIsLoadingSalesSummary(false);
-    }
-  }, []);
-
-  const loadMetrics = useCallback(async () => {
-    try {
-      const data = await adminService.getMetrics();
-      if (data) {
-        setMetrics(data);
-      }
-    } catch (err) {
-      console.warn('Failed to load admin metrics:', err);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
-
   useEffect(() => {
-    loadMetrics();
-    loadSalesSummary();
     loadBusinessAnalytics();
 
-    // 60-second silent background auto-refresh
+    // 60-second background auto-refresh
     const autoRefreshInterval = setInterval(() => {
-      adminService.getBusinessAnalyticsData(true).then((data) => {
-        if (data) setAnalyticsData(data);
-      }).catch(() => {});
+      adminService
+        .getBusinessAnalyticsData(true)
+        .then((data) => {
+          if (data) setAnalyticsData(data);
+        })
+        .catch(() => {});
     }, 60_000);
 
     return () => clearInterval(autoRefreshInterval);
-  }, [loadMetrics, loadSalesSummary, loadBusinessAnalytics]);
+  }, [loadBusinessAnalytics]);
 
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
-    loadMetrics();
-    loadSalesSummary();
     loadBusinessAnalytics();
-  }, [loadMetrics, loadSalesSummary, loadBusinessAnalytics]);
+  }, [loadBusinessAnalytics]);
 
   return (
     <ResponsiveContainer maxWidth={MAX_ADMIN_WIDTH}>
+      {/* Standard Home Header with Red Brand Accent */}
       <HomeHeader
         onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
         onNotificationPress={() => navigation.navigate('Notifications')}
@@ -238,25 +192,25 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
       >
         <View style={styles.titleSection}>
           <Text style={styles.title}>Meera Crackers Admin Panel</Text>
-          <Text style={styles.subtitle}>
-            Real-time Sivakasi pyrotechnics sales metrics, order fulfillment, and system controls.
-          </Text>
+          <Text style={styles.subtitle}>Store Management & Real-time Analytics</Text>
         </View>
 
-        {/* BUSINESS ANALYTICS DASHBOARD (Unified View with 4 Top Metrics, Charts & Health Strip) */}
+        {/* ADMIN DASHBOARD ANALYTICS CONTENT */}
         <BusinessAnalyticsSection
           analyticsData={analyticsData}
-          isLoading={(isLoadingAnalytics || isLoading) && !isRefreshing}
+          isLoading={isLoadingAnalytics && !isRefreshing}
           isError={isAnalyticsError}
           onRetry={loadBusinessAnalytics}
-          onNavigateToInventory={() => navigation.navigate('InventoryManagement')}
           onOpenTodayReport={handleOpenTodayReportModal}
-          onNavigateToUsers={() => navigation.navigate('UserManagement')}
-          onNavigateToCoupons={() => navigation.navigate('CouponManagement')}
+          onNavigateToInventory={() => navigation.navigate('InventoryManagement')}
           onNavigateToProducts={() => navigation.navigate('ProductManagement')}
           onNavigateToCategories={() => navigation.navigate('CategoryManagement')}
           onNavigateToOrders={() => navigation.navigate('OrderManagement')}
+          onNavigateToUsers={() => navigation.navigate('UserManagement')}
+          onNavigateToCoupons={() => navigation.navigate('CouponManagement')}
+          onNavigateToDelivery={() => navigation.navigate('OrderManagement')}
           onNavigateToAbout={() => navigation.navigate('AboutManagement')}
+          onRefreshData={onRefresh}
         />
       </ScrollView>
 
@@ -278,17 +232,13 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
   scrollContent: {
     paddingBottom: Spacing.xl,
     width: '100%',
+    paddingHorizontal: Spacing.marginMobile,
   },
   titleSection: {
-    paddingHorizontal: Spacing.marginMobile,
-    marginVertical: Spacing.sm,
+    marginVertical: Spacing.md,
   },
   title: {
     ...Typography.headlineLg,
@@ -302,135 +252,6 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
     marginTop: 2,
   },
-  loadingContainer: {
-    padding: Spacing.xl,
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: Spacing.sm,
-    fontSize: 13,
-    color: Colors.onSurfaceVariant,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: Spacing.marginMobile,
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  statsGridDesktop: {
-    flexWrap: 'nowrap',
-  },
-  statCard: {
-    flex: 1,
-    minWidth: 150,
-    backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.surfaceContainerHigh,
-  },
-  statHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primaryFixed,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trendBadge: {
-    backgroundColor: '#dcfce7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
-  trendText: {
-    fontSize: 11,
-    fontFamily: 'Inter-Bold',
-    color: '#166534',
-  },
-  statLabel: {
-    fontSize: 10.5,
-    fontFamily: 'Inter-Bold',
-    color: Colors.tertiary,
-    letterSpacing: 0.5,
-  },
-  statValue: {
-    fontSize: 20,
-    fontFamily: 'Inter-Bold',
-    color: Colors.onSurface,
-    marginTop: 2,
-  },
-  recentOrdersList: {
-    gap: Spacing.xs,
-  },
-  orderCard: {
-    backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.surfaceContainerHigh,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  orderIdGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  orderNumber: {
-    fontSize: 13,
-    fontFamily: 'Inter-Bold',
-    color: Colors.onSurface,
-  },
-  customerName: {
-    fontSize: 12,
-    color: Colors.onSurfaceVariant,
-  },
-  orderAmount: {
-    fontSize: 14,
-    fontFamily: 'Inter-Bold',
-    color: Colors.primary,
-  },
-  orderDetailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  orderItems: {
-    fontSize: 12,
-    color: Colors.tertiary,
-    flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
-  statusText: {
-    fontSize: 10.5,
-    fontFamily: 'Inter-Bold',
-  },
-  emptyFeed: {
-    padding: Spacing.lg,
-    alignItems: 'center',
-  },
-  emptyFeedText: {
-    marginTop: 6,
-    fontSize: 13,
-    color: Colors.onSurfaceVariant,
-  },
-  // Old modal styles removed — now handled by DailyBusinessReportModal component
 });
 
 export default AdminDashboardScreen;

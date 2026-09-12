@@ -44,7 +44,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isInstagramLoading, setIsInstagramLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
+  const [showColdStartNotice, setShowColdStartNotice] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
+
+  useEffect(() => {
+    let timer: any;
+    if (isLoading || isGoogleLoading || isInstagramLoading) {
+      timer = setTimeout(() => {
+        setShowColdStartNotice(true);
+      }, 4000);
+    } else {
+      setShowColdStartNotice(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isLoading, isGoogleLoading, isInstagramLoading]);
 
 
   const storeLogin = useAuthStore((state) => state.login);
@@ -234,6 +247,31 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
         >
           {/* Main Card Container */}
           <View style={styles.cardContainer}>
+            {/* Top Navigation Shortcuts */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 12, paddingHorizontal: 4 }}>
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: BorderRadius.full, backgroundColor: Colors.surfaceContainerLow }}
+                onPress={() => navigation.navigate('Home')}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="arrow-back" size={16} color={Colors.onSurfaceVariant} />
+                <Text style={{ fontSize: 13, color: Colors.onSurfaceVariant, fontFamily: 'Inter-Medium', marginLeft: 4 }}>
+                  Back to Store
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10 }}
+                onPress={() => navigation.navigate('Register')}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 13, color: Colors.primary, fontFamily: 'Inter-Bold' }}>
+                  Sign Up
+                </Text>
+                <MaterialIcons name="chevron-right" size={18} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+
             {/* Branding Header */}
             <View style={styles.brandHeader}>
               <Image
@@ -304,6 +342,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
                 loading={isLoading}
                 style={styles.loginButton}
               />
+
+              {showColdStartNotice && (
+                <View style={styles.noticeBanner}>
+                  <MaterialIcons name="info-outline" size={18} color="#E65100" />
+                  <Text style={styles.noticeText}>
+                    Server waking up (Render free tier cold start). Please wait ~30-50 seconds...
+                  </Text>
+                </View>
+              )}
 
               {/* Create Account Link */}
               <View style={styles.signupRow}>

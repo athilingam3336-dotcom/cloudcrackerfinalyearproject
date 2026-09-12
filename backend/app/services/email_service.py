@@ -457,6 +457,66 @@ class EmailService:
         return await asyncio.to_thread(cls.send_admin_report_email_sync, admin_emails, report_data, requested_by_email)
 
     @staticmethod
+    def _format_order_email_items(items: list) -> tuple[str, str]:
+        """Generates HTML table and plain text summary for ordered items."""
+        if not items:
+            return "", ""
+        
+        rows_html = []
+        text_lines = []
+        
+        for item in items:
+            name = "Item"
+            qty = 1
+            price = 0.0
+            
+            if isinstance(item, (list, tuple)) and len(item) >= 2:
+                prod, qty = item[0], item[1]
+                if hasattr(prod, "name"):
+                    name = prod.name
+                elif isinstance(prod, dict):
+                    name = prod.get("name", "Item")
+                
+                p_val = getattr(prod, "discount_price", None) or getattr(prod, "price", 0) if hasattr(prod, "price") else (prod.get("discount_price") or prod.get("price", 0) if isinstance(prod, dict) else 0)
+                price = float(p_val or 0)
+            elif isinstance(item, dict):
+                name = item.get("name") or item.get("product_name") or "Item"
+                qty = int(item.get("quantity") or 1)
+                price = float(item.get("price") or item.get("unit_price") or 0)
+            elif hasattr(item, "quantity"):
+                qty = int(getattr(item, "quantity", 1))
+                name = getattr(item, "product_name", None) or getattr(item, "name", "Item")
+                price = float(getattr(item, "price", 0))
+                
+            line_total = price * qty
+            rows_html.append(f"""
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; color: #333;">{name}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; color: #555; text-align: center;">{qty}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; color: #555; text-align: right;">₹{price:.2f}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; color: #333; font-weight: bold; text-align: right;">₹{line_total:.2f}</td>
+            </tr>
+            """)
+            text_lines.append(f"• {name} x {qty} @ ₹{price:.2f} = ₹{line_total:.2f}")
+            
+        table_html = f"""
+        <table width="100%" cellspacing="0" cellpadding="0" style="margin: 15px 0; border-collapse: collapse; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+          <thead>
+            <tr style="background-color: #f8f9fa; text-align: left;">
+              <th style="padding: 10px; font-size: 12px; color: #666; font-weight: 600; border-bottom: 2px solid #eee;">Item Name</th>
+              <th style="padding: 10px; font-size: 12px; color: #666; font-weight: 600; text-align: center; border-bottom: 2px solid #eee;">Qty</th>
+              <th style="padding: 10px; font-size: 12px; color: #666; font-weight: 600; text-align: right; border-bottom: 2px solid #eee;">Price</th>
+              <th style="padding: 10px; font-size: 12px; color: #666; font-weight: 600; text-align: right; border-bottom: 2px solid #eee;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {''.join(rows_html)}
+          </tbody>
+        </table>
+        """
+        return table_html, "\n".join(text_lines)
+
+    @staticmethod
     def send_upi_payment_email_sync(
         to_email: str,
         customer_name: str,
@@ -474,62 +534,122 @@ class EmailService:
         smtp_port = settings.SMTP_PORT or 587
         smtp_user = settings.SMTP_USER
         smtp_pass = settings.SMTP_PASSWORD
-        smtp_from = settings.SMTP_FROM or smtp_user or "noreply@meeracrackersworld.com"
+        
+        # FIX FOR GMAIL SPAM: When using Gmail SMTP, From MUST match SMTP_USER to pass SPF & DKIM checks
+        if smtp_user and "gmail.com" in smtp_host.lower():
+            smtp_from = smtp_user
+        else:
+            smtp_from = settings.SMTP_FROM or smtp_user or "noreply@meeracrackersworld.com"
 
         if not smtp_user or not smtp_pass:
             logger.warning(f"[SMTP NOT CONFIGURED] Cannot send UPI QR email to {to_email}.")
             return False
 
-        subject = f"Payment Pending — Order {order_number} — Meera Crackers"
+        subject = f"Order Confirmation & Payment — {order_number} — Meera Crackers"
         
+        items_html, items_text = EmailService._format_order_email_items(items)
+        shipping_str = "FREE" if shipping <= 0 else f"₹{shipping:.2f}"
+        
+        plain_text = f"""Hello {customer_name},
+
+Thank you for placing your order with Meera Crackers!
+
+ORDER DETAILS:
+Order Number: {order_number}
+Payment Method: UPI QR Payment
+Payment Status: Pending Verification
+
+ORDERED ITEMS:
+{items_text if items_text else f'Total Amount: ₹{amount}'}
+
+Subtotal: ₹{subtotal:.2f}
+Shipping Fee: {shipping_str}
+Total Amount to Pay: ₹{amount}
+
+PAYMENT INSTRUCTIONS:
+Please complete payment of exact amount ₹{amount} via UPI to: {upi_payee_name}
+
+After completing payment, please keep your transaction reference / UTR number safe.
+Our team will verify your payment and process your order promptly.
+
+Thank you,
+Meera Crackers
+Sivakasi Pyrotechnics Store
+"""
+
         html_body = f"""
         <!DOCTYPE html>
         <html>
-          <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px; color: #333;">
-            <table width="100%" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
               <tr>
-                <td style="background-color: #D32F2F; padding: 20px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 1px;">MEERA CRACKERS</h1>
-                  <p style="color: #ffebee; margin: 5px 0 0 0; font-size: 13px;">Sivakasi Pyrotechnics Store</p>
+                <td style="background-color: #D32F2F; padding: 24px; text-align: center;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 1px; font-weight: 700;">MEERA CRACKERS</h1>
+                  <p style="color: #ffebee; margin: 4px 0 0 0; font-size: 13px;">Sivakasi Pyrotechnics Store</p>
                 </td>
               </tr>
               <tr>
                 <td style="padding: 24px;">
-                  <p style="font-size: 15px; color: #555;">Hello {customer_name},</p>
-                  <p style="font-size: 14px; color: #555;">Thank you for placing your order with Meera Crackers.</p>
-                  <p style="font-size: 14px; color: #555;">Your order has been successfully created and is currently awaiting payment verification.</p>
+                  <p style="font-size: 15px; color: #333; margin-top: 0;">Hello <strong>{customer_name}</strong>,</p>
+                  <p style="font-size: 14px; color: #555; line-height: 1.5;">Thank you for your order! Your order has been successfully created and is currently awaiting payment verification.</p>
                   
-                  <h3 style="font-size: 15px; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">ORDER DETAILS</h3>
-                  <p style="margin: 4px 0; font-size: 13px;"><strong>Order Number:</strong> {order_number}</p>
-                  <p style="margin: 4px 0; font-size: 13px;"><strong>Order ID:</strong> {order_id}</p>
-                  <p style="margin: 4px 0; font-size: 13px;"><strong>Amount to Pay:</strong> ₹{amount}</p>
-                  <p style="margin: 4px 0; font-size: 13px;"><strong>Payment Method:</strong> UPI QR Payment</p>
-                  <p style="margin: 4px 0; font-size: 13px;"><strong>Payment Status:</strong> Payment Pending</p>
-
-                  <h3 style="font-size: 15px; margin-top:20px; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">SCAN & PAY</h3>
-                  <p style="font-size: 14px; color: #555;">Please scan the QR code below using GPay, PhonePe, Paytm, or another supported UPI application.</p>
-                  
-                  <div style="background-color: #FFF3E0; border: 1px solid #E65100; border-radius: 6px; padding: 15px; text-align: center; margin: 20px 0;">
-                    <img src="cid:qrcode_img" alt="UPI QR Code" style="width: 200px; height: 200px; border-radius:8px; border:4px solid #fff;" />
-                    <p style="margin: 15px 0 5px 0; font-size: 14px; color: #333;"><strong>Amount to Pay:</strong><br/>₹{amount}</p>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #333;"><strong>UPI Payee:</strong><br/>{upi_payee_name}</p>
+                  <div style="background-color: #f8f9fa; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e9ecef;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="font-size: 13px; color: #666;">Order Number:</td>
+                        <td style="font-size: 14px; color: #D32F2F; font-weight: bold; text-align: right;">{order_number}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 13px; color: #666; padding-top: 6px;">Payment Method:</td>
+                        <td style="font-size: 13px; color: #333; font-weight: 500; text-align: right; padding-top: 6px;">UPI QR Code</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 13px; color: #666; padding-top: 6px;">Payment Status:</td>
+                        <td style="font-size: 13px; color: #E65100; font-weight: bold; text-align: right; padding-top: 6px;">Pending Verification</td>
+                      </tr>
+                    </table>
                   </div>
 
-                  <div style="background-color: #f9f9f9; border-left: 4px solid #D32F2F; padding: 10px; margin-bottom: 20px;">
-                    <p style="margin: 0 0 5px 0; font-size: 13px; font-weight: bold; color: #D32F2F;">IMPORTANT:</p>
-                    <p style="margin: 0; font-size: 13px; color: #555;">Please pay the exact amount shown above.</p>
+                  {"<h3 style='font-size: 15px; color: #222; margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px;'>ORDERED ITEMS</h3>" + items_html if items_html else ""}
+
+                  <div style="background-color: #fafafa; border-radius: 8px; padding: 14px; margin: 15px 0;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="font-size: 13px; color: #666;">Subtotal:</td>
+                        <td style="font-size: 13px; color: #333; text-align: right;">₹{subtotal:.2f}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 13px; color: #666; padding-top: 4px;">Shipping Fee:</td>
+                        <td style="font-size: 13px; color: #333; text-align: right; padding-top: 4px;">{shipping_str}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 15px; color: #222; font-weight: bold; padding-top: 10px; border-top: 1px solid #eee;">Total Amount to Pay:</td>
+                        <td style="font-size: 18px; color: #D32F2F; font-weight: bold; text-align: right; padding-top: 10px; border-top: 1px solid #eee;">₹{amount}</td>
+                      </tr>
+                    </table>
                   </div>
 
-                  <p style="font-size: 13px; color: #555;">After completing the payment, keep your transaction reference / UTR number safely.</p>
-                  <p style="font-size: 13px; color: #555;">Our admin team will verify your payment manually and update your order status.</p>
-                  <p style="font-size: 13px; color: #555;">If payment has already been completed, please do not make another payment.</p>
+                  <h3 style="font-size: 15px; color: #222; margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px;">SCAN & PAY VIA UPI</h3>
+                  <p style="font-size: 13px; color: #555; margin-bottom: 15px;">Please scan the QR code below using GPay, PhonePe, Paytm, or any UPI application to complete payment:</p>
                   
-                  <p style="font-size: 13px; color: #333; margin-top: 15px;"><strong>Order Number:</strong><br/>{order_number}</p>
+                  <div style="background-color: #FFF3E0; border: 1px solid #FFE0B2; border-radius: 10px; padding: 20px; text-align: center; margin: 15px 0;">
+                    <img src="cid:qrcode_img" alt="UPI QR Code" style="width: 200px; height: 200px; border-radius: 8px; border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                    <p style="margin: 12px 0 4px 0; font-size: 16px; color: #D32F2F; font-weight: bold;">Amount: ₹{amount}</p>
+                    <p style="margin: 0; font-size: 13px; color: #555;">Payee: <strong>{upi_payee_name}</strong></p>
+                  </div>
 
-                  <p style="font-size: 14px; color: #555; margin-top: 25px;">Thank you,<br/>Meera Crackers<br/>Sivakasi Pyrotechnics Store</p>
-                  
+                  <div style="background-color: #FFEBEE; border-left: 4px solid #D32F2F; padding: 12px; border-radius: 4px; margin: 20px 0;">
+                    <p style="margin: 0; font-size: 13px; color: #C62828; font-weight: bold;">IMPORTANT:</p>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #424242;">Please pay the exact amount ₹{amount} and keep your UTR / Reference Number safe for payment verification.</p>
+                  </div>
+
+                  <p style="font-size: 13px; color: #666; margin-top: 25px;">Thank you for shopping with us!<br/><strong>Meera Crackers Team</strong></p>
                   <hr style="border: none; border-top: 1px solid #eeeeee; margin: 25px 0;" />
-                  <p style="font-size: 12px; color: #999; text-align: center;">&copy; 2026 Meera Crackers</p>
+                  <p style="font-size: 11px; color: #aaa; text-align: center; margin: 0;">&copy; 2026 Meera Crackers World. All rights reserved.</p>
                 </td>
               </tr>
             </table>
@@ -547,9 +667,11 @@ class EmailService:
             msg["Subject"] = subject
             msg["From"] = f"Meera Crackers <{smtp_from}>"
             msg["To"] = to_email
+            msg["Auto-Submitted"] = "auto-generated"
 
             msg_alternative = MIMEMultipart("alternative")
             msg.attach(msg_alternative)
+            msg_alternative.attach(MIMEText(plain_text, "plain"))
             msg_alternative.attach(MIMEText(html_body, "html"))
 
             # Attach QR inline
@@ -578,53 +700,111 @@ class EmailService:
                 clean_api_key = settings.RESEND_API_KEY.strip().strip("'\"")
                 resend_from = settings.RESEND_FROM or settings.SMTP_FROM or "onboarding@resend.dev"
                 formatted_from = resend_from if "<" in resend_from else f"Meera Crackers <{resend_from}>"
-                subject = f"Payment Pending — Order {order_number} — Meera Crackers"
+                subject = f"Order Confirmation & Payment — {order_number} — Meera Crackers"
+
+                items_html, items_text = EmailService._format_order_email_items(items)
+                shipping_str = "FREE" if shipping <= 0 else f"₹{shipping:.2f}"
+
+                plain_text = f"""Hello {customer_name},
+
+Thank you for placing your order with Meera Crackers!
+
+ORDER DETAILS:
+Order Number: {order_number}
+Payment Method: UPI QR Payment
+Payment Status: Pending Verification
+
+ORDERED ITEMS:
+{items_text if items_text else f'Total Amount: ₹{amount}'}
+
+Subtotal: ₹{subtotal:.2f}
+Shipping Fee: {shipping_str}
+Total Amount to Pay: ₹{amount}
+
+PAYMENT INSTRUCTIONS:
+Please complete payment of exact amount ₹{amount} via UPI to: {upi_payee_name}
+
+After completing payment, please keep your transaction reference / UTR number safe.
+Our team will verify your payment and process your order promptly.
+
+Thank you,
+Meera Crackers
+Sivakasi Pyrotechnics Store
+"""
 
                 html_resend = f"""
                 <!DOCTYPE html>
                 <html>
-                  <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px; color: #333;">
-                    <table width="100%" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  </head>
+                  <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
                       <tr>
-                        <td style="background-color: #D32F2F; padding: 20px; text-align: center;">
-                          <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 1px;">MEERA CRACKERS</h1>
-                          <p style="color: #ffebee; margin: 5px 0 0 0; font-size: 13px;">Sivakasi Pyrotechnics Store</p>
+                        <td style="background-color: #D32F2F; padding: 24px; text-align: center;">
+                          <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 1px; font-weight: 700;">MEERA CRACKERS</h1>
+                          <p style="color: #ffebee; margin: 4px 0 0 0; font-size: 13px;">Sivakasi Pyrotechnics Store</p>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 24px;">
-                          <p style="font-size: 15px; color: #555;">Hello {customer_name},</p>
-                          <p style="font-size: 14px; color: #555;">Thank you for placing your order with Meera Crackers.</p>
-                          <p style="font-size: 14px; color: #555;">Your order has been successfully created and is currently awaiting payment verification.</p>
+                          <p style="font-size: 15px; color: #333; margin-top: 0;">Hello <strong>{customer_name}</strong>,</p>
+                          <p style="font-size: 14px; color: #555; line-height: 1.5;">Thank you for your order! Your order has been successfully created and is currently awaiting payment verification.</p>
                           
-                          <h3 style="font-size: 15px; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">ORDER DETAILS</h3>
-                          <p style="margin: 4px 0; font-size: 13px;"><strong>Order Number:</strong> {order_number}</p>
-                          <p style="margin: 4px 0; font-size: 13px;"><strong>Order ID:</strong> {order_id}</p>
-                          <p style="margin: 4px 0; font-size: 13px;"><strong>Amount to Pay:</strong> ₹{amount}</p>
-                          <p style="margin: 4px 0; font-size: 13px;"><strong>Payment Method:</strong> UPI QR Payment</p>
-                          <p style="margin: 4px 0; font-size: 13px;"><strong>Payment Status:</strong> Payment Pending</p>
-
-                          <h3 style="font-size: 15px; margin-top:20px; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">SCAN & PAY</h3>
-                          <p style="font-size: 14px; color: #555;">Please scan the QR code below using GPay, PhonePe, Paytm, or another supported UPI application.</p>
-                          
-                          <div style="background-color: #FFF3E0; border: 1px solid #E65100; border-radius: 6px; padding: 15px; text-align: center; margin: 20px 0;">
-                            <img src="data:image/png;base64,{qr_base64}" alt="UPI QR Code" style="width: 200px; height: 200px; border-radius:8px; border:4px solid #fff;" />
-                            <p style="margin: 15px 0 5px 0; font-size: 14px; color: #333;"><strong>Amount to Pay:</strong><br/>₹{amount}</p>
-                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #333;"><strong>UPI Payee:</strong><br/>{upi_payee_name}</p>
+                          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e9ecef;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td style="font-size: 13px; color: #666;">Order Number:</td>
+                                <td style="font-size: 14px; color: #D32F2F; font-weight: bold; text-align: right;">{order_number}</td>
+                              </tr>
+                              <tr>
+                                <td style="font-size: 13px; color: #666; padding-top: 6px;">Payment Method:</td>
+                                <td style="font-size: 13px; color: #333; font-weight: 500; text-align: right; padding-top: 6px;">UPI QR Code</td>
+                              </tr>
+                              <tr>
+                                <td style="font-size: 13px; color: #666; padding-top: 6px;">Payment Status:</td>
+                                <td style="font-size: 13px; color: #E65100; font-weight: bold; text-align: right; padding-top: 6px;">Pending Verification</td>
+                              </tr>
+                            </table>
                           </div>
 
-                          <div style="background-color: #f9f9f9; border-left: 4px solid #D32F2F; padding: 10px; margin-bottom: 20px;">
-                            <p style="margin: 0 0 5px 0; font-size: 13px; font-weight: bold; color: #D32F2F;">IMPORTANT:</p>
-                            <p style="margin: 0; font-size: 13px; color: #555;">Please pay the exact amount shown above.</p>
+                          {"<h3 style='font-size: 15px; color: #222; margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px;'>ORDERED ITEMS</h3>" + items_html if items_html else ""}
+
+                          <div style="background-color: #fafafa; border-radius: 8px; padding: 14px; margin: 15px 0;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td style="font-size: 13px; color: #666;">Subtotal:</td>
+                                <td style="font-size: 13px; color: #333; text-align: right;">₹{subtotal:.2f}</td>
+                              </tr>
+                              <tr>
+                                <td style="font-size: 13px; color: #666; padding-top: 4px;">Shipping Fee:</td>
+                                <td style="font-size: 13px; color: #333; text-align: right; padding-top: 4px;">{shipping_str}</td>
+                              </tr>
+                              <tr>
+                                <td style="font-size: 15px; color: #222; font-weight: bold; padding-top: 10px; border-top: 1px solid #eee;">Total Amount to Pay:</td>
+                                <td style="font-size: 18px; color: #D32F2F; font-weight: bold; text-align: right; padding-top: 10px; border-top: 1px solid #eee;">₹{amount}</td>
+                              </tr>
+                            </table>
                           </div>
 
-                          <p style="font-size: 13px; color: #555;">After completing the payment, keep your transaction reference / UTR number safely.</p>
-                          <p style="font-size: 13px; color: #555;">Our admin team will verify your payment manually and update your order status.</p>
+                          <h3 style="font-size: 15px; color: #222; margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid #f1f3f5; padding-bottom: 8px;">SCAN & PAY VIA UPI</h3>
+                          <p style="font-size: 13px; color: #555; margin-bottom: 15px;">Please scan the QR code below using GPay, PhonePe, Paytm, or any UPI application to complete payment:</p>
                           
-                          <p style="font-size: 14px; color: #555; margin-top: 25px;">Thank you,<br/>Meera Crackers<br/>Sivakasi Pyrotechnics Store</p>
-                          
+                          <div style="background-color: #FFF3E0; border: 1px solid #FFE0B2; border-radius: 10px; padding: 20px; text-align: center; margin: 15px 0;">
+                            <img src="data:image/png;base64,{qr_base64}" alt="UPI QR Code" style="width: 200px; height: 200px; border-radius: 8px; border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                            <p style="margin: 12px 0 4px 0; font-size: 16px; color: #D32F2F; font-weight: bold;">Amount: ₹{amount}</p>
+                            <p style="margin: 0; font-size: 13px; color: #555;">Payee: <strong>{upi_payee_name}</strong></p>
+                          </div>
+
+                          <div style="background-color: #FFEBEE; border-left: 4px solid #D32F2F; padding: 12px; border-radius: 4px; margin: 20px 0;">
+                            <p style="margin: 0; font-size: 13px; color: #C62828; font-weight: bold;">IMPORTANT:</p>
+                            <p style="margin: 4px 0 0 0; font-size: 13px; color: #424242;">Please pay the exact amount ₹{amount} and keep your UTR / Reference Number safe for payment verification.</p>
+                          </div>
+
+                          <p style="font-size: 13px; color: #666; margin-top: 25px;">Thank you for shopping with us!<br/><strong>Meera Crackers Team</strong></p>
                           <hr style="border: none; border-top: 1px solid #eeeeee; margin: 25px 0;" />
-                          <p style="font-size: 12px; color: #999; text-align: center;">&copy; 2026 Meera Crackers</p>
+                          <p style="font-size: 11px; color: #aaa; text-align: center; margin: 0;">&copy; 2026 Meera Crackers World. All rights reserved.</p>
                         </td>
                       </tr>
                     </table>
@@ -644,6 +824,7 @@ class EmailService:
                             "to": [to_email],
                             "subject": subject,
                             "html": html_resend,
+                            "text": plain_text,
                             "attachments": [
                                 {
                                     "content": qr_base64,
@@ -670,6 +851,7 @@ class EmailService:
                                     "to": [to_email],
                                     "subject": subject,
                                     "html": html_resend,
+                                    "text": plain_text,
                                 },
                             )
                             if fallback_res.status_code in (200, 201, 202):
@@ -683,4 +865,3 @@ class EmailService:
             cls.send_upi_payment_email_sync,
             to_email, customer_name, order_number, order_id, amount, upi_payee_name, qr_base64, items, shipping, tax, subtotal
         )
-

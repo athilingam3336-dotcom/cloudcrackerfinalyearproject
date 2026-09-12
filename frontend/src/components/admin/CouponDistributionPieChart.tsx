@@ -277,115 +277,128 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
           : 'Breakdown of Percentage % vs Fixed ₹ Discounts'}
       </Text>
 
-      {/* Chart Area: Pie or Bar */}
-      {viewType === 'pie' ? (
-        <View style={styles.chartContainer}>
-          {isWeb ? (
-            <View style={styles.webPieWrapper}>
-              <svg width="240" height="240" viewBox="0 0 240 240" style={{ overflow: 'visible' }}>
-                <defs>
-                  {arcs.map((arc) => (
-                    <path key={`coupon-text-path-${arc.id}`} id={`coupon-text-path-${arc.id}`} d={arc.textArcD} />
-                  ))}
-                </defs>
-                {arcs.map((arc) => {
-                  const isHovered = hoveredSegment === arc.id;
-                  const isFilterActive = activeFilter === arc.filter;
-                  return (
-                    <g key={arc.id} onClick={() => onSelectFilter(arc.filter)} onMouseEnter={() => setHoveredSegment(arc.id)} onMouseLeave={() => setHoveredSegment(null)} style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}>
-                      <path d={arc.pathD} fill={arc.color} stroke="#FFFFFF" strokeWidth={isHovered || isFilterActive ? '3' : '2'} opacity={isHovered ? 0.92 : 1} />
-                      {arc.angleDeg > 18 && (
-                        <text fill="#FFFFFF" fontSize="11.5" fontWeight="bold" fontFamily="Inter-Bold, sans-serif" style={{ pointerEvents: 'none' }}>
-                          <textPath href={`#coupon-text-path-${arc.id}`} startOffset="50%" textAnchor="middle">
-                            {arc.label} {arc.count} ({arc.pct}%)
-                          </textPath>
-                        </text>
-                      )}
-                    </g>
-                  );
-                })}
-                <circle cx="120" cy="120" r="50" fill="#FFFFFF" style={{ filter: 'drop-shadow(0px 3px 8px rgba(0,0,0,0.12))' }} />
-                <text x="120" y="114" fill={Colors.onSurface} fontSize="22" fontWeight="bold" fontFamily="Inter-Bold, sans-serif" textAnchor="middle" dominantBaseline="middle">
-                  {activeSegmentItem ? activeSegmentItem.count : total}
-                </text>
-                <text x="120" y="132" fill={Colors.onSurfaceVariant} fontSize="10" fontFamily="Inter-Medium, sans-serif" textAnchor="middle" dominantBaseline="middle">
-                  {activeSegmentItem ? activeSegmentItem.label : 'Total Coupons'}
-                </text>
-              </svg>
-            </View>
-          ) : (
-            <View style={styles.nativeRingContainer}>
-              <View style={styles.nativeRingOuter}>
-                <View style={styles.nativeRingInner}>
-                  <Text style={styles.donutCountText}>{total}</Text>
-                  <Text style={styles.donutLabelText}>Total Coupons</Text>
+      {/* Side-by-side Chart & Legend Wrapper */}
+      <View style={styles.chartAndLegendWrapper}>
+        {/* Chart Area: Pie or Bar */}
+        {viewType === 'pie' ? (
+          <View style={styles.chartContainer}>
+            {isWeb ? (
+              <View style={styles.webPieWrapper}>
+                <svg width="240" height="240" viewBox="0 0 240 240" style={{ overflow: 'visible' }}>
+                  <defs>
+                    {arcs.map((arc) => (
+                      <path key={`coupon-text-path-${arc.id}`} id={`coupon-text-path-${arc.id}`} d={arc.textArcD} />
+                    ))}
+                  </defs>
+                  {arcs.map((arc) => {
+                    const isHovered = hoveredSegment === arc.id;
+                    const isFilterActive = activeFilter === arc.filter;
+                    return (
+                      <g key={arc.id} onClick={() => onSelectFilter(arc.filter)} onMouseEnter={() => setHoveredSegment(arc.id)} onMouseLeave={() => setHoveredSegment(null)} style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                        <path d={arc.pathD} fill={arc.color} stroke="#FFFFFF" strokeWidth={isHovered || isFilterActive ? '3' : '2'} opacity={isHovered ? 0.92 : 1} />
+                        {arc.angleDeg > 18 && (
+                          <text fill="#FFFFFF" fontSize="11.5" fontWeight="bold" fontFamily="Inter-Bold, sans-serif" style={{ pointerEvents: 'none' }}>
+                            <textPath href={`#coupon-text-path-${arc.id}`} startOffset="50%" textAnchor="middle">
+                              {arc.label} {arc.count} ({arc.pct}%)
+                            </textPath>
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                  <circle cx="120" cy="120" r="50" fill="#FFFFFF" style={{ filter: 'drop-shadow(0px 3px 8px rgba(0,0,0,0.12))' }} />
+                  <text x="120" y="114" fill={Colors.onSurface} fontSize="22" fontWeight="bold" fontFamily="Inter-Bold, sans-serif" textAnchor="middle" dominantBaseline="middle">
+                    {activeSegmentItem ? activeSegmentItem.count : total}
+                  </text>
+                  <text x="120" y="132" fill={Colors.onSurfaceVariant} fontSize="10" fontFamily="Inter-Medium, sans-serif" textAnchor="middle" dominantBaseline="middle">
+                    {activeSegmentItem ? activeSegmentItem.label : 'Total Coupons'}
+                  </text>
+                </svg>
+              </View>
+            ) : (
+              <View style={styles.nativeRingContainer}>
+                <View style={styles.nativeRingOuter}>
+                  <View style={styles.nativeRingInner}>
+                    <Text style={styles.donutCountText}>{total}</Text>
+                    <Text style={styles.donutLabelText}>Total Coupons</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          )}
-        </View>
-      ) : (
-        <View style={styles.barChartContainer}>
+            )}
+          </View>
+        ) : (
+          <View style={styles.barChartContainer}>
+            {formattedSegments.map((seg) => {
+              const maxCount = Math.max(...formattedSegments.map((s) => s.count), 1);
+              const barPct = (seg.count / maxCount) * 100;
+              const isHovered = hoveredSegment === seg.id;
+              return (
+                <TouchableOpacity
+                  key={seg.id}
+                  activeOpacity={0.85}
+                  onPress={() => onSelectFilter(seg.filter)}
+                  style={styles.barRow}
+                  {...(isWeb
+                    ? {
+                        onMouseEnter: () => setHoveredSegment(seg.id),
+                        onMouseLeave: () => setHoveredSegment(null),
+                      }
+                    : {} ) as any}
+                >
+                  <Text style={styles.barLabel} numberOfLines={1}>{seg.label}</Text>
+                  <View style={styles.barTrack}>
+                    <View style={[styles.barFill, { width: `${Math.max(barPct, 4)}%` as any, backgroundColor: seg.color, opacity: isHovered ? 1 : 0.85 }]} />
+                  </View>
+                  <Text style={[styles.barCount, { color: seg.color }]}>{seg.count}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Breakdown Legend Side List */}
+        <View style={styles.legendContainer}>
           {formattedSegments.map((seg) => {
-            const maxCount = Math.max(...formattedSegments.map((s) => s.count), 1);
-            const barPct = (seg.count / maxCount) * 100;
+            const isFilterActive = activeFilter === seg.filter;
             const isHovered = hoveredSegment === seg.id;
+
             return (
               <TouchableOpacity
                 key={seg.id}
-                activeOpacity={0.85}
+                style={[
+                  styles.legendCard,
+                  { borderLeftColor: seg.color, borderLeftWidth: 4 },
+                  (isFilterActive || isHovered) && styles.legendCardActive,
+                ]}
                 onPress={() => onSelectFilter(seg.filter)}
-                style={styles.barRow}
-                {...(isWeb
-                  ? {
-                      onMouseEnter: () => setHoveredSegment(seg.id),
-                      onMouseLeave: () => setHoveredSegment(null),
-                    }
-                  : {} ) as any}
+                {...({
+                  onMouseEnter: () => setHoveredSegment(seg.id),
+                  onMouseLeave: () => setHoveredSegment(null),
+                } as any)}
+                activeOpacity={0.8}
               >
-                <Text style={styles.barLabel} numberOfLines={1}>{seg.label}</Text>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { width: `${Math.max(barPct, 4)}%` as any, backgroundColor: seg.color, opacity: isHovered ? 1 : 0.85 }]} />
+                <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
+                  <MaterialIcons name={seg.icon as any} size={12} color="#FFF" />
                 </View>
-                <Text style={[styles.barCount, { color: seg.color }]}>{seg.count}</Text>
+
+                <View style={styles.legendTextWrapper}>
+                  <Text style={styles.legendTitle} numberOfLines={1}>
+                    {seg.label}
+                  </Text>
+                  <Text style={styles.legendSubtitle}>
+                    {seg.count} ({seg.pct}%)
+                  </Text>
+                </View>
+
+                <MaterialIcons
+                  name="chevron-right"
+                  size={16}
+                  color={isFilterActive ? Colors.primary : Colors.outline}
+                />
               </TouchableOpacity>
             );
           })}
         </View>
-      )}
-
-      {/* Breakdown Legend List */}
-      <View style={styles.legendContainer}>
-        {formattedSegments.map((seg) => {
-          const isFilterActive = activeFilter === seg.filter;
-          return (
-            <TouchableOpacity
-              key={seg.id}
-              style={[
-                styles.legendItem,
-                isFilterActive && styles.legendItemActive,
-              ]}
-              onPress={() => onSelectFilter(seg.filter)}
-              onPressIn={() => setHoveredSegment(seg.id)}
-              onPressOut={() => setHoveredSegment(null)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.legendLeft}>
-                <View style={[styles.colorDot, { backgroundColor: seg.color }]} />
-                <MaterialIcons name={seg.icon as any} size={16} color={seg.color} />
-                <Text style={styles.legendLabel}>{seg.label}</Text>
-              </View>
-
-              <View style={styles.legendRight}>
-                <Text style={styles.legendValueText}>{seg.count}</Text>
-                <Text style={styles.legendPctText}>({seg.pct}%)</Text>
-                {isFilterActive && (
-                  <MaterialIcons name="check" size={14} color={Colors.primary} style={{ marginLeft: 4 }} />
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
       </View>
 
       {/* Quick Summary Pill Footer */}
@@ -535,10 +548,22 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontFamily: 'Inter-Bold',
   },
+  chartAndLegendWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+    flexWrap: 'wrap',
+    marginTop: Spacing.xs,
+  },
   chartContainer: {
+    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4,
+    height: 240,
+    flex: 1,
+    minWidth: 280,
+    marginVertical: Spacing.xs,
   },
   webPieWrapper: {
     alignItems: 'center',
@@ -580,55 +605,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   legendContainer: {
-    marginTop: Spacing.xs,
+    flex: 1,
+    minWidth: 280,
     gap: 6,
+    marginTop: Spacing.xs,
   },
-  legendItem: {
+  legendCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: BorderRadius.md,
+    padding: Spacing.xs + 2,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: Colors.surfaceContainerHigh,
+    gap: Spacing.xs,
   },
-  legendItemActive: {
-    backgroundColor: Colors.primaryContainer + '40',
+  legendCardActive: {
+    backgroundColor: Colors.primaryContainer,
     borderColor: Colors.primary,
   },
-  legendLeft: {
-    flexDirection: 'row',
+  colorBadgeCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
-  colorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  legendTextWrapper: {
+    flex: 1,
   },
-  legendLabel: {
-    ...Typography.bodyMd,
-    fontSize: 12.5,
-    fontFamily: 'Inter-Medium',
-    color: Colors.onSurface,
-  },
-  legendRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  legendValueText: {
+  legendTitle: {
     ...Typography.titleLg,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
-  legendPctText: {
+  legendSubtitle: {
     ...Typography.bodyMd,
-    fontSize: 11,
-    color: Colors.tertiary,
+    fontSize: 10,
+    color: Colors.onSurfaceVariant,
   },
   allUsersFooterBtn: {
     flexDirection: 'row',

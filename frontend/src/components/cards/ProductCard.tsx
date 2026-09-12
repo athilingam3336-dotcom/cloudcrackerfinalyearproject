@@ -6,6 +6,7 @@ import { BorderRadius, Spacing } from '@/constants/spacing';
 import { MaterialIcons } from '@expo/vector-icons';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
+import { useCartStore } from '@/store/cartStore';
 
 export interface ProductCardProps {
   id: string;
@@ -26,6 +27,7 @@ export interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = React.memo(
   ({
+    id,
     title,
     category,
     price,
@@ -43,6 +45,10 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
     const isOutOfStock = (stock !== undefined && stock <= 0) || badge === 'Out of Stock';
     const effectiveBadge = isOutOfStock ? 'Out of Stock' : badge;
     const imageSource = resolveProductImage({ title, category, imageUrl });
+
+    // Live Cart Quantity for this specific product
+    const cartItem = useCartStore((state) => state.items.find((i) => i.product?.id === id));
+    const cartQuantity = cartItem ? cartItem.quantity : 0;
 
     return (
       <View style={styles.cardContainer}>
@@ -64,6 +70,14 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
             {effectiveBadge && (
               <View style={[styles.badge, isOutOfStock && styles.badgeOutOfStock]}>
                 <Text style={styles.badgeText}>{effectiveBadge}</Text>
+              </View>
+            )}
+
+            {/* In Cart Live Indicator Badge */}
+            {cartQuantity > 0 && (
+              <View style={styles.inCartBadge}>
+                <MaterialIcons name="shopping-cart" size={11} color="#ffffff" style={{ marginRight: 3 }} />
+                <Text style={styles.inCartBadgeText}>{cartQuantity} in Cart</Text>
               </View>
             )}
           </View>
@@ -113,25 +127,33 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
           </Pressable>
         )}
 
-        {/* Sibling Add to Cart Button */}
+        {/* Sibling Add to Cart Button with Counter Badge */}
         {onAddToCart && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.addButton,
-              pressed && !isOutOfStock && styles.buttonPressed,
-              isOutOfStock && styles.disabledAddButton,
-            ]}
-            onPress={isOutOfStock ? undefined : onAddToCart}
-            disabled={isOutOfStock}
-            accessibilityLabel={isOutOfStock ? `${title} is out of stock` : `Add ${title} to cart`}
-            accessibilityRole="button"
-          >
-            <MaterialIcons
-              name={isOutOfStock ? 'block' : 'shopping-cart'}
-              size={16}
-              color={isOutOfStock ? Colors.onSurfaceVariant : Colors.onPrimary}
-            />
-          </Pressable>
+          <View style={styles.addButtonWrapper}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.addButton,
+                pressed && !isOutOfStock && styles.buttonPressed,
+                isOutOfStock && styles.disabledAddButton,
+                cartQuantity > 0 && styles.activeCartAddButton,
+              ]}
+              onPress={isOutOfStock ? undefined : onAddToCart}
+              disabled={isOutOfStock}
+              accessibilityLabel={isOutOfStock ? `${title} is out of stock` : `Add ${title} to cart (${cartQuantity} in cart)`}
+              accessibilityRole="button"
+            >
+              <MaterialIcons
+                name={isOutOfStock ? 'block' : 'shopping-cart'}
+                size={16}
+                color={isOutOfStock ? Colors.onSurfaceVariant : Colors.onPrimary}
+              />
+            </Pressable>
+            {cartQuantity > 0 && (
+              <View style={styles.addButtonBadge}>
+                <Text style={styles.addButtonBadgeText}>{cartQuantity}</Text>
+              </View>
+            )}
+          </View>
         )}
       </View>
     );
@@ -259,17 +281,61 @@ const styles = StyleSheet.create({
     color: Colors.tertiary,
     textDecorationLine: 'line-through',
   },
-  addButton: {
+  addButtonWrapper: {
     position: 'absolute',
     bottom: Spacing.sm,
     right: Spacing.sm,
-    width: 32,
-    height: 32,
+    zIndex: 10,
+  },
+  addButton: {
+    width: 34,
+    height: 34,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
+    elevation: 2,
+  },
+  activeCartAddButton: {
+    backgroundColor: '#2E7D32',
+  },
+  addButtonBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#D32F2F',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+    elevation: 4,
+  },
+  addButtonBadgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    lineHeight: 12,
+  },
+  inCartBadge: {
+    position: 'absolute',
+    bottom: Spacing.xs,
+    left: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    backgroundColor: '#2E7D32',
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  inCartBadgeText: {
+    fontSize: 9,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
   },
   cardOutOfStock: {
     opacity: 0.8,

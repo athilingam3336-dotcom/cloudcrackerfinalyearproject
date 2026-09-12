@@ -51,6 +51,48 @@ const PAYMENT_STATUS_OPTIONS: AdminOrderItem['paymentStatus'][] = [
   'Failed',
 ];
 
+const getOrderStatusIcon = (status?: string): string => {
+  const s = (status || '').toLowerCase();
+  if (s === 'pending') return 'hourglass-top';
+  if (s === 'confirmed') return 'check-circle-outline';
+  if (s === 'packed') return 'inventory-2';
+  if (s === 'shipped') return 'local-shipping';
+  if (s === 'delivered') return 'verified';
+  if (s === 'cancelled' || s === 'canceled') return 'cancel';
+  if (s === 'all') return 'view-list';
+  return 'receipt';
+};
+
+const getOrderStatusColor = (status?: string): string => {
+  const s = (status || '').toLowerCase();
+  if (s === 'pending') return '#D97706';
+  if (s === 'confirmed') return '#0284C7';
+  if (s === 'packed') return '#4F46E5';
+  if (s === 'shipped') return '#7B1FA2';
+  if (s === 'delivered') return '#16A34A';
+  if (s === 'cancelled' || s === 'canceled') return '#DC2626';
+  return '#64748B';
+};
+
+const getPaymentStatusIcon = (status?: string): string => {
+  const s = (status || '').toLowerCase();
+  if (s === 'paid') return 'verified-user';
+  if (s === 'pending') return 'hourglass-bottom';
+  if (s === 'refunded') return 'replay';
+  if (s === 'failed') return 'error-outline';
+  if (s === 'all') return 'payments';
+  return 'payment';
+};
+
+const getPaymentStatusColor = (status?: string): string => {
+  const s = (status || '').toLowerCase();
+  if (s === 'paid') return '#16A34A';
+  if (s === 'pending') return '#EA580C';
+  if (s === 'refunded') return '#D97706';
+  if (s === 'failed') return '#DC2626';
+  return '#64748B';
+};
+
 export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   navigation,
 }) => {
@@ -105,8 +147,8 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
     fetchOrdersOverview();
   }, [fetchOrdersOverview]);
 
-  const fetchOrders = useCallback(async () => {
-    setIsLoading(true);
+  const fetchOrders = useCallback(async (showSpinner: boolean = true) => {
+    if (showSpinner) setIsLoading(true);
     setErrorMessage(null);
     try {
       const res = await adminService.getAdminOrders(
@@ -123,7 +165,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
       const msg = err.response?.data?.message || err.message || 'Failed to fetch admin orders.';
       setErrorMessage(msg);
     } finally {
-      setIsLoading(false);
+      if (showSpinner) setIsLoading(false);
     }
   }, [page, searchQuery, orderStatusFilter, paymentStatusFilter]);
 
@@ -133,24 +175,52 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
 
   const handleUpdateOrderStatus = useCallback(
     async (orderId: string, newStatus: AdminOrderItem['orderStatus']) => {
+      const previousOrders = [...orders];
+      const previousOverview = [...allOrdersOverview];
+
+      // ⚡ OPTIMISTIC INSTANT UPDATE (0ms lag)
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
+      );
+      setAllOrdersOverview((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o))
+      );
+      setModalVisible(false);
+      setSelectedOrder(null);
+      setEditType(null);
+
       try {
         await adminService.updateOrderStatus(orderId, newStatus);
-        setModalVisible(false);
-        setSelectedOrder(null);
-        setEditType(null);
-        fetchOrders();
-        fetchOrdersOverview();
-        Alert.alert('Success', `Order status updated to "${newStatus}".`);
+        Promise.all([fetchOrders(false), fetchOrdersOverview()]).catch(() => {});
       } catch (err: any) {
+        // Rollback on failure
+        setOrders(previousOrders);
+        setAllOrdersOverview(previousOverview);
         const msg = err.response?.data?.message || err.message || 'Failed to update order status.';
         Alert.alert('Error', msg);
       }
     },
-    [fetchOrders, fetchOrdersOverview]
+    [orders, allOrdersOverview, fetchOrders, fetchOrdersOverview]
   );
 
   const handleUpdatePaymentStatus = useCallback(
     async (orderId: string, newStatus: AdminOrderItem['paymentStatus'], utr?: string, paymentMethod?: string) => {
+      const previousOrders = [...orders];
+      const previousOverview = [...allOrdersOverview];
+
+      // ⚡ OPTIMISTIC INSTANT UPDATE (0ms lag)
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, paymentStatus: newStatus } : o))
+      );
+      setAllOrdersOverview((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, paymentStatus: newStatus } : o))
+      );
+      setModalVisible(false);
+      setSelectedOrder(null);
+      setEditType(null);
+      setPendingPaymentStatus(null);
+      setTransactionReference('');
+
       try {
         if (newStatus === 'Paid' && utr) {
            await adminService.verifyUpiPayment(orderId, utr);
@@ -159,20 +229,16 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
         } else {
            await adminService.updatePaymentStatus(orderId, newStatus);
         }
-        setModalVisible(false);
-        setSelectedOrder(null);
-        setEditType(null);
-        setPendingPaymentStatus(null);
-        setTransactionReference('');
-        fetchOrders();
-        fetchOrdersOverview();
-        Alert.alert('Success', `Payment status updated to "${newStatus}".`);
+        Promise.all([fetchOrders(false), fetchOrdersOverview()]).catch(() => {});
       } catch (err: any) {
+        // Rollback on failure
+        setOrders(previousOrders);
+        setAllOrdersOverview(previousOverview);
         const msg = err.response?.data?.message || err.message || 'Failed to update payment status.';
         Alert.alert('Error', msg);
       }
     },
-    [fetchOrders, fetchOrdersOverview]
+    [orders, allOrdersOverview, fetchOrders, fetchOrdersOverview]
   );
 
   const [isClearingAllCancelled, setIsClearingAllCancelled] = useState(false);
@@ -308,57 +374,69 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
           {/* Order Status Filters */}
           <Text style={styles.filterSectionLabel}>ORDER STATUS</Text>
           <View style={styles.filterGridContainer}>
-            {['All', 'Pending', 'Confirmed', 'Packed', 'Shipped', 'Delivered', 'Cancelled'].map((st) => (
-              <TouchableOpacity
-                key={st}
-                style={[
-                  styles.filterChip,
-                  orderStatusFilter === st && styles.activeFilterChip,
-                ]}
-                onPress={() => {
-                  setOrderStatusFilter(st);
-                  setPage(1);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text
+            {['All', 'Pending', 'Confirmed', 'Packed', 'Shipped', 'Delivered', 'Cancelled'].map((st) => {
+              const isActive = orderStatusFilter === st;
+              const iconName = getOrderStatusIcon(st);
+              const iconColor = isActive ? '#FFFFFF' : getOrderStatusColor(st);
+              return (
+                <TouchableOpacity
+                  key={st}
                   style={[
-                    styles.filterChipText,
-                    orderStatusFilter === st && styles.activeFilterChipText,
+                    styles.filterChip,
+                    isActive && styles.activeFilterChip,
                   ]}
+                  onPress={() => {
+                    setOrderStatusFilter(st);
+                    setPage(1);
+                  }}
+                  activeOpacity={0.8}
                 >
-                  {st}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <MaterialIcons name={iconName as any} size={15} color={iconColor} style={{ marginRight: 5 }} />
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.activeFilterChipText,
+                    ]}
+                  >
+                    {st}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Payment Status Filters */}
           <Text style={styles.filterSectionLabel}>PAYMENT STATUS</Text>
           <View style={styles.filterGridContainer}>
-            {['All', 'Paid', 'Pending', 'Refunded', 'Failed'].map((pst) => (
-              <TouchableOpacity
-                key={pst}
-                style={[
-                  styles.filterChip,
-                  paymentStatusFilter === pst && styles.activeFilterChip,
-                ]}
-                onPress={() => {
-                  setPaymentStatusFilter(pst);
-                  setPage(1);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text
+            {['All', 'Paid', 'Pending', 'Refunded', 'Failed'].map((pst) => {
+              const isActive = paymentStatusFilter === pst;
+              const iconName = getPaymentStatusIcon(pst);
+              const iconColor = isActive ? '#FFFFFF' : getPaymentStatusColor(pst);
+              return (
+                <TouchableOpacity
+                  key={pst}
                   style={[
-                    styles.filterChipText,
-                    paymentStatusFilter === pst && styles.activeFilterChipText,
+                    styles.filterChip,
+                    isActive && styles.activeFilterChip,
                   ]}
+                  onPress={() => {
+                    setPaymentStatusFilter(pst);
+                    setPage(1);
+                  }}
+                  activeOpacity={0.8}
                 >
-                  {pst}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <MaterialIcons name={iconName as any} size={15} color={iconColor} style={{ marginRight: 5 }} />
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.activeFilterChipText,
+                    ]}
+                  >
+                    {pst}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Bulk Delete All Cancelled Orders Button */}
@@ -394,22 +472,32 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
           {/* Header Row */}
           <View style={styles.orderCardHeader}>
             <View style={styles.orderNumberCol}>
-              <Text style={styles.orderNumber}>{item.orderNumber}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <MaterialIcons name="receipt" size={16} color={Colors.primary} />
+                <Text style={styles.orderNumber}>{item.orderNumber}</Text>
+              </View>
               <Text style={styles.orderDate}>{item.date} • {item.itemCount} items</Text>
             </View>
-            <Text style={styles.orderAmount}>{formatCurrency(item.totalAmount)}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <MaterialIcons name="account-balance-wallet" size={16} color="#16A34A" />
+              <Text style={styles.orderAmount}>{formatCurrency(item.totalAmount)}</Text>
+            </View>
           </View>
 
           {/* Customer Details */}
           <View style={styles.customerBox}>
-            <MaterialIcons name="person-outline" size={16} color={Colors.tertiary} />
+            <MaterialIcons name="person" size={16} color={Colors.tertiary} />
             <Text style={styles.customerName}>{item.customerName}</Text>
             <Text style={styles.customerEmail}>({item.customerEmail})</Text>
           </View>
 
           {/* Payment Info */}
           <View style={styles.paymentInfoRow}>
-            <MaterialIcons name="payment" size={14} color={Colors.primary} />
+            <MaterialIcons
+              name={item.paymentMethod?.toLowerCase().includes('upi') || item.paymentMethod?.toLowerCase().includes('qr') ? 'qr-code-scanner' : 'credit-card'}
+              size={15}
+              color={Colors.primary}
+            />
             <Text style={styles.paymentInfoText}>
               {item.paymentMethod || 'Online'}
               {item.transactionReference ? ` • Ref: ${item.transactionReference}` : ''}
@@ -437,6 +525,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
               }}
               activeOpacity={0.8}
             >
+              <MaterialIcons name={getOrderStatusIcon(item.orderStatus) as any} size={14} color={getOrderStatusColor(item.orderStatus)} style={{ marginRight: 4 }} />
               <Text style={styles.badgeLabel}>Order:</Text>
               <Text style={styles.badgeValue}>{item.orderStatus}</Text>
               <MaterialIcons name="arrow-drop-down" size={16} color={Colors.onSurface} />
@@ -459,6 +548,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
               }}
               activeOpacity={0.8}
             >
+              <MaterialIcons name={getPaymentStatusIcon(item.paymentStatus) as any} size={14} color={getPaymentStatusColor(item.paymentStatus)} style={{ marginRight: 4 }} />
               <Text style={styles.badgeLabel}>Pay:</Text>
               <Text style={styles.badgeValue}>{item.paymentStatus}</Text>
               <MaterialIcons name="arrow-drop-down" size={16} color={Colors.onSurface} />
@@ -638,7 +728,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
         <View style={styles.errorBanner}>
           <MaterialIcons name="error-outline" size={18} color="#D32F2F" />
           <Text style={styles.errorText}>{errorMessage}</Text>
-          <TouchableOpacity onPress={fetchOrders}>
+          <TouchableOpacity onPress={() => fetchOrders()}>
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -659,7 +749,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
           ListEmptyComponent={renderEmpty}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          onRefresh={fetchOrders}
+          onRefresh={() => fetchOrders()}
           refreshing={isLoading}
         />
       )}
@@ -705,14 +795,17 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
                       ]}
                       onPress={() => selectedOrder && handleUpdateOrderStatus(selectedOrder.id, opt)}
                     >
-                      <Text
-                        style={[
-                          styles.modalOptionText,
-                          selectedOrder?.orderStatus === opt && styles.selectedModalOptionText,
-                        ]}
-                      >
-                        {opt}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <MaterialIcons name={getOrderStatusIcon(opt) as any} size={18} color={getOrderStatusColor(opt)} />
+                        <Text
+                          style={[
+                            styles.modalOptionText,
+                            selectedOrder?.orderStatus === opt && styles.selectedModalOptionText,
+                          ]}
+                        >
+                          {opt}
+                        </Text>
+                      </View>
                       {selectedOrder?.orderStatus === opt && (
                         <MaterialIcons name="check" size={18} color={Colors.primary} />
                       )}
@@ -737,14 +830,17 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
                               }
                             }}
                           >
-                            <Text
-                              style={[
-                                styles.modalOptionText,
-                                isSelected && styles.selectedModalOptionText,
-                              ]}
-                            >
-                              {opt}
-                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <MaterialIcons name={getPaymentStatusIcon(opt) as any} size={18} color={getPaymentStatusColor(opt)} />
+                              <Text
+                                style={[
+                                  styles.modalOptionText,
+                                  isSelected && styles.selectedModalOptionText,
+                                ]}
+                              >
+                                {opt}
+                              </Text>
+                            </View>
                             {isSelected && (
                               <MaterialIcons name="check" size={18} color={Colors.primary} />
                             )}
@@ -879,14 +975,15 @@ const styles = StyleSheet.create({
   filterChip: {
     flex: 1,
     minWidth: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
-    alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: Colors.shadowColor,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,

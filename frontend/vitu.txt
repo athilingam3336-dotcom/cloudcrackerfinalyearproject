@@ -55,4 +55,4 @@ RESEND_FROM=noreply@meeracrackers.com
 No Spam Folder: noreply@yourdomain.com மூலம் செல்வதால் Spam-ல் விழாமல் Primary Inbox-க்கு நேராக செல்லும்.
 Professional Look: Customer-க்கு onboarding@resend.dev அல்லது gmail.com என்று போகாமல் உங்கள் சொந்த பிராண்ட் பெயரில் (Meera Crackers <noreply@meeracrackers.com>) Email செல்லும்.
 
-re_xxxxxxxxxxxxxxxxxxxxxxxx
+

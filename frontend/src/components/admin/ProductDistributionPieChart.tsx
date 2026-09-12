@@ -346,303 +346,308 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
         </View>
       </View>
 
-      {/* Main Visual Chart View */}
-      {viewType === 'bar' ? (
-        <View style={styles.chartContainer}>
-          {Platform.OS === 'web' ? (
-            <svg width="100%" height="250" viewBox="0 0 860 250" style={{ overflow: 'visible', maxWidth: '100%' }}>
-              <defs>
-                {barChartData.bars.map((bar) => (
-                  <linearGradient
-                    key={`grad_${bar.id}`}
-                    id={`barGrad_${bar.id}`}
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="0%" stopColor={bar.color} stopOpacity="1" />
-                    <stop offset="100%" stopColor={bar.color} stopOpacity="0.65" />
-                  </linearGradient>
-                ))}
-              </defs>
-
-              {/* Grid Lines & Y Axis */}
-              {[0, 0.5, 1].map((ratio) => {
-                const yLine = barChartData.paddingTop + barChartData.chartH * (1 - ratio);
-                const val = Math.round(barChartData.maxVal * ratio);
-                return (
-                  <g key={`grid_${ratio}`}>
-                    <line
-                      x1={barChartData.paddingLeft}
-                      y1={yLine}
-                      x2={barChartData.paddingLeft + barChartData.chartW}
-                      y2={yLine}
-                      stroke="#E2E8F0"
-                      strokeDasharray={ratio === 0 ? 'none' : '3 3'}
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={barChartData.paddingLeft - 8}
-                      y={yLine + 4}
-                      textAnchor="end"
-                      fontSize="11"
-                      fill="#94A3B8"
-                      fontFamily="Inter-Medium, sans-serif"
+      {/* Side-by-side Chart & Legend Wrapper */}
+      <View style={styles.chartAndLegendWrapper}>
+        {/* Main Visual Chart View */}
+        {viewType === 'bar' ? (
+          <View style={styles.chartContainer}>
+            {Platform.OS === 'web' ? (
+              <svg width="100%" height="250" viewBox="0 0 860 250" style={{ overflow: 'visible', maxWidth: '100%' }}>
+                <defs>
+                  {barChartData.bars.map((bar) => (
+                    <linearGradient
+                      key={`grad_${bar.id}`}
+                      id={`barGrad_${bar.id}`}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
                     >
-                      {val}
-                    </text>
-                  </g>
-                );
-              })}
+                      <stop offset="0%" stopColor={bar.color} stopOpacity="1" />
+                      <stop offset="100%" stopColor={bar.color} stopOpacity="0.65" />
+                    </linearGradient>
+                  ))}
+                </defs>
 
-              {/* Bars */}
-              {barChartData.bars.map((bar) => {
-                const isHovered = hoveredSegment === bar.id;
-                const isSelected =
-                  chartMode === 'category'
-                    ? selectedCategory === bar.categoryId
-                    : false;
-
-                return (
-                  <g
-                    key={`bargroup_${bar.id}`}
-                    style={{ cursor: 'pointer' }}
-                    onMouseEnter={() => setHoveredSegment(bar.id)}
-                    onMouseLeave={() => setHoveredSegment(null)}
-                    onClick={() => {
-                      if (chartMode === 'category') {
-                        onSelectCategory(bar.categoryId);
-                      } else if (onSelectPromoFilter) {
-                        onSelectPromoFilter(bar.label);
-                      }
-                    }}
-                  >
-                    {/* Bar Rect */}
-                    <rect
-                      x={bar.x}
-                      y={bar.y}
-                      width={bar.barWidth}
-                      height={Math.max(4, bar.barH)}
-                      rx="6"
-                      ry="6"
-                      fill={`url(#barGrad_${bar.id})`}
-                      opacity={isHovered || isSelected ? 1 : 0.88}
-                      style={{
-                        transition: 'all 0.2s ease-in-out',
-                        transform: isHovered || isSelected ? 'scaleY(1.02)' : 'scaleY(1)',
-                        transformOrigin: `${bar.x + bar.barWidth / 2}px ${barChartData.paddingTop + barChartData.chartH}px`,
-                        filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.2))' : 'none',
-                      }}
-                    />
-
-                    {/* Top Count Text */}
-                    <text
-                      x={bar.x + bar.barWidth / 2}
-                      y={Math.max(16, bar.y - 6)}
-                      textAnchor="middle"
-                      fontSize="11"
-                      fontWeight="bold"
-                      fill={isHovered ? Colors.primary : '#475569'}
-                      fontFamily="Inter-Bold, sans-serif"
-                    >
-                      {bar.count}
-                    </text>
-
-                    {/* X-axis Label (FULL UN-TRUNCATED LABEL!) */}
-                    <text
-                      x={bar.x + bar.barWidth / 2}
-                      y={barChartData.paddingTop + barChartData.chartH + 18}
-                      textAnchor="middle"
-                      fontSize="12"
-                      fontWeight="bold"
-                      fill={isHovered ? Colors.primary : '#475569'}
-                      fontFamily="Inter-Bold, sans-serif"
-                    >
-                      {bar.label}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          ) : (
-            <View style={styles.nativeFallbackDonut} />
-          )}
-        </View>
-      ) : (
-        /* Center Donut SVG Pie Chart */
-        <View style={styles.chartContainer}>
-          {Platform.OS === 'web' ? (
-            <svg width="280" height="280" viewBox="0 0 280 280" style={{ overflow: 'visible' }}>
-              <defs>
-                {arcs.map((arc, index) => (
-                  <React.Fragment key={`def_prod_frag_${arc.id}_${index}`}>
-                    <path id={`prodTextPath_Name_${arc.id}_${index}`} d={arc.textArcD_Name} />
-                    <path id={`prodTextPath_Pct_${arc.id}_${index}`} d={arc.textArcD_Pct} />
-                  </React.Fragment>
-                ))}
-              </defs>
-
-              {/* Render Donut Slices */}
-              {arcs.map((arc) => {
-                const isHovered = hoveredSegment === arc.id;
-                const isSelected =
-                  chartMode === 'category'
-                    ? selectedCategory === arc.categoryId
-                    : false;
-
-                return (
-                  <path
-                    key={`path_${arc.id}`}
-                    d={arc.pathD}
-                    fill={arc.color}
-                    opacity={isHovered || isSelected ? 1 : 0.88}
-                    style={{
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease-in-out',
-                      transform: isHovered || isSelected ? 'scale(1.03)' : 'scale(1)',
-                      transformOrigin: '140px 140px',
-                      filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.25))' : 'none',
-                    }}
-                    onMouseEnter={() => setHoveredSegment(arc.id)}
-                    onMouseLeave={() => setHoveredSegment(null)}
-                    onClick={() => {
-                      if (chartMode === 'category') {
-                        onSelectCategory(arc.categoryId);
-                      } else if (onSelectPromoFilter) {
-                        onSelectPromoFilter(arc.label);
-                      }
-                    }}
-                  />
-                );
-              })}
-
-              {/* Render 2-Line Curved Text Labels inside slices using SVG <textPath> */}
-              {arcs.map((arc, index) => {
-                if (arc.angleDeg < 14) return null; // Don't render text inside tiny slices to avoid overflow
-
-                return (
-                  <g key={`prod_text_group_${arc.id}_${index}`}>
-                    {/* Line 1: Category Name (e.g. Rockets) */}
-                    <text
-                      style={{
-                        fontSize: arc.angleDeg < 25 ? '10px' : '11px',
-                        fontWeight: 'bold',
-                        fill: '#FFFFFF',
-                        pointerEvents: 'none',
-                        letterSpacing: '0.4px',
-                      }}
-                    >
-                      <textPath
-                        href={`#prodTextPath_Name_${arc.id}_${index}`}
-                        startOffset="50%"
-                        textAnchor="middle"
+                {/* Grid Lines & Y Axis */}
+                {[0, 0.5, 1].map((ratio) => {
+                  const yLine = barChartData.paddingTop + barChartData.chartH * (1 - ratio);
+                  const val = Math.round(barChartData.maxVal * ratio);
+                  return (
+                    <g key={`grid_${ratio}`}>
+                      <line
+                        x1={barChartData.paddingLeft}
+                        y1={yLine}
+                        x2={barChartData.paddingLeft + barChartData.chartW}
+                        y2={yLine}
+                        stroke="#E2E8F0"
+                        strokeDasharray={ratio === 0 ? 'none' : '3 3'}
+                        strokeWidth="1"
+                      />
+                      <text
+                        x={barChartData.paddingLeft - 8}
+                        y={yLine + 4}
+                        textAnchor="end"
+                        fontSize="11"
+                        fill="#94A3B8"
+                        fontFamily="Inter-Medium, sans-serif"
                       >
-                        {arc.label}
-                      </textPath>
-                    </text>
+                        {val}
+                      </text>
+                    </g>
+                  );
+                })}
 
-                    {/* Line 2: Count & Percentage (e.g. 2 (20.0%)) */}
-                    <text
-                      style={{
-                        fontSize: arc.angleDeg < 25 ? '9px' : '10px',
-                        fontWeight: '600',
-                        fill: 'rgba(255, 255, 255, 0.95)',
-                        pointerEvents: 'none',
-                        letterSpacing: '0.2px',
+                {/* Bars */}
+                {barChartData.bars.map((bar) => {
+                  const isHovered = hoveredSegment === bar.id;
+                  const isSelected =
+                    chartMode === 'category'
+                      ? selectedCategory === bar.categoryId
+                      : false;
+
+                  return (
+                    <g
+                      key={`bargroup_${bar.id}`}
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={() => setHoveredSegment(bar.id)}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      onClick={() => {
+                        if (chartMode === 'category') {
+                          onSelectCategory(bar.categoryId);
+                        } else if (onSelectPromoFilter) {
+                          onSelectPromoFilter(bar.label);
+                        }
                       }}
                     >
-                      <textPath
-                        href={`#prodTextPath_Pct_${arc.id}_${index}`}
-                        startOffset="50%"
-                        textAnchor="middle"
-                      >
-                        {`${arc.count} (${arc.pct}%)`}
-                      </textPath>
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          ) : (
-            /* Fallback for non-web native views */
-            <View style={styles.nativeFallbackDonut}>
-              {arcs.map((arc) => (
-                <View
-                  key={arc.id}
-                  style={[
-                    styles.nativeSegmentLine,
-                    { backgroundColor: arc.color, height: (arc.count / Math.max(1, sliceTotal)) * 140 },
-                  ]}
-                />
-              ))}
-            </View>
-          )}
+                      {/* Bar Rect */}
+                      <rect
+                        x={bar.x}
+                        y={bar.y}
+                        width={bar.barWidth}
+                        height={Math.max(4, bar.barH)}
+                        rx="6"
+                        ry="6"
+                        fill={`url(#barGrad_${bar.id})`}
+                        opacity={isHovered || isSelected ? 1 : 0.88}
+                        style={{
+                          transition: 'all 0.2s ease-in-out',
+                          transform: isHovered || isSelected ? 'scaleY(1.02)' : 'scaleY(1)',
+                          transformOrigin: `${bar.x + bar.barWidth / 2}px ${barChartData.paddingTop + barChartData.chartH}px`,
+                          filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.2))' : 'none',
+                        }}
+                      />
 
-          {/* Donut Hole Center Summary Content */}
-          <View style={styles.donutCenter}>
-            <Text style={styles.donutCenterValue}>
-              {activeSegmentItem ? activeSegmentItem.count : displayTotal}
-            </Text>
-            <Text style={styles.donutCenterLabel}>
-              {activeSegmentItem ? activeSegmentItem.label : 'Products'}
-            </Text>
-            {activeSegmentItem && (
-              <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+                      {/* Top Count Text */}
+                      <text
+                        x={bar.x + bar.barWidth / 2}
+                        y={Math.max(16, bar.y - 6)}
+                        textAnchor="middle"
+                        fontSize="11"
+                        fontWeight="bold"
+                        fill={isHovered ? Colors.primary : '#475569'}
+                        fontFamily="Inter-Bold, sans-serif"
+                      >
+                        {bar.count}
+                      </text>
+
+                      {/* X-axis Label */}
+                      <text
+                        x={bar.x + bar.barWidth / 2}
+                        y={barChartData.paddingTop + barChartData.chartH + 18}
+                        textAnchor="middle"
+                        fontSize="12"
+                        fontWeight="bold"
+                        fill={isHovered ? Colors.primary : '#475569'}
+                        fontFamily="Inter-Bold, sans-serif"
+                      >
+                        {bar.label}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            ) : (
+              <View style={styles.nativeFallbackDonut} />
             )}
           </View>
+        ) : (
+          /* Center Donut SVG Pie Chart */
+          <View style={styles.chartContainer}>
+            {Platform.OS === 'web' ? (
+              <svg width="280" height="280" viewBox="0 0 280 280" style={{ overflow: 'visible' }}>
+                <defs>
+                  {arcs.map((arc, index) => (
+                    <React.Fragment key={`def_prod_frag_${arc.id}_${index}`}>
+                      <path id={`prodTextPath_Name_${arc.id}_${index}`} d={arc.textArcD_Name} />
+                      <path id={`prodTextPath_Pct_${arc.id}_${index}`} d={arc.textArcD_Pct} />
+                    </React.Fragment>
+                  ))}
+                </defs>
+
+                {/* Render Donut Slices */}
+                {arcs.map((arc) => {
+                  const isHovered = hoveredSegment === arc.id;
+                  const isSelected =
+                    chartMode === 'category'
+                      ? selectedCategory === arc.categoryId
+                      : false;
+
+                  return (
+                    <path
+                      key={`path_${arc.id}`}
+                      d={arc.pathD}
+                      fill={arc.color}
+                      opacity={isHovered || isSelected ? 1 : 0.88}
+                      style={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out',
+                        transform: isHovered || isSelected ? 'scale(1.03)' : 'scale(1)',
+                        transformOrigin: '140px 140px',
+                        filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.25))' : 'none',
+                      }}
+                      onMouseEnter={() => setHoveredSegment(arc.id)}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      onClick={() => {
+                        if (chartMode === 'category') {
+                          onSelectCategory(arc.categoryId);
+                        } else if (onSelectPromoFilter) {
+                          onSelectPromoFilter(arc.label);
+                        }
+                      }}
+                    />
+                  );
+                })}
+
+                {/* Render 2-Line Curved Text Labels inside slices using SVG <textPath> */}
+                {arcs.map((arc, index) => {
+                  if (arc.angleDeg < 14) return null; // Don't render text inside tiny slices to avoid overflow
+
+                  return (
+                    <g key={`prod_text_group_${arc.id}_${index}`}>
+                      {/* Line 1: Category Name */}
+                      <text
+                        style={{
+                          fontSize: arc.angleDeg < 25 ? '10px' : '11px',
+                          fontWeight: 'bold',
+                          fill: '#FFFFFF',
+                          pointerEvents: 'none',
+                          letterSpacing: '0.4px',
+                        }}
+                      >
+                        <textPath
+                          href={`#prodTextPath_Name_${arc.id}_${index}`}
+                          startOffset="50%"
+                          textAnchor="middle"
+                        >
+                          {arc.label}
+                        </textPath>
+                      </text>
+
+                      {/* Line 2: Count & Percentage */}
+                      <text
+                        style={{
+                          fontSize: arc.angleDeg < 25 ? '9px' : '10px',
+                          fontWeight: '600',
+                          fill: 'rgba(255, 255, 255, 0.95)',
+                          pointerEvents: 'none',
+                          letterSpacing: '0.2px',
+                        }}
+                      >
+                        <textPath
+                          href={`#prodTextPath_Pct_${arc.id}_${index}`}
+                          startOffset="50%"
+                          textAnchor="middle"
+                        >
+                          {`${arc.count} (${arc.pct}%)`}
+                        </textPath>
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            ) : (
+              /* Fallback for non-web native views */
+              <View style={styles.nativeFallbackDonut}>
+                {arcs.map((arc) => (
+                  <View
+                    key={arc.id}
+                    style={[
+                      styles.nativeSegmentLine,
+                      { backgroundColor: arc.color, height: (arc.count / Math.max(1, sliceTotal)) * 140 },
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* Donut Hole Center Summary Content */}
+            <View style={styles.donutCenter}>
+              <Text style={styles.donutCenterValue}>
+                {activeSegmentItem ? activeSegmentItem.count : displayTotal}
+              </Text>
+              <Text style={styles.donutCenterLabel}>
+                {activeSegmentItem ? activeSegmentItem.label : 'Products'}
+              </Text>
+              {activeSegmentItem && (
+                <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Interactive Legend Side List */}
+        <View style={styles.legendContainer}>
+          {formattedSegments.map((seg) => {
+            const isSelected =
+              chartMode === 'category'
+                ? selectedCategory === seg.categoryId
+                : false;
+            const isHovered = hoveredSegment === seg.id;
+
+            return (
+              <TouchableOpacity
+                key={seg.id}
+                style={[
+                  styles.legendCard,
+                  { borderLeftColor: seg.color, borderLeftWidth: 4 },
+                  (isSelected || isHovered) && styles.legendCardActive,
+                ]}
+                onPress={() => {
+                  if (chartMode === 'category') {
+                    onSelectCategory(seg.categoryId);
+                  } else if (onSelectPromoFilter) {
+                    onSelectPromoFilter(seg.label);
+                  }
+                }}
+                {...({
+                  onMouseEnter: () => setHoveredSegment(seg.id),
+                  onMouseLeave: () => setHoveredSegment(null),
+                } as any)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
+                  <MaterialIcons name={seg.icon as any} size={12} color="#FFF" />
+                </View>
+
+                <View style={styles.legendTextWrapper}>
+                  <Text style={styles.legendTitle} numberOfLines={1}>
+                    {seg.label}
+                  </Text>
+                  <Text style={styles.legendSubtitle}>
+                    {seg.count} items ({seg.pct}%)
+                  </Text>
+                </View>
+
+                <MaterialIcons
+                  name="chevron-right"
+                  size={16}
+                  color={isSelected ? Colors.primary : Colors.outline}
+                />
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      )}
-      {/* Interactive Legend List */}
-      <View style={styles.legendContainer}>
-        {formattedSegments.map((seg) => {
-          const isSelected =
-            chartMode === 'category'
-              ? selectedCategory === seg.categoryId
-              : false;
-          const isHovered = hoveredSegment === seg.id;
-
-          return (
-            <TouchableOpacity
-              key={seg.id}
-              style={[
-                styles.legendCard,
-                (isSelected || isHovered) && styles.legendCardActive,
-              ]}
-              onPress={() => {
-                if (chartMode === 'category') {
-                  onSelectCategory(seg.categoryId);
-                } else if (onSelectPromoFilter) {
-                  onSelectPromoFilter(seg.label);
-                }
-              }}
-              {...({
-                onMouseEnter: () => setHoveredSegment(seg.id),
-                onMouseLeave: () => setHoveredSegment(null),
-              } as any)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
-                <MaterialIcons name={seg.icon as any} size={12} color="#FFF" />
-              </View>
-
-              <View style={styles.legendTextWrapper}>
-                <Text style={styles.legendTitle} numberOfLines={1}>
-                  {seg.label}
-                </Text>
-                <Text style={styles.legendSubtitle}>
-                  {seg.count} items ({seg.pct}%)
-                </Text>
-              </View>
-
-              <MaterialIcons
-                name="chevron-right"
-                size={16}
-                color={isSelected ? Colors.primary : Colors.outline}
-              />
-            </TouchableOpacity>
-          );
-        })}
       </View>
 
       {/* Quick Summary Pill Footer */}
@@ -750,11 +755,21 @@ const styles = StyleSheet.create({
     color: Colors.onPrimary,
     fontFamily: 'Inter-Bold',
   },
+  chartAndLegendWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+    flexWrap: 'wrap',
+    marginTop: Spacing.xs,
+  },
   chartContainer: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
     height: 280,
+    flex: 1,
+    minWidth: 280,
     marginVertical: Spacing.xs,
   },
   donutCenter: {
@@ -806,18 +821,23 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   legendContainer: {
-    gap: 6,
+    flex: 1,
+    minWidth: 280,
+    gap: 8,
     marginTop: Spacing.xs,
   },
   legendCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.xs + 2,
-    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs + 3,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
+    borderLeftWidth: 4,
     gap: Spacing.xs,
+    elevation: 1,
   },
   legendCardActive: {
     backgroundColor: Colors.primaryContainer,

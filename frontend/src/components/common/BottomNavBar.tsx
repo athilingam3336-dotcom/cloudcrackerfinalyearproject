@@ -5,6 +5,8 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { useAppLayout } from '@/hooks/useAppLayout';
 
+import { useCartStore } from '@/store/cartStore';
+
 export type TabRoute = 'Home' | 'Categories' | 'Cart' | 'Wishlist' | 'Profile';
 
 interface BottomNavBarProps {
@@ -23,6 +25,7 @@ const TABS: { id: TabRoute; label: string; icon: keyof typeof MaterialIcons.glyp
 export const BottomNavBar: React.FC<BottomNavBarProps> = React.memo(
   ({ activeTab, onTabPress }) => {
     const { isDesktopWeb } = useAppLayout();
+    const cartCount = useCartStore((state) => state.getItemCount());
 
     // HIDE BottomNavBar completely on Desktop Web browser
     if (isDesktopWeb) {
@@ -40,11 +43,18 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = React.memo(
               onPress={() => onTabPress(tab.id)}
               activeOpacity={0.7}
             >
-              <MaterialIcons
-                name={tab.icon}
-                size={22}
-                color={isActive ? Colors.primary : Colors.tertiary}
-              />
+              <View style={{ position: 'relative' }}>
+                <MaterialIcons
+                  name={tab.icon}
+                  size={22}
+                  color={isActive ? Colors.primary : Colors.tertiary}
+                />
+                {tab.id === 'Cart' && cartCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{cartCount > 99 ? '99+' : cartCount}</Text>
+                  </View>
+                )}
+              </View>
               <Text
                 style={[
                   styles.tabLabel,
@@ -98,6 +108,26 @@ const styles = StyleSheet.create({
   },
   activeTabLabel: {
     fontFamily: 'Inter-Bold',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    backgroundColor: '#D32F2F',
+    borderRadius: 9,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.surface,
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontFamily: 'Inter-Bold',
+    lineHeight: 11,
   },
 });
 
