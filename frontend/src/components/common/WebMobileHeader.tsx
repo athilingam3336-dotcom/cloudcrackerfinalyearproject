@@ -47,7 +47,7 @@ export const WebMobileHeader: React.FC<WebMobileHeaderProps> = React.memo(
 
           <TouchableOpacity style={styles.brandRow} onPress={handleLogo} activeOpacity={0.8}>
             <Image source={LOCAL_PRODUCT_IMAGES.LOGO} style={styles.logo} resizeMode="contain" />
-            <View>
+            <View style={styles.brandTextWrap}>
               <Text style={styles.brandTitle} numberOfLines={1}>
                 MEERA CRACKERS
               </Text>
@@ -111,36 +111,47 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   leftRow: {
+    flex: 1,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    paddingRight: 4,
   },
   brandRow: {
+    flex: 1,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+  },
+  brandTextWrap: {
+    flex: 1,
+    flexShrink: 1,
   },
   logo: {
     width: 32,
     height: 32,
     borderRadius: 16,
     overflow: 'hidden',
+    flexShrink: 0,
   },
   brandTitle: {
     ...Typography.titleLg,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
   brandSub: {
     ...Typography.labelLg,
-    fontSize: 10,
+    fontSize: 9.5,
     color: Colors.onSurfaceVariant,
   },
   rightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
+    flexShrink: 0,
   },
   iconBtn: {
     width: 38,

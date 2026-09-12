@@ -30,6 +30,7 @@ import { LOCAL_PRODUCT_IMAGES, resolveProductImage } from '@/constants/productIm
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { useProductStore } from '@/store/productStore';
+import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 
 type ProductDetailsVariantScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -221,200 +222,204 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
 
   if (isLoading || !product) {
     return (
+      <ResponsiveContainer>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+          <HomeHeader
+            onNotificationPress={() => navigation.navigate('Notifications')}
+            onProfilePress={() => navigation.navigate('UserProfile')}
+            onCartPress={() => navigation.navigate('Cart')}
+            notificationCount={unreadNotifs}
+          />
+          <LoadingSpinner message="Loading variant options..." />
+          <BottomNavBar activeTab="Home" onTabPress={(tab) => navigation.navigate(tab as any)} />
+        </SafeAreaView>
+      </ResponsiveContainer>
+    );
+  }
+
+  return (
+    <ResponsiveContainer>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <HomeHeader
+          onBackPress={handleVariantDetailsBack}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
           notificationCount={unreadNotifs}
         />
-        <LoadingSpinner message="Loading variant options..." />
-        <BottomNavBar activeTab="Home" onTabPress={(tab) => navigation.navigate(tab as any)} />
-      </SafeAreaView>
-    );
-  }
 
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <HomeHeader
-        onBackPress={handleVariantDetailsBack}
-        onNotificationPress={() => navigation.navigate('Notifications')}
-        onProfilePress={() => navigation.navigate('UserProfile')}
-        onCartPress={() => navigation.navigate('Cart')}
-        notificationCount={unreadNotifs}
-      />
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Dynamic Variant Image Display */}
-        <Pressable
-          style={styles.imageContainer}
-          onPress={() => setIsZoomViewerOpen(true)}
-        >
-          <Image
-            source={selectedEffect.imageUrl}
-            style={styles.mainImage}
-            resizeMode="contain"
-          />
-          <TouchableOpacity
-            style={styles.wishlistBtn}
-            onPress={handleToggleWishlist}
-            activeOpacity={0.8}
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Dynamic Variant Image Display */}
+          <Pressable
+            style={styles.imageContainer}
+            onPress={() => setIsZoomViewerOpen(true)}
           >
-            <MaterialIcons
-              name={isWishlisted ? 'favorite' : 'favorite-border'}
-              size={22}
-              color={isWishlisted ? Colors.primary : Colors.onSurface}
+            <Image
+              source={selectedEffect.imageUrl}
+              style={styles.mainImage}
+              resizeMode="contain"
             />
-          </TouchableOpacity>
-          <View style={styles.variantBadge}>
-            <Text style={styles.variantBadgeText}>{selectedEffect.name}</Text>
-          </View>
-          <View style={styles.zoomHint}>
-            <MaterialIcons name="zoom-in" size={18} color="rgba(255,255,255,0.9)" />
-          </View>
-        </Pressable>
-
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>{product.title} ({selectedEffect.name})</Text>
-          <Text style={styles.categoryText}>{product.category} • Custom Variants</Text>
-
-          {/* Dynamic Pricing */}
-          <View style={styles.priceRow}>
-            <Text style={styles.price}>{formatCurrency(unitPrice)}</Text>
-            {quantity > 1 && (
-              <Text style={styles.totalPriceText}>(Total: {formatCurrency(totalPrice)})</Text>
-            )}
-          </View>
-
-          {/* Stock Indicator */}
-          <View style={styles.stockRow}>
-            <MaterialIcons
-              name={selectedEffect.stock > 0 ? 'check-circle' : 'cancel'}
-              size={18}
-              color={selectedEffect.stock > 0 ? (selectedEffect.stock < 10 ? '#F57C00' : Colors.secondary) : '#D32F2F'}
-            />
-            <Text
-              style={[
-                styles.stockText,
-                selectedEffect.stock <= 0 && styles.outOfStockText,
-                selectedEffect.stock > 0 && selectedEffect.stock < 10 && styles.lowStockText,
-              ]}
+            <TouchableOpacity
+              style={styles.wishlistBtn}
+              onPress={handleToggleWishlist}
+              activeOpacity={0.8}
             >
-              {selectedEffect.stock > 10
-                ? `In Stock (${selectedEffect.stock} available)`
-                : selectedEffect.stock > 0
-                ? `Low Stock! Only ${selectedEffect.stock} left`
-                : 'Out of Stock'}
-            </Text>
-          </View>
-
-          {/* 1. Size / Pack Variant Selector */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>SELECT PACK SIZE</Text>
-            <View style={styles.sizeRow}>
-              {SIZE_VARIANTS.map((size) => {
-                const isSelected = selectedSize.id === size.id;
-                return (
-                  <TouchableOpacity
-                    key={size.id}
-                    style={[styles.sizeChip, isSelected && styles.activeSizeChip]}
-                    onPress={() => setSelectedSize(size)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.sizeChipText, isSelected && styles.activeSizeChipText]}>
-                      {size.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              <MaterialIcons
+                name={isWishlisted ? 'favorite' : 'favorite-border'}
+                size={22}
+                color={isWishlisted ? Colors.primary : Colors.onSurface}
+              />
+            </TouchableOpacity>
+            <View style={styles.variantBadge}>
+              <Text style={styles.variantBadgeText}>{selectedEffect.name}</Text>
             </View>
-          </View>
-
-          {/* 2. Color / Effect Variant Selector */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>SELECT EFFECT / COLOR</Text>
-            <View style={styles.effectGrid}>
-              {EFFECT_VARIANTS.map((eff) => {
-                const isSelected = selectedEffect.id === eff.id;
-                return (
-                  <TouchableOpacity
-                    key={eff.id}
-                    style={[styles.effectCard, isSelected && styles.activeEffectCard]}
-                    onPress={() => setSelectedEffect(eff)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={[styles.colorDot, { backgroundColor: eff.colorHex }]} />
-                    <View style={styles.effectTextCol}>
-                      <Text style={[styles.effectName, isSelected && styles.activeEffectName]}>
-                        {eff.name}
-                      </Text>
-                      <Text style={styles.effectStockLabel}>
-                        {eff.stock > 0 ? `${eff.stock} left` : 'Sold out'}
-                      </Text>
-                    </View>
-                    {isSelected && (
-                      <MaterialIcons name="check-circle" size={20} color={Colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+            <View style={styles.zoomHint}>
+              <MaterialIcons name="zoom-in" size={18} color="rgba(255,255,255,0.9)" />
             </View>
-          </View>
+          </Pressable>
 
-          {/* 3. Quantity Selector */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>QUANTITY</Text>
-            <View style={styles.quantityControl}>
-              <TouchableOpacity
-                style={styles.qtyBtn}
-                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-                activeOpacity={0.7}
-              >
-                <MaterialIcons name="remove" size={20} color={Colors.onSurface} />
-              </TouchableOpacity>
-              <Text style={styles.qtyText}>{quantity}</Text>
-              <TouchableOpacity
+          <View style={styles.contentContainer}>
+            <Text style={styles.title}>{product.title} ({selectedEffect.name})</Text>
+            <Text style={styles.categoryText}>{product.category} • Custom Variants</Text>
+
+            {/* Dynamic Pricing */}
+            <View style={styles.priceRow}>
+              <Text style={styles.price}>{formatCurrency(unitPrice)}</Text>
+              {quantity > 1 && (
+                <Text style={styles.totalPriceText}>(Total: {formatCurrency(totalPrice)})</Text>
+              )}
+            </View>
+
+            {/* Stock Indicator */}
+            <View style={styles.stockRow}>
+              <MaterialIcons
+                name={selectedEffect.stock > 0 ? 'check-circle' : 'cancel'}
+                size={18}
+                color={selectedEffect.stock > 0 ? (selectedEffect.stock < 10 ? '#F57C00' : Colors.secondary) : '#D32F2F'}
+              />
+              <Text
                 style={[
-                  styles.qtyBtn,
-                  (selectedEffect.stock !== undefined && quantity >= selectedEffect.stock) && { opacity: 0.4 },
+                  styles.stockText,
+                  selectedEffect.stock <= 0 && styles.outOfStockText,
+                  selectedEffect.stock > 0 && selectedEffect.stock < 10 && styles.lowStockText,
                 ]}
-                onPress={() => {
-                  const maxStock = typeof product?.stock === 'number' ? product.stock : (selectedEffect.stock ?? 999);
-                  if (quantity >= maxStock) {
-                    Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
-                    return;
-                  }
-                  setQuantity((q) => Math.min(maxStock, q + 1));
-                }}
-                disabled={selectedEffect.stock <= 0 || (selectedEffect.stock !== undefined && quantity >= selectedEffect.stock)}
-                activeOpacity={0.7}
               >
-                <MaterialIcons name="add" size={20} color={Colors.onSurface} />
-              </TouchableOpacity>
+                {selectedEffect.stock > 10
+                  ? `In Stock (${selectedEffect.stock} available)`
+                  : selectedEffect.stock > 0
+                  ? `Low Stock! Only ${selectedEffect.stock} left`
+                  : 'Out of Stock'}
+              </Text>
+            </View>
+
+            {/* 1. Size / Pack Variant Selector */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>SELECT PACK SIZE</Text>
+              <View style={styles.sizeRow}>
+                {SIZE_VARIANTS.map((size) => {
+                  const isSelected = selectedSize.id === size.id;
+                  return (
+                    <TouchableOpacity
+                      key={size.id}
+                      style={[styles.sizeChip, isSelected && styles.activeSizeChip]}
+                      onPress={() => setSelectedSize(size)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.sizeChipText, isSelected && styles.activeSizeChipText]}>
+                        {size.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* 2. Color / Effect Variant Selector */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>SELECT EFFECT / COLOR</Text>
+              <View style={styles.effectGrid}>
+                {EFFECT_VARIANTS.map((eff) => {
+                  const isSelected = selectedEffect.id === eff.id;
+                  return (
+                    <TouchableOpacity
+                      key={eff.id}
+                      style={[styles.effectCard, isSelected && styles.activeEffectCard]}
+                      onPress={() => setSelectedEffect(eff)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={[styles.colorDot, { backgroundColor: eff.colorHex }]} />
+                      <View style={styles.effectTextCol}>
+                        <Text style={[styles.effectName, isSelected && styles.activeEffectName]}>
+                          {eff.name}
+                        </Text>
+                        <Text style={styles.effectStockLabel}>
+                          {eff.stock > 0 ? `${eff.stock} left` : 'Sold out'}
+                        </Text>
+                      </View>
+                      {isSelected && (
+                        <MaterialIcons name="check-circle" size={20} color={Colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* 3. Quantity Selector */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>QUANTITY</Text>
+              <View style={styles.quantityControl}>
+                <TouchableOpacity
+                  style={styles.qtyBtn}
+                  onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="remove" size={20} color={Colors.onSurface} />
+                </TouchableOpacity>
+                <Text style={styles.qtyText}>{quantity}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.qtyBtn,
+                    (selectedEffect.stock !== undefined && quantity >= selectedEffect.stock) && { opacity: 0.4 },
+                  ]}
+                  onPress={() => {
+                    const maxStock = typeof product?.stock === 'number' ? product.stock : (selectedEffect.stock ?? 999);
+                    if (quantity >= maxStock) {
+                      Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                      return;
+                    }
+                    setQuantity((q) => Math.min(maxStock, q + 1));
+                  }}
+                  disabled={selectedEffect.stock <= 0 || (selectedEffect.stock !== undefined && quantity >= selectedEffect.stock)}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="add" size={20} color={Colors.onSurface} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Add to Cart CTA */}
+            <View style={styles.ctaWrapper}>
+              <PrimaryButton
+                title={selectedEffect.stock > 0 ? `Add ${quantity} to Cart • $${totalPrice.toFixed(2)}` : 'Out of Stock'}
+                onPress={handleAddToCart}
+                disabled={selectedEffect.stock <= 0}
+              />
             </View>
           </View>
+        </ScrollView>
 
-          {/* Add to Cart CTA */}
-          <View style={styles.ctaWrapper}>
-            <PrimaryButton
-              title={selectedEffect.stock > 0 ? `Add ${quantity} to Cart • $${totalPrice.toFixed(2)}` : 'Out of Stock'}
-              onPress={handleAddToCart}
-              disabled={selectedEffect.stock <= 0}
-            />
-          </View>
-        </View>
-      </ScrollView>
+        <BottomNavBar activeTab="Categories" onTabPress={handleTabPress} />
 
-      <BottomNavBar activeTab="Categories" onTabPress={handleTabPress} />
-
-      {/* Full-screen Image Zoom Viewer */}
-      <ImageZoomViewer
-        visible={isZoomViewerOpen}
-        imageSource={selectedEffect.imageUrl}
-        onClose={() => setIsZoomViewerOpen(false)}
-        title={`${product.title} (${selectedEffect.name})`}
-      />
-    </SafeAreaView>
+        {/* Full-screen Image Zoom Viewer */}
+        <ImageZoomViewer
+          visible={isZoomViewerOpen}
+          imageSource={selectedEffect.imageUrl}
+          onClose={() => setIsZoomViewerOpen(false)}
+          title={`${product.title} (${selectedEffect.name})`}
+        />
+      </SafeAreaView>
+    </ResponsiveContainer>
   );
 };
 

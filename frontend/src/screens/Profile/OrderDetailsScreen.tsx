@@ -29,6 +29,7 @@ import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
 import { downloadCustomerOrderInvoicePdf } from '@/utils/invoiceGenerator';
 import { paymentService } from '@/services/paymentService';
+import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 
@@ -171,17 +172,19 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
 
   if (isLoading || !order) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <HomeHeader
-          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('OrderHistory'))}
-          onNotificationPress={() => navigation.navigate('Notifications')}
-          onProfilePress={() => navigation.navigate('UserProfile')}
-          onCartPress={() => navigation.navigate('Cart')}
-          notificationCount={unreadNotifs}
-        />
-        <LoadingSpinner message="Fetching order specifications..." />
-        <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />
-      </SafeAreaView>
+      <ResponsiveContainer>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+          <HomeHeader
+            onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('OrderHistory'))}
+            onNotificationPress={() => navigation.navigate('Notifications')}
+            onProfilePress={() => navigation.navigate('UserProfile')}
+            onCartPress={() => navigation.navigate('Cart')}
+            notificationCount={unreadNotifs}
+          />
+          <LoadingSpinner message="Fetching order specifications..." />
+          <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />
+        </SafeAreaView>
+      </ResponsiveContainer>
     );
   }
 
@@ -195,321 +198,314 @@ export const OrderDetailsScreen: React.FC<OrderDetailsScreenProps> = ({
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <HomeHeader
-        onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('OrderHistory'))}
-        onNotificationPress={() => navigation.navigate('Notifications')}
-        onProfilePress={() => navigation.navigate('UserProfile')}
-        onCartPress={() => navigation.navigate('Cart')}
-        notificationCount={unreadNotifs}
-      />
+    <ResponsiveContainer>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <HomeHeader
+          onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('OrderHistory'))}
+          onNotificationPress={() => navigation.navigate('Notifications')}
+          onProfilePress={() => navigation.navigate('UserProfile')}
+          onCartPress={() => navigation.navigate('Cart')}
+          notificationCount={unreadNotifs}
+        />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Top Header Card */}
-        <View style={styles.orderHeaderCard}>
-          <View style={styles.orderHeaderTop}>
-            <View>
-              <Text style={styles.orderNumberText}>{order.orderNumber}</Text>
-              <Text style={styles.orderDateText}>Placed on {order.date}</Text>
-            </View>
-            <View
-              style={[
-                styles.statusBadge,
-                ['in transit', 'shipped'].includes(stLower)
-                  ? styles.inTransitBadge
-                  : stLower === 'delivered'
-                  ? styles.deliveredBadge
-                  : stLower === 'cancelled'
-                  ? styles.cancelledBadge
-                  : styles.pendingBadge,
-              ]}
-            >
-              <Text style={styles.statusBadgeText}>{order.status}</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Top Header Card */}
+          <View style={styles.orderHeaderCard}>
+            <View style={styles.orderHeaderTop}>
+              <View>
+                <Text style={styles.orderNumberText}>{order.orderNumber}</Text>
+                <Text style={styles.orderDateText}>Placed on {order.date}</Text>
+              </View>
+              <View
+                style={[
+                  styles.statusBadge,
+                  ['in transit', 'shipped'].includes(stLower)
+                    ? styles.inTransitBadge
+                    : stLower === 'delivered'
+                    ? styles.deliveredBadge
+                    : stLower === 'cancelled'
+                    ? styles.cancelledBadge
+                    : styles.pendingBadge,
+                ]}
+              >
+                <Text style={styles.statusBadgeText}>{order.status}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Order Status Timeline */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Order Progress Timeline</Text>
-          <View style={styles.timelineContainer}>
-            {timelineSteps.map((step, idx) => {
-              const isLast = idx === timelineSteps.length - 1;
-              const isCancelled = order.status === 'Cancelled';
-              return (
-                <View key={idx} style={styles.timelineRow}>
-                  <View style={styles.timelineIconCol}>
-                    <View
-                      style={[
-                        styles.timelineDot,
-                        step.completed && styles.timelineDotCompleted,
-                        isCancelled && styles.timelineDotCancelled,
-                      ]}
-                    >
-                      <MaterialIcons
-                        name={isCancelled ? 'close' : step.completed ? 'check' : 'schedule'}
-                        size={12}
-                        color="#ffffff"
-                      />
-                    </View>
-                    {!isLast && (
+          {/* Order Status Timeline */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Order Progress Timeline</Text>
+            <View style={styles.timelineContainer}>
+              {timelineSteps.map((step, idx) => {
+                const isLast = idx === timelineSteps.length - 1;
+                const isCancelled = order.status === 'Cancelled';
+                return (
+                  <View key={idx} style={styles.timelineRow}>
+                    <View style={styles.timelineIconCol}>
                       <View
                         style={[
-                          styles.timelineLine,
-                          step.completed && styles.timelineLineCompleted,
+                          styles.timelineDot,
+                          step.completed && styles.timelineDotCompleted,
+                          isCancelled && styles.timelineDotCancelled,
                         ]}
-                      />
-                    )}
+                      >
+                        <MaterialIcons
+                          name={isCancelled ? 'close' : step.completed ? 'check' : 'schedule'}
+                          size={12}
+                          color={isCancelled || step.completed ? '#ffffff' : Colors.onSurfaceVariant}
+                        />
+                      </View>
+                      {!isLast && (
+                        <View
+                          style={[
+                            styles.timelineLine,
+                            step.completed && styles.timelineLineCompleted,
+                          ]}
+                        />
+                      )}
+                    </View>
+                    <View style={styles.timelineContent}>
+                      <Text style={[styles.timelineStatusTitle, step.completed && styles.timelineStatusTitleCompleted]}>
+                        {step.status}
+                      </Text>
+                      <Text style={styles.timelineDateText}>{step.date}</Text>
+                    </View>
                   </View>
-                  <View style={styles.timelineContent}>
-                    <Text
-                      style={[
-                        styles.timelineStatusTitle,
-                        step.completed && styles.timelineStatusTitleCompleted,
-                      ]}
-                    >
-                      {step.status}
-                    </Text>
-                    <Text style={styles.timelineDateText}>{step.date}</Text>
-                  </View>
-                </View>
-              );
-            })}
+                );
+              })}
+            </View>
           </View>
-        </View>
 
-        {/* Shipping Address */}
-        {order.shippingAddress && (
+          {/* Shipping Address */}
+          {order.shippingAddress && (
+            <View style={styles.sectionCard}>
+              <View style={styles.cardHeaderRow}>
+                <MaterialIcons name="location-on" size={20} color={Colors.primary} />
+                <Text style={styles.sectionTitle}>Delivery Destination</Text>
+              </View>
+              <Text style={styles.addressName}>{order.shippingAddress.fullName || 'Valued Customer'}</Text>
+              <Text style={styles.addressText}>
+                {order.shippingAddress.street || (order.shippingAddress as any).addressLine1}
+              </Text>
+              <Text style={styles.addressText}>
+                {[order.shippingAddress.city, order.shippingAddress.state, order.shippingAddress.zipCode || (order.shippingAddress as any).postalCode].filter(Boolean).join(', ')}
+              </Text>
+              {order.shippingAddress.phone && (
+                <Text style={styles.addressPhone}>{order.shippingAddress.phone}</Text>
+              )}
+            </View>
+          )}
+
+          {/* Ordered Products List */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Ordered Products ({order.itemCount})</Text>
+            <View style={styles.itemsList}>
+              {(order.items || []).map((item, idx) => (
+                <View key={item.id || idx} style={[styles.itemRow, idx > 0 && styles.itemRowBorder]}>
+                  <Image
+                    source={resolveProductImage(item)}
+                    style={styles.itemThumb}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    {item.variantInfo && (
+                      <Text style={styles.itemVariantText}>{item.variantInfo}</Text>
+                    )}
+                    <Text style={styles.itemQtyPrice}>
+                      Qty: {item.quantity} × {formatCurrency(item.price)}
+                    </Text>
+                  </View>
+                  <Text style={styles.itemTotal}>{formatCurrency(item.quantity * item.price)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Payment & Financial Breakdown */}
           <View style={styles.sectionCard}>
             <View style={styles.cardHeaderRow}>
-              <MaterialIcons name="location-on" size={20} color={Colors.primary} />
-              <Text style={styles.sectionTitle}>Shipping Address</Text>
+              <MaterialIcons name="credit-card" size={20} color={Colors.primary} />
+              <Text style={styles.sectionTitle}>Payment Information</Text>
             </View>
-            <Text style={styles.addressName}>{order.shippingAddress.fullName}</Text>
-            {order.shippingAddress.street ? (
-              <Text style={styles.addressText}>{order.shippingAddress.street}</Text>
-            ) : null}
-            {(order.shippingAddress.city || order.shippingAddress.state || order.shippingAddress.zipCode) ? (
-              <Text style={styles.addressText}>
-                {[order.shippingAddress.city, order.shippingAddress.state, order.shippingAddress.zipCode]
-                  .filter(Boolean)
-                  .join(', ')}
-              </Text>
-            ) : null}
-            {order.shippingAddress.phone && (
-              <Text style={styles.addressPhone}>{order.shippingAddress.phone}</Text>
-            )}
-          </View>
-        )}
 
-        {/* Ordered Products List */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Ordered Products ({order.itemCount})</Text>
-          <View style={styles.itemsList}>
-            {(order.items || []).map((item, idx) => (
-              <View key={item.id || idx} style={[styles.itemRow, idx > 0 && styles.itemRowBorder]}>
-                <Image
-                  source={resolveProductImage(item)}
-                  style={styles.itemThumb}
-                  resizeMode="contain"
-                />
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-                  {item.variantInfo && (
-                    <Text style={styles.itemVariantText}>{item.variantInfo}</Text>
-                  )}
-                  <Text style={styles.itemQtyPrice}>
-                    Qty: {item.quantity} × {formatCurrency(item.price)}
+            <View style={styles.paymentMetaRow}>
+              <Text style={styles.metaLabel}>Payment Method:</Text>
+              <Text style={styles.metaValue}>{order.paymentMethod || 'Credit Card'}</Text>
+            </View>
+            <View style={styles.paymentMetaRow}>
+              <Text style={styles.metaLabel}>Payment Status:</Text>
+              <View
+                style={[
+                  styles.payStatusBadge,
+                  order.paymentStatus === 'Paid'
+                    ? styles.paidBadge
+                    : styles.unpaidBadge,
+                ]}
+              >
+                <Text style={styles.payStatusText}>{order.paymentStatus || 'Paid'}</Text>
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>{formatCurrency(order.subtotal || order.totalPrice)}</Text>
+            </View>
+            {order.discount ? (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Discount</Text>
+                <Text style={styles.discountValue}>-{formatCurrency(order.discount)}</Text>
+              </View>
+            ) : null}
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Shipping Fee</Text>
+              <Text style={styles.summaryValue}>
+                {order.shippingFee === 0 ? 'FREE' : formatCurrency(order.shippingFee || 0)}
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Estimated Tax</Text>
+              <Text style={styles.summaryValue}>{formatCurrency(order.tax || 0)}</Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.grandTotalRow}>
+              <Text style={styles.grandTotalLabel}>Total Amount Paid</Text>
+              <Text style={styles.grandTotalValue}>{formatCurrency(order.totalPrice)}</Text>
+            </View>
+
+            {/* UPI QR Code & Payment Pending Section */}
+            {order.paymentStatus === 'Pending' && order.paymentMethod?.includes('UPI') && (
+              <View style={{ backgroundColor: '#FFF8E1', padding: 14, borderRadius: 12, marginTop: 14, borderWidth: 1, borderColor: '#FFE082' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <MaterialIcons name="qr-code-2" size={24} color="#F57F17" style={{ marginRight: 8 }} />
+                  <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#F57F17' }}>
+                    Complete Payment via UPI
                   </Text>
                 </View>
-                <Text style={styles.itemTotal}>{formatCurrency(item.quantity * item.price)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Payment & Financial Breakdown */}
-        <View style={styles.sectionCard}>
-          <View style={styles.cardHeaderRow}>
-            <MaterialIcons name="credit-card" size={20} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>Payment Information</Text>
-          </View>
-
-          <View style={styles.paymentMetaRow}>
-            <Text style={styles.metaLabel}>Payment Method:</Text>
-            <Text style={styles.metaValue}>{order.paymentMethod || 'Credit Card'}</Text>
-          </View>
-          <View style={styles.paymentMetaRow}>
-            <Text style={styles.metaLabel}>Payment Status:</Text>
-            <View
-              style={[
-                styles.payStatusBadge,
-                order.paymentStatus === 'Paid'
-                  ? styles.paidBadge
-                  : styles.unpaidBadge,
-              ]}
-            >
-              <Text style={styles.payStatusText}>{order.paymentStatus || 'Paid'}</Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(order.subtotal || order.totalPrice)}</Text>
-          </View>
-          {order.discount ? (
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Discount</Text>
-              <Text style={styles.discountValue}>-{formatCurrency(order.discount)}</Text>
-            </View>
-          ) : null}
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping Fee</Text>
-            <Text style={styles.summaryValue}>
-              {order.shippingFee === 0 ? 'FREE' : formatCurrency(order.shippingFee || 0)}
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Estimated Tax</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(order.tax || 0)}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.grandTotalRow}>
-            <Text style={styles.grandTotalLabel}>Grand Total</Text>
-            <Text style={styles.grandTotalValue}>{formatCurrency(order.totalPrice)}</Text>
-          </View>
-
-          {/* PENDING PAYMENT ACTION CARD WITH UTR INPUT */}
-          {(order.paymentStatus === 'Pending' || order.paymentStatus === 'Payment Pending' || !order.paymentStatus) && (
-            <View style={{ backgroundColor: '#FFF3E0', padding: 14, borderRadius: 12, marginTop: 14, borderWidth: 1, borderColor: '#FFE0B2' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                <MaterialIcons name="account-balance-wallet" size={20} color="#E65100" style={{ marginRight: 6 }} />
-                <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#E65100' }}>
-                  Action Required: Pay {formatCurrency(order.totalPrice)}
+                <Text style={{ fontSize: 12, color: '#555', marginBottom: 10, lineHeight: 16 }}>
+                  Scan the merchant QR code or transfer to UPI ID below. After payment, submit your 12-digit UTR transaction reference for verification.
                 </Text>
+                
+                {/* UTR Input Form */}
+                <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#333', marginBottom: 6 }}>
+                  Submit 12-Digit Payment UTR Reference:
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#ffffff',
+                      borderWidth: 1,
+                      borderColor: '#ddd',
+                      borderRadius: 8,
+                      paddingHorizontal: 10,
+                      paddingVertical: 8,
+                      fontSize: 13,
+                      color: '#333',
+                    }}
+                    placeholder="e.g. 425689123456"
+                    placeholderTextColor="#999"
+                    value={utr}
+                    onChangeText={setUtr}
+                    keyboardType="number-pad"
+                  />
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: isSubmittingUtr ? '#ccc' : Colors.primary,
+                      paddingHorizontal: 14,
+                      borderRadius: 8,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                    onPress={handleSubmitUtr}
+                    disabled={isSubmittingUtr}
+                  >
+                    {isSubmittingUtr ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={{ color: '#fff', fontFamily: 'Inter-Bold', fontSize: 12 }}>
+                        SUBMIT UTR
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
-              <Text style={{ fontSize: 12, color: '#555', lineHeight: 17, marginBottom: 12 }}>
-                Please check your registered email for the payment QR code and complete payment. After completing payment, enter your 12-digit UTR transaction reference below:
-              </Text>
+            )}
 
-              {/* UTR Input Form */}
-              <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#333', marginBottom: 6 }}>
-                Submit 12-Digit Payment UTR Reference:
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TextInput
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#ffffff',
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    borderRadius: 8,
-                    paddingHorizontal: 10,
-                    paddingVertical: 8,
-                    fontSize: 13,
-                    color: '#333',
-                  }}
-                  placeholder="e.g. 425689123456"
-                  placeholderTextColor="#999"
-                  value={utr}
-                  onChangeText={setUtr}
-                  keyboardType="number-pad"
-                />
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: isSubmittingUtr ? '#ccc' : Colors.primary,
-                    paddingHorizontal: 14,
-                    borderRadius: 8,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                  onPress={handleSubmitUtr}
-                  disabled={isSubmittingUtr}
-                >
-                  {isSubmittingUtr ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={{ color: '#fff', fontFamily: 'Inter-Bold', fontSize: 12 }}>
-                      SUBMIT UTR
-                    </Text>
-                  )}
-                </TouchableOpacity>
+            {/* UNDER REVIEW STATUS CARD */}
+            {order.paymentStatus === 'Under Review' && (
+              <View style={{ backgroundColor: '#E3F2FD', padding: 12, borderRadius: 12, marginTop: 14, borderWidth: 1, borderColor: '#90CAF9', flexDirection: 'row', alignItems: 'center' }}>
+                <MaterialIcons name="hourglass-empty" size={22} color="#1565C0" style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: '#1565C0' }}>
+                    Payment Reference Under Verification
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#0D47A1', marginTop: 2 }}>
+                    Your UTR transaction reference has been submitted. Admin will confirm payment shortly.
+                  </Text>
+                </View>
               </View>
+            )}
+          </View>
+
+          {/* Download Official Tax Invoice (PDF) Button */}
+          {order.paymentStatus === 'Paid' && (
+            <View style={styles.cancelContainer}>
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#2E7D32',
+                  paddingVertical: 12,
+                  borderRadius: 12,
+                  gap: 8,
+                }}
+                onPress={handleDownloadInvoice}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="picture-as-pdf" size={20} color="#ffffff" />
+                <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
+                  Download Official Tax Invoice (PDF)
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
-          {/* UNDER REVIEW STATUS CARD */}
-          {order.paymentStatus === 'Under Review' && (
-            <View style={{ backgroundColor: '#E3F2FD', padding: 12, borderRadius: 12, marginTop: 14, borderWidth: 1, borderColor: '#90CAF9', flexDirection: 'row', alignItems: 'center' }}>
-              <MaterialIcons name="hourglass-empty" size={22} color="#1565C0" style={{ marginRight: 8 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: '#1565C0' }}>
-                  Payment UTR Reference Submitted
-                </Text>
-                <Text style={{ fontSize: 12, color: '#333', marginTop: 2 }}>
-                  Our admin team is verifying your payment. Status will update automatically once verified.
-                </Text>
-              </View>
+          {/* Cancel Order Action Button */}
+          {isCancellable && (
+            <View style={styles.cancelContainer}>
+              <PrimaryButton
+                title={isCancelling ? 'Cancelling Order...' : 'Cancel Order'}
+                variant="secondary"
+                onPress={handleCancelOrder}
+                disabled={isCancelling}
+              />
             </View>
           )}
-        </View>
 
-        {/* Customer Download Invoice CTA Button */}
-        {order && (
-          <View style={styles.cancelContainer}>
-            <TouchableOpacity
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#2E7D32',
-                paddingVertical: 12,
-                borderRadius: 12,
-                gap: 8,
-              }}
-              onPress={handleDownloadInvoice}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="picture-as-pdf" size={20} color="#ffffff" />
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
-                Download Official Tax Invoice (PDF)
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          {/* Delete Order Action Button */}
+          {isDeletable && (
+            <View style={styles.cancelContainer}>
+              <PrimaryButton
+                title={isDeleting ? 'Deleting...' : '🗑 Delete Order'}
+                variant="primary"
+                style={{ backgroundColor: '#D32F2F' }}
+                onPress={handleDeleteOrder}
+                disabled={isDeleting}
+              />
+            </View>
+          )}
+        </ScrollView>
 
-        {/* Cancel Order Action Button */}
-        {isCancellable && (
-          <View style={styles.cancelContainer}>
-            <PrimaryButton
-              title={isCancelling ? 'Cancelling Order...' : 'Cancel Order'}
-              variant="secondary"
-              onPress={handleCancelOrder}
-              disabled={isCancelling}
-            />
-          </View>
-        )}
-
-        {/* Delete Order Action Button */}
-        {isDeletable && (
-          <View style={styles.cancelContainer}>
-            <PrimaryButton
-              title={isDeleting ? 'Deleting...' : '🗑 Delete Order'}
-              variant="primary"
-              style={{ backgroundColor: '#D32F2F' }}
-              onPress={handleDeleteOrder}
-              disabled={isDeleting}
-            />
-          </View>
-        )}
-      </ScrollView>
-
-      <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />
-    </SafeAreaView>
+        <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />
+      </SafeAreaView>
+    </ResponsiveContainer>
   );
 };
 

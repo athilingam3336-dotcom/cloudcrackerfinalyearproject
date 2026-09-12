@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -25,6 +26,7 @@ const TABS: { id: TabRoute; label: string; icon: keyof typeof MaterialIcons.glyp
 export const BottomNavBar: React.FC<BottomNavBarProps> = React.memo(
   ({ activeTab, onTabPress }) => {
     const { isDesktopWeb } = useAppLayout();
+    const insets = useSafeAreaInsets();
     const cartCount = useCartStore((state) => state.getItemCount());
 
     // HIDE BottomNavBar completely on Desktop Web browser
@@ -32,8 +34,10 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = React.memo(
       return null;
     }
 
+    const bottomPadding = Math.max(insets.bottom, 4);
+
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingBottom: bottomPadding, height: 56 + bottomPadding }]}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (

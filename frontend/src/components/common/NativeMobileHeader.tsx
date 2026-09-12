@@ -48,7 +48,7 @@ export const NativeMobileHeader: React.FC<NativeMobileHeaderProps> = React.memo(
 
           <TouchableOpacity style={styles.brandTouch} onPress={handleLogo} activeOpacity={0.8}>
             <Image source={LOCAL_PRODUCT_IMAGES.LOGO} style={styles.logo} resizeMode="contain" />
-            <View>
+            <View style={styles.brandTextWrap}>
               <Text style={styles.title} numberOfLines={1}>
                 MEERA CRACKERS
               </Text>
@@ -112,42 +112,54 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   leftRow: {
+    flex: 1,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingRight: 4,
   },
   backBtn: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   brandTouch: {
+    flex: 1,
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+  },
+  brandTextWrap: {
+    flex: 1,
+    flexShrink: 1,
   },
   logo: {
     width: 34,
     height: 34,
     borderRadius: 17,
     overflow: 'hidden',
+    flexShrink: 0,
   },
   title: {
     ...Typography.titleLg,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },
   subtitle: {
     ...Typography.labelLg,
-    fontSize: 10.5,
+    fontSize: 10,
     color: Colors.onSurfaceVariant,
   },
   rightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
+    flexShrink: 0,
   },
   iconBtn: {
     width: 40,
