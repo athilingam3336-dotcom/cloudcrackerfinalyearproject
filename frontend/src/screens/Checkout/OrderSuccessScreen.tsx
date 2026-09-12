@@ -10,6 +10,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Linking,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -78,6 +80,8 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
       if (intervalId) clearInterval(intervalId);
     };
   }, [orderId, currentPaymentStatus]);
+
+
 
   const handleSubmitUtr = useCallback(async () => {
     if (!orderId) {
@@ -167,7 +171,7 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
         </View>
 
         <View style={styles.contentContainer}>
-          {currentPaymentStatus === 'Pending' && qrCodeBase64 ? (
+          {currentPaymentStatus === 'Pending' ? (
             <View style={[styles.badgeSuccess, { backgroundColor: '#FFF3E0' }]}>
               <MaterialIcons name="pending-actions" size={16} color="#E65100" />
               <Text style={[styles.badgeSuccessText, { color: '#E65100' }]}>Awaiting Payment</Text>
@@ -190,14 +194,14 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
           )}
 
           <Text style={styles.title}>
-            {currentPaymentStatus === 'Pending' && qrCodeBase64 ? 'Pending Payment' :
+            {currentPaymentStatus === 'Pending' ? 'Pending Payment' :
              currentPaymentStatus === 'Under Review' ? 'Payment Submitted' :
              ['Rejected', 'Failed'].includes(currentPaymentStatus) ? 'Payment Failed' :
              'Order Confirmed!'}
           </Text>
           <Text style={styles.subtitle}>
-            {currentPaymentStatus === 'Pending' && qrCodeBase64
-              ? "A payment QR has been sent to your registered email. Please scan the QR code to complete your payment."
+            {currentPaymentStatus === 'Pending'
+              ? "A payment QR has been sent to your registered email. Please check your email and scan the QR code to complete your payment."
               : currentPaymentStatus === 'Under Review'
               ? "Your payment reference has been submitted. We are verifying the payment. You will be notified shortly."
               : ['Rejected', 'Failed'].includes(currentPaymentStatus)
@@ -205,20 +209,11 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
               : "Your pyrotechnics are locked, loaded, and ready for dispatch. We've sent an order confirmation to your registered email."}
           </Text>
 
-          {currentPaymentStatus === 'Pending' && qrCodeBase64 && (
+          {currentPaymentStatus === 'Pending' && (
             <View style={styles.qrContainer}>
-              <View style={{ marginVertical: 20, alignItems: 'center' }}>
-                <View style={{ backgroundColor: '#FFEBEE', padding: 20, borderRadius: 50, marginBottom: 15 }}>
-                  <MaterialIcons name="mark-email-read" size={60} color="#D32F2F" />
-                </View>
-                <Text style={{ fontSize: 18, color: '#333', fontWeight: '600', marginBottom: 5 }}>
-                  QR Code Sent to Email
-                </Text>
-                <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', paddingHorizontal: 20 }}>
-                  Please check your registered email inbox for the payment QR code for {formatCurrency(amountPaid || 0)}.
-                </Text>
-              </View>
-              <Text style={styles.qrHelpText}>After paying, please submit your UTR below</Text>
+              <Text style={styles.qrHelpText}>
+                After completing payment via the QR code sent to your email, enter your 12-digit UTR or Reference No. below:
+              </Text>
               
               <View style={styles.utrForm}>
                 <TextInput
@@ -236,7 +231,7 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
                   {isSubmittingUtr ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text style={styles.utrSubmitBtnText}>I HAVE PAID</Text>
+                    <Text style={styles.utrSubmitBtnText}>VERIFY PAYMENT</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -333,7 +328,7 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
               </View>
             </View>
 
-            {paymentId && !qrCodeBase64 && (
+            {paymentId && (
               <>
                 <View style={styles.divider} />
                 <View style={styles.detailItem}>

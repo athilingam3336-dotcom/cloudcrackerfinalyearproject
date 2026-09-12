@@ -11,6 +11,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 
+import { useCartStore } from '@/store/cartStore';
+
 export interface WebMobileHeaderProps {
   onNotificationPress: () => void;
   onProfilePress: () => void;
@@ -31,6 +33,7 @@ export const WebMobileHeader: React.FC<WebMobileHeaderProps> = React.memo(
   }) => {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const user = useAuthStore((state) => state.user);
+    const cartCount = useCartStore((state) => state.getItemCount());
     const handleLogo = onLogoPress || (() => navigation.navigate('Home'));
 
     return (
@@ -75,6 +78,11 @@ export const WebMobileHeader: React.FC<WebMobileHeaderProps> = React.memo(
             activeOpacity={0.7}
           >
             <MaterialIcons name="shopping-cart" size={22} color={Colors.primary} />
+            {cartCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{cartCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity

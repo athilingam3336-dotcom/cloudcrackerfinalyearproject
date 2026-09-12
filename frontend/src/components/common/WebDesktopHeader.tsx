@@ -5,6 +5,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
+import { useCartStore } from '@/store/cartStore';
 import { sanitizeRemoteImageUrl, LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 import { CLIENT_INFO } from '@/constants/clientInfo';
 import { MAX_CONTENT_WIDTH } from '@/constants/responsive';
@@ -28,6 +29,7 @@ export interface WebDesktopHeaderProps {
   avatarUrl?: string;
 }
 
+
 export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
   ({
     onNotificationPress,
@@ -44,6 +46,7 @@ export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { handleTabPress } = useSmartTabNavigation();
     const user = useAuthStore((state) => state.user);
+    const cartCount = useCartStore((state) => state.getItemCount());
     const activeUserName = userName || (user?.name ? user.name.split(' ')[0] : 'Account');
     const activeAvatar = sanitizeRemoteImageUrl(avatarUrl || user?.avatarUrl);
     const isAdmin = user?.role === 'admin' || (user as any)?.isAdmin;
@@ -183,6 +186,11 @@ export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
               >
                 <MaterialIcons name="shopping-cart" size={20} color="#FFFFFF" />
                 <Text style={styles.cartBtnText}>Cart</Text>
+                {cartCount > 0 && (
+                  <View style={styles.cartHeaderBadge}>
+                    <Text style={styles.cartHeaderBadgeText}>{cartCount}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -422,6 +430,21 @@ const styles = StyleSheet.create({
     ...Typography.labelLg,
     color: Colors.primary,
     fontSize: 13,
+    fontFamily: 'Inter-Bold',
+  },
+  cartHeaderBadge: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  cartHeaderBadgeText: {
+    color: Colors.primary,
+    fontSize: 11,
     fontFamily: 'Inter-Bold',
   },
 });

@@ -1,4 +1,5 @@
 import asyncio
+import re
 import time
 from datetime import datetime, timedelta
 from typing import Any, Dict
@@ -19,6 +20,12 @@ _today_report_downloads: Dict[str, int] = {}
 
 
 class DashboardService:
+    @classmethod
+    def clear_cache(cls) -> None:
+        global _dashboard_cache, _dashboard_cache_time
+        _dashboard_cache = {}
+        _dashboard_cache_time = 0.0
+
     async def get_admin_dashboard_metrics(self) -> Dict[str, Any]:
         """Assembles real-time dashboard metrics from MongoDB Atlas with parallel execution & 15s TTL cache."""
         global _dashboard_cache, _dashboard_cache_time
@@ -31,23 +38,52 @@ class DashboardService:
         last_30_start = now - timedelta(days=30)
         prev_30_start = now - timedelta(days=60)
 
-        # Pipelines
+        # 1. Total Stock Units
         stock_pipeline = [
             {"$match": {"status": {"$ne": "deleted"}}},
             {"$group": {"_id": None, "total_stock": {"$sum": "$stock"}}},
         ]
+
+        # Paid condition: strictly match paid/confirmed/verified/success or delivered orders
+        paid_condition = {
+            "admin_deleted_at": None,
+            "$or": [
+                {"payment_status": re.compile(r"^(paid|confirmed|verified|success)$", re.IGNORECASE)},
+                {"order_status": re.compile(r"^(delivered|completed)$", re.IGNORECASE)}
+            ]
+        }
+        pending_condition = {
+            "admin_deleted_at": None,
+            "payment_status": re.compile(r"^(pending|under review|payment pending)$", re.IGNORECASE),
+            "order_status": {"$ne": re.compile(r"^(cancelled|canceled|delivered)$", re.IGNORECASE)}
+        }
+        failed_condition = {
+            "admin_deleted_at": None,
+            "$or": [
+                {"order_status": re.compile(r"^(cancelled|canceled)$", re.IGNORECASE)},
+                {"payment_status": re.compile(r"^(failed|rejected|cancelled|canceled)$", re.IGNORECASE)}
+            ]
+        }
+
         rev_pipeline = [
-            {"$match": {"admin_deleted_at": None, "order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}},
+            {"$match": paid_condition},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total"}}},
         ]
         today_rev_pipeline = [
             {
                 "$match": {
-                    "admin_deleted_at": None,
+                    **paid_condition,
                     "created_at": {"$gte": today_start},
-                    "order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}},
                 }
             },
+            {"$group": {"_id": None, "revenue": {"$sum": "$total"}}},
+        ]
+        pending_rev_pipeline = [
+            {"$match": pending_condition},
+            {"$group": {"_id": None, "revenue": {"$sum": "$total"}}},
+        ]
+        failed_rev_pipeline = [
+            {"$match": failed_condition},
             {"$group": {"_id": None, "revenue": {"$sum": "$total"}}},
         ]
 
@@ -70,6 +106,8 @@ class DashboardService:
             stock_results,
             rev_results,
             today_rev_results,
+            pending_rev_results,
+            failed_rev_results,
         ) = await asyncio.gather(
             User.find().count(),
             User.find(User.role == "CUSTOMER").count(),
@@ -77,22 +115,26 @@ class DashboardService:
             Category.find(Category.status != "deleted").count(),
             Product.find(Product.status != "deleted").count(),
             Order.find(Order.admin_deleted_at == None).count(),
-            Order.find(Order.admin_deleted_at == None, {"order_status": {"$regex": "^pending$", "$options": "i"}}).count(),
-            Order.find(Order.admin_deleted_at == None, {"order_status": {"$regex": "^delivered$", "$options": "i"}}).count(),
-            Order.find(Order.admin_deleted_at == None, {"order_status": {"$regex": "^cancelled$", "$options": "i"}}).count(),
+            Order.find(Order.admin_deleted_at == None, Order.order_status == re.compile(r"^pending$", re.IGNORECASE)).count(),
+            Order.find(Order.admin_deleted_at == None, Order.order_status == re.compile(r"^delivered$", re.IGNORECASE)).count(),
+            Order.find(Order.admin_deleted_at == None, Order.order_status == re.compile(r"^cancelled$", re.IGNORECASE)).count(),
             Order.find(Order.admin_deleted_at == None, Order.created_at >= today_start).count(),
-            Order.find(Order.admin_deleted_at == None, Order.created_at >= last_30_start, {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}).count(),
-            Order.find(Order.admin_deleted_at == None, Order.created_at >= prev_30_start, Order.created_at < last_30_start, {"order_status": {"$not": {"$regex": "^cancelled$", "$options": "i"}}}).count(),
+            Order.find(Order.admin_deleted_at == None, Order.created_at >= last_30_start, Order.order_status != re.compile(r"^cancelled$", re.IGNORECASE)).count(),
+            Order.find(Order.admin_deleted_at == None, Order.created_at >= prev_30_start, Order.created_at < last_30_start, Order.order_status != re.compile(r"^cancelled$", re.IGNORECASE)).count(),
             User.find(User.created_at >= last_30_start).count(),
             User.find(User.created_at >= prev_30_start, User.created_at < last_30_start).count(),
             Product.get_pymongo_collection().aggregate(stock_pipeline).to_list(length=None),
             Order.get_pymongo_collection().aggregate(rev_pipeline).to_list(length=None),
             Order.get_pymongo_collection().aggregate(today_rev_pipeline).to_list(length=None),
+            Order.get_pymongo_collection().aggregate(pending_rev_pipeline).to_list(length=None),
+            Order.get_pymongo_collection().aggregate(failed_rev_pipeline).to_list(length=None),
         )
 
         total_stock_units = stock_results[0]["total_stock"] if stock_results else 0
         total_revenue = round(rev_results[0]["total_revenue"], 2) if rev_results else 0.0
         today_revenue = round(today_rev_results[0]["revenue"], 2) if today_rev_results else 0.0
+        pending_revenue = round(pending_rev_results[0]["revenue"], 2) if pending_rev_results else 0.0
+        failed_revenue = round(failed_rev_results[0]["revenue"], 2) if failed_rev_results else 0.0
 
         # 6. Real Period-over-Period Growth Calculations (Last 30 days vs Previous 30 days)
         now = datetime.utcnow()
@@ -184,12 +226,9 @@ class DashboardService:
             })
 
         # 9. Stock alerts
-        low_stock_products_count = await Inventory.find(
-            {"$expr": {"$lte": ["$current_stock", "$minimum_stock"]}}
-        ).count()
-        out_of_stock_products_count = await Inventory.find(
-            Inventory.current_stock == 0
-        ).count()
+        all_inventory = await Inventory.find_all().to_list()
+        low_stock_products_count = sum(1 for inv in all_inventory if inv.current_stock <= inv.minimum_stock)
+        out_of_stock_products_count = sum(1 for inv in all_inventory if inv.current_stock == 0)
 
         # 10. Recent Orders list enriched with User information
         recent_orders = await Order.find({"admin_deleted_at": None, "customer_deleted_at": None}).sort(-Order.created_at).limit(10).to_list()
@@ -218,9 +257,9 @@ class DashboardService:
             order_resp["items"] = items_out
             recent_orders_out.append(OrderResponse(**order_resp))
 
-        # 11. Monthly Revenue & Orders
+        # 11. Monthly Revenue & Orders (Paid only)
         monthly_pipeline = [
-            {"$match": {"order_status": {"$ne": "Cancelled"}}},
+            {"$match": paid_condition},
             {"$group": {
                 "_id": {
                     "year": {"$year": "$created_at"},
@@ -258,6 +297,8 @@ class DashboardService:
                 "total_revenue": total_revenue,
                 "today_orders": today_orders,
                 "today_revenue": today_revenue,
+                "pending_revenue": pending_revenue,
+                "failed_revenue": failed_revenue,
             },
             "growth": {
                 "revenue_growth": revenue_growth,

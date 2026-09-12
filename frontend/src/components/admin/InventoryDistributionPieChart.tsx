@@ -320,144 +320,148 @@ export const InventoryDistributionPieChart: React.FC<InventoryDistributionPieCha
         </View>
       </View>
 
-      {/* Chart Area: Pie or Bar */}
-      {viewType === 'pie' ? (
-        <View style={styles.chartContainer}>
-          {isWeb ? (
-            <svg width="240" height="240" viewBox="0 0 240 240" style={{ overflow: 'visible' }}>
-              <defs>
-                {arcs.map((arc, index) => (
-                  <React.Fragment key={`def_frag_${arc.id}_${index}`}>
-                    <path id={`invTextPath_Name_${arc.id}_${index}`} d={arc.textArcD_Name} />
-                    <path id={`invTextPath_Pct_${arc.id}_${index}`} d={arc.textArcD_Pct} />
-                  </React.Fragment>
+      {/* Side-by-side Chart & Legend Wrapper */}
+      <View style={styles.chartAndLegendWrapper}>
+        {/* Chart Area: Pie or Bar */}
+        {viewType === 'pie' ? (
+          <View style={styles.chartContainer}>
+            {isWeb ? (
+              <svg width="240" height="240" viewBox="0 0 240 240" style={{ overflow: 'visible' }}>
+                <defs>
+                  {arcs.map((arc, index) => (
+                    <React.Fragment key={`def_frag_${arc.id}_${index}`}>
+                      <path id={`invTextPath_Name_${arc.id}_${index}`} d={arc.textArcD_Name} />
+                      <path id={`invTextPath_Pct_${arc.id}_${index}`} d={arc.textArcD_Pct} />
+                    </React.Fragment>
+                  ))}
+                </defs>
+                {arcs.map((arc) => {
+                  const isHovered = hoveredSegment === arc.id;
+                  const isSelected = chartMode === 'status' ? activeStatusFilter === arc.statusFilter : selectedCategory === arc.categoryId;
+                  return (
+                    <path
+                      key={`path_${arc.id}`}
+                      d={arc.pathD}
+                      fill={arc.color}
+                      opacity={isHovered || isSelected ? 1 : 0.88}
+                      style={{ cursor: 'pointer', transition: 'all 0.2s ease-in-out', transform: isHovered || isSelected ? 'scale(1.03)' : 'scale(1)', transformOrigin: '120px 120px', filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.25))' : 'none' }}
+                      onMouseEnter={() => setHoveredSegment(arc.id)}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      onClick={() => { if (chartMode === 'status') { onSelectStatusFilter(arc.statusFilter); } else { onSelectCategory(arc.categoryId); } }}
+                    />
+                  );
+                })}
+                {arcs.map((arc, index) => {
+                  if (arc.angleDeg < 14) return null;
+                  return (
+                    <g key={`text_group_${arc.id}_${index}`}>
+                      <text style={{ fontSize: arc.angleDeg < 25 ? '10px' : '11px', fontWeight: 'bold', fill: '#FFFFFF', pointerEvents: 'none', letterSpacing: '0.4px' }}>
+                        <textPath href={`#invTextPath_Name_${arc.id}_${index}`} startOffset="50%" textAnchor="middle">{arc.label}</textPath>
+                      </text>
+                      <text style={{ fontSize: arc.angleDeg < 25 ? '9px' : '10px', fontWeight: '600', fill: 'rgba(255, 255, 255, 0.95)', pointerEvents: 'none', letterSpacing: '0.2px' }}>
+                        <textPath href={`#invTextPath_Pct_${arc.id}_${index}`} startOffset="50%" textAnchor="middle">{`${arc.count} (${arc.pct}%)`}</textPath>
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            ) : (
+              <View style={styles.nativeFallbackDonut}>
+                {arcs.map((arc) => (
+                  <View key={arc.id} style={[styles.nativeSegmentLine, { backgroundColor: arc.color, height: (arc.count / Math.max(1, sliceTotal)) * 140 }]} />
                 ))}
-              </defs>
-              {arcs.map((arc) => {
-                const isHovered = hoveredSegment === arc.id;
-                const isSelected = chartMode === 'status' ? activeStatusFilter === arc.statusFilter : selectedCategory === arc.categoryId;
-                return (
-                  <path
-                    key={`path_${arc.id}`}
-                    d={arc.pathD}
-                    fill={arc.color}
-                    opacity={isHovered || isSelected ? 1 : 0.88}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s ease-in-out', transform: isHovered || isSelected ? 'scale(1.03)' : 'scale(1)', transformOrigin: '120px 120px', filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.25))' : 'none' }}
-                    onMouseEnter={() => setHoveredSegment(arc.id)}
-                    onMouseLeave={() => setHoveredSegment(null)}
-                    onClick={() => { if (chartMode === 'status') { onSelectStatusFilter(arc.statusFilter); } else { onSelectCategory(arc.categoryId); } }}
-                  />
-                );
-              })}
-              {arcs.map((arc, index) => {
-                if (arc.angleDeg < 14) return null;
-                return (
-                  <g key={`text_group_${arc.id}_${index}`}>
-                    <text style={{ fontSize: arc.angleDeg < 25 ? '10px' : '11px', fontWeight: 'bold', fill: '#FFFFFF', pointerEvents: 'none', letterSpacing: '0.4px' }}>
-                      <textPath href={`#invTextPath_Name_${arc.id}_${index}`} startOffset="50%" textAnchor="middle">{arc.label}</textPath>
-                    </text>
-                    <text style={{ fontSize: arc.angleDeg < 25 ? '9px' : '10px', fontWeight: '600', fill: 'rgba(255, 255, 255, 0.95)', pointerEvents: 'none', letterSpacing: '0.2px' }}>
-                      <textPath href={`#invTextPath_Pct_${arc.id}_${index}`} startOffset="50%" textAnchor="middle">{`${arc.count} (${arc.pct}%)`}</textPath>
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          ) : (
-            <View style={styles.nativeFallbackDonut}>
-              {arcs.map((arc) => (
-                <View key={arc.id} style={[styles.nativeSegmentLine, { backgroundColor: arc.color, height: (arc.count / Math.max(1, sliceTotal)) * 140 }]} />
-              ))}
+              </View>
+            )}
+            {/* Donut Hole Center Summary Content */}
+            <View style={styles.donutCenter}>
+              <Text style={styles.donutCenterValue}>{activeSegmentItem ? activeSegmentItem.count : displayTotal}</Text>
+              <Text style={styles.donutCenterLabel}>{activeSegmentItem ? activeSegmentItem.label : chartMode === 'status' ? 'Total Products' : 'Items'}</Text>
+              {activeSegmentItem && (<Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>)}
             </View>
-          )}
-          {/* Donut Hole Center Summary Content */}
-          <View style={styles.donutCenter}>
-            <Text style={styles.donutCenterValue}>{activeSegmentItem ? activeSegmentItem.count : displayTotal}</Text>
-            <Text style={styles.donutCenterLabel}>{activeSegmentItem ? activeSegmentItem.label : chartMode === 'status' ? 'Total Products' : 'Items'}</Text>
-            {activeSegmentItem && (<Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>)}
           </View>
-        </View>
-      ) : (
-        /* BAR CHART */
-        <View style={styles.barChartContainer}>
+        ) : (
+          /* BAR CHART */
+          <View style={styles.barChartContainer}>
+            {formattedSegments.map((seg) => {
+              const maxCount = Math.max(...formattedSegments.map((s) => s.count), 1);
+              const barPct = (seg.count / maxCount) * 100;
+              const isHovered = hoveredSegment === seg.id;
+              return (
+                <TouchableOpacity
+                  key={seg.id}
+                  activeOpacity={0.85}
+                  onPress={() => { if (chartMode === 'status') { onSelectStatusFilter(seg.statusFilter); } else { onSelectCategory(seg.categoryId); } }}
+                  style={styles.barRow}
+                  {...(isWeb
+                    ? {
+                        onMouseEnter: () => setHoveredSegment(seg.id),
+                        onMouseLeave: () => setHoveredSegment(null),
+                      }
+                    : {} ) as any}
+                >
+                  <Text style={styles.barLabel} numberOfLines={1}>{seg.label}</Text>
+                  <View style={styles.barTrack}>
+                    <View style={[styles.barFill, { width: `${Math.max(barPct, 4)}%` as any, backgroundColor: seg.color, opacity: isHovered ? 1 : 0.85 }]} />
+                  </View>
+                  <Text style={[styles.barCount, { color: seg.color }]}>{seg.count}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Interactive Legend Side List */}
+        <View style={styles.legendContainer}>
           {formattedSegments.map((seg) => {
-            const maxCount = Math.max(...formattedSegments.map((s) => s.count), 1);
-            const barPct = (seg.count / maxCount) * 100;
+            const isSelected =
+              chartMode === 'status'
+                ? activeStatusFilter === seg.statusFilter
+                : selectedCategory === seg.categoryId;
             const isHovered = hoveredSegment === seg.id;
+
             return (
               <TouchableOpacity
                 key={seg.id}
-                activeOpacity={0.85}
-                onPress={() => { if (chartMode === 'status') { onSelectStatusFilter(seg.statusFilter); } else { onSelectCategory(seg.categoryId); } }}
-                style={styles.barRow}
-                {...(isWeb
-                  ? {
-                      onMouseEnter: () => setHoveredSegment(seg.id),
-                      onMouseLeave: () => setHoveredSegment(null),
-                    }
-                  : {} ) as any}
+                style={[
+                  styles.legendCard,
+                  { borderLeftColor: seg.color, borderLeftWidth: 4 },
+                  (isSelected || isHovered) && styles.legendCardActive,
+                ]}
+                onPress={() => {
+                  if (chartMode === 'status') {
+                    onSelectStatusFilter(seg.statusFilter);
+                  } else {
+                    onSelectCategory(seg.categoryId);
+                  }
+                }}
+                {...({
+                  onMouseEnter: () => setHoveredSegment(seg.id),
+                  onMouseLeave: () => setHoveredSegment(null),
+                } as any)}
+                activeOpacity={0.8}
               >
-                <Text style={styles.barLabel} numberOfLines={1}>{seg.label}</Text>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { width: `${Math.max(barPct, 4)}%` as any, backgroundColor: seg.color, opacity: isHovered ? 1 : 0.85 }]} />
+                <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
+                  <MaterialIcons name={seg.icon as any} size={12} color="#FFF" />
                 </View>
-                <Text style={[styles.barCount, { color: seg.color }]}>{seg.count}</Text>
+
+                <View style={styles.legendTextWrapper}>
+                  <Text style={styles.legendTitle} numberOfLines={1}>
+                    {seg.label}
+                  </Text>
+                  <Text style={styles.legendSubtitle}>
+                    {seg.count} products ({seg.pct}%)
+                  </Text>
+                </View>
+
+                <MaterialIcons
+                  name="chevron-right"
+                  size={16}
+                  color={isSelected ? Colors.primary : Colors.outline}
+                />
               </TouchableOpacity>
             );
           })}
         </View>
-      )}
-
-      {/* Interactive Legend List */}
-      <View style={styles.legendContainer}>
-        {formattedSegments.map((seg) => {
-          const isSelected =
-            chartMode === 'status'
-              ? activeStatusFilter === seg.statusFilter
-              : selectedCategory === seg.categoryId;
-          const isHovered = hoveredSegment === seg.id;
-
-          return (
-            <TouchableOpacity
-              key={seg.id}
-              style={[
-                styles.legendCard,
-                (isSelected || isHovered) && styles.legendCardActive,
-              ]}
-              onPress={() => {
-                if (chartMode === 'status') {
-                  onSelectStatusFilter(seg.statusFilter);
-                } else {
-                  onSelectCategory(seg.categoryId);
-                }
-              }}
-              {...({
-                onMouseEnter: () => setHoveredSegment(seg.id),
-                onMouseLeave: () => setHoveredSegment(null),
-              } as any)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
-                <MaterialIcons name={seg.icon as any} size={12} color="#FFF" />
-              </View>
-
-              <View style={styles.legendTextWrapper}>
-                <Text style={styles.legendTitle} numberOfLines={1}>
-                  {seg.label}
-                </Text>
-                <Text style={styles.legendSubtitle}>
-                  {seg.count} products ({seg.pct}%)
-                </Text>
-              </View>
-
-              <MaterialIcons
-                name="chevron-right"
-                size={16}
-                color={isSelected ? Colors.primary : Colors.outline}
-              />
-            </TouchableOpacity>
-          );
-        })}
       </View>
 
       {/* Quick Summary Pill Footer */}
@@ -614,11 +618,21 @@ const styles = StyleSheet.create({
     color: Colors.onPrimary,
     fontFamily: 'Inter-Bold',
   },
+  chartAndLegendWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+    flexWrap: 'wrap',
+    marginTop: Spacing.xs,
+  },
   chartContainer: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
     height: 240,
+    flex: 1,
+    minWidth: 280,
     marginVertical: Spacing.xs,
   },
   donutCenter: {
@@ -670,6 +684,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   legendContainer: {
+    flex: 1,
+    minWidth: 280,
     gap: 6,
     marginTop: Spacing.xs,
   },

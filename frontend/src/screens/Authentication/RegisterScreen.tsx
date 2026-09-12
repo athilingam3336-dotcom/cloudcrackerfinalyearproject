@@ -453,6 +453,31 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
 
             {/* Right Side Form Card */}
             <View style={styles.formCard}>
+              {/* Top Navigation Shortcuts */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: BorderRadius.full, backgroundColor: Colors.surfaceContainerLow }}
+                  onPress={() => navigation.navigate('Home')}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="arrow-back" size={16} color={Colors.onSurfaceVariant} />
+                  <Text style={{ fontSize: 13, color: Colors.onSurfaceVariant, fontFamily: 'Inter-Medium', marginLeft: 4 }}>
+                    Back to Store
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10 }}
+                  onPress={handleSignIn}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 13, color: Colors.primary, fontFamily: 'Inter-Bold' }}>
+                    Sign In
+                  </Text>
+                  <MaterialIcons name="chevron-right" size={18} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
+
               <View style={styles.headerBox}>
                 <Text style={styles.formTitle}>Join the Celebration</Text>
                 <Text style={styles.formSubtitle}>
@@ -566,6 +591,40 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
                       ) : null
                     }
                   />
+
+                  {/* Direct 1-Click Login Action if Email already exists */}
+                  {(emailCheckStatus === 'taken' || (errors.email && errors.email.toLowerCase().includes('already exists'))) && (
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: '#FEF2F2',
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: BorderRadius.md,
+                        marginTop: -6,
+                        marginBottom: 12,
+                        borderWidth: 1,
+                        borderColor: '#FCA5A5',
+                      }}
+                      onPress={handleSignIn}
+                      activeOpacity={0.8}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <MaterialIcons name="account-circle" size={18} color={Colors.primary} style={{ marginRight: 6 }} />
+                        <Text style={{ fontSize: 13, color: Colors.onSurface, fontFamily: 'Inter-Medium' }}>
+                          Already registered?
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 13, color: Colors.primary, fontFamily: 'Inter-Bold', marginRight: 2 }}>
+                          Log In Now
+                        </Text>
+                        <MaterialIcons name="arrow-forward" size={16} color={Colors.primary} />
+                      </View>
+                    </TouchableOpacity>
+                  )}
 
 
                   <PasswordInput

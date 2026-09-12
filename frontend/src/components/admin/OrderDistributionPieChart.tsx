@@ -129,12 +129,12 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
     return totalOrdersCount || sliceTotal;
   }, [totalOrdersCount, sliceTotal]);
 
-  // Calculate percentages, SVG Slice Paths, and 2-Line Curved Text Paths (<textPath>)
-  const { arcs, formattedSegments } = useMemo(() => {
-    const cx = 170;
+  // Calculate percentages, SVG Slice Paths, and Leader Line Points for Left/Right Status Cards
+  const { arcs, formattedSegments, leftSegments, rightSegments } = useMemo(() => {
+    const cx = 220;
     const cy = 170;
-    const R = 152;
-    const r = 74;
+    const R = 110;
+    const r = 58;
 
     let accumulatedDeg = -90; // Start at top center (-90deg)
 
@@ -191,7 +191,6 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
 
       // Calculate 2 Concentric Curved Text Paths along arc (textPath)
       const normMid = ((midDeg % 360) + 360) % 360;
-      // If segment is in lower half (between 20deg and 160deg), invert arc direction so text is right-side up
       const isLowerHalf = normMid > 20 && normMid < 160;
 
       const pStartRad = (isLowerHalf ? endDeg : startDeg) * (Math.PI / 180);
@@ -199,10 +198,8 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
       const sweepFlag = isLowerHalf ? 0 : 1;
       const largeArcText = angleDeg > 180 ? 1 : 0;
 
-      // Line 1: Status Name (Top Line)
-      // Line 2: Count & Percentage (Bottom Line)
-      const R_name = isLowerHalf ? 94 : 132;
-      const R_pct = isLowerHalf ? 132 : 94;
+      const R_name = isLowerHalf ? 72 : 94;
+      const R_pct = isLowerHalf ? 94 : 72;
 
       const tx1_n = cx + R_name * Math.cos(pStartRad);
       const ty1_n = cy + R_name * Math.sin(pStartRad);
@@ -216,18 +213,86 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
       const ty2_p = cy + R_pct * Math.sin(pEndRad);
       const textArcD_Pct = `M ${tx1_p.toFixed(2)} ${ty1_p.toFixed(2)} A ${R_pct} ${R_pct} 0 ${largeArcText} ${sweepFlag} ${tx2_p.toFixed(2)} ${ty2_p.toFixed(2)}`;
 
+      const midRad = (midDeg * Math.PI) / 180;
+      const x_donut = cx + R * Math.cos(midRad);
+      const y_donut = cy + R * Math.sin(midRad);
+
       return {
         ...seg,
         pathD,
         textArcD_Name,
         textArcD_Pct,
         angleDeg,
+        midDeg,
+        x_donut,
+        y_donut,
+      };
+    });
+
+    // Split formatted into Left & Right groups
+    const half = Math.ceil(formatted.length / 2);
+    const leftRaw = formatted.slice(0, half);
+    const rightRaw = formatted.slice(half);
+
+    // Calculate Y positions for connector lines matching card vertical centers
+    const getTargetY = (index: number, count: number) => {
+      if (count === 3) {
+        return 100 + index * 70; // 100, 170, 240
+      } else if (count === 2) {
+        return 135 + index * 70; // 135, 205
+      }
+      return 170;
+    };
+
+    const leftSegs = leftRaw.map((item, idx) => {
+      const y_card = getTargetY(idx, leftRaw.length);
+      const dy = y_card - cy;
+      let x_donut = cx - R;
+      let y_donut = y_card;
+
+      if (Math.abs(dy) < R) {
+        const dx = Math.sqrt(R * R - dy * dy);
+        x_donut = cx - dx;
+      } else {
+        x_donut = cx - R;
+        y_donut = cy;
+      }
+
+      return {
+        ...item,
+        y_card,
+        x_donut,
+        y_donut,
+      };
+    });
+
+    const rightSegs = rightRaw.map((item, idx) => {
+      const y_card = getTargetY(idx, rightRaw.length);
+      const dy = y_card - cy;
+      let x_donut = cx + R;
+      let y_donut = y_card;
+
+      if (Math.abs(dy) < R) {
+        const dx = Math.sqrt(R * R - dy * dy);
+        x_donut = cx + dx;
+      } else {
+        x_donut = cx + R;
+        y_donut = cy;
+      }
+
+      return {
+        ...item,
+        y_card,
+        x_donut,
+        y_donut,
       };
     });
 
     return {
       arcs: arcItems,
       formattedSegments: formatted,
+      leftSegments: leftSegs,
+      rightSegments: rightSegs,
     };
   }, [segments, sliceTotal]);
 
@@ -434,7 +499,7 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                       {bar.count}
                     </text>
 
-                    {/* X-axis Label (FULL UN-TRUNCATED LABEL!) */}
+                    {/* X-axis Label */}
                     <text
                       x={bar.x + bar.barWidth / 2}
                       y={barChartData.paddingTop + barChartData.chartH + 18}
@@ -455,181 +520,306 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
           )}
         </View>
       ) : (
-        /* Center Donut SVG Pie Chart */
-        <View style={styles.chartContainer}>
-          {Platform.OS === 'web' ? (
-            <svg width="340" height="340" viewBox="0 0 340 340" style={{ overflow: 'visible' }}>
-              <defs>
-                {arcs.map((arc, index) => (
-                  <React.Fragment key={`def_order_frag_${arc.id}_${index}`}>
-                    <path id={`orderTextPath_Name_${arc.id}_${index}`} d={arc.textArcD_Name} />
-                    <path id={`orderTextPath_Pct_${arc.id}_${index}`} d={arc.textArcD_Pct} />
-                  </React.Fragment>
-                ))}
-              </defs>
+        /* Pie View with LEFT & RIGHT Status Cards + Leader Lines (kodu) */
+        <View style={styles.pieLayoutRow}>
+          {/* 👈 LEFT SIDE STATUS CARDS */}
+          <View style={styles.sideColumn}>
+            {leftSegments.map((seg) => {
+              const isSelected =
+                chartMode === 'status'
+                  ? selectedOrderStatus === seg.statusValue
+                  : selectedPaymentStatus === seg.statusValue;
+              const isHovered = hoveredSegment === seg.id;
 
-              {/* Render Donut Slices */}
-              {arcs.map((arc) => {
-                const isHovered = hoveredSegment === arc.id;
-                const isSelected =
-                  chartMode === 'status'
-                    ? selectedOrderStatus === arc.statusValue
-                    : selectedPaymentStatus === arc.statusValue;
-
-                return (
-                  <path
-                    key={`path_${arc.id}`}
-                    d={arc.pathD}
-                    fill={arc.color}
-                    opacity={isHovered || isSelected ? 1 : 0.88}
-                    style={{
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease-in-out',
-                      transform: isHovered || isSelected ? 'scale(1.03)' : 'scale(1)',
-                      transformOrigin: '170px 170px',
-                      filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.25))' : 'none',
-                    }}
-                    onMouseEnter={() => setHoveredSegment(arc.id)}
-                    onMouseLeave={() => setHoveredSegment(null)}
-                    onClick={() => {
-                      if (chartMode === 'status') {
-                        onSelectOrderStatusFilter(arc.statusValue);
-                      } else {
-                        onSelectPaymentStatusFilter(arc.statusValue);
-                      }
-                    }}
-                  />
-                );
-              })}
-
-              {/* Render 2-Line Curved Text Labels inside slices using SVG <textPath> */}
-              {arcs.map((arc, index) => {
-                if (arc.angleDeg < 14) return null; // Don't render text inside tiny slices to avoid overflow
-
-                return (
-                  <g key={`order_text_group_${arc.id}_${index}`}>
-                    {/* Line 1: Status Name (e.g. Delivered) */}
-                    <text
-                      style={{
-                        fontSize: arc.angleDeg < 25 ? '11px' : '13px',
-                        fontWeight: 'bold',
-                        fill: '#FFFFFF',
-                        pointerEvents: 'none',
-                        letterSpacing: '0.4px',
-                      }}
-                    >
-                      <textPath
-                        href={`#orderTextPath_Name_${arc.id}_${index}`}
-                        startOffset="50%"
-                        textAnchor="middle"
-                      >
-                        {arc.label}
-                      </textPath>
-                    </text>
-
-                    {/* Line 2: Count & Percentage (e.g. 2 (28.6%)) */}
-                    <text
-                      style={{
-                        fontSize: arc.angleDeg < 25 ? '10px' : '11.5px',
-                        fontWeight: '600',
-                        fill: 'rgba(255, 255, 255, 0.95)',
-                        pointerEvents: 'none',
-                        letterSpacing: '0.2px',
-                      }}
-                    >
-                      <textPath
-                        href={`#orderTextPath_Pct_${arc.id}_${index}`}
-                        startOffset="50%"
-                        textAnchor="middle"
-                      >
-                        {`${arc.count} (${arc.pct}%)`}
-                      </textPath>
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          ) : (
-            /* Fallback for non-web native views */
-            <View style={styles.nativeFallbackDonut}>
-              {arcs.map((arc) => (
-                <View
-                  key={arc.id}
+              return (
+                <TouchableOpacity
+                  key={`left_card_${seg.id}`}
                   style={[
-                    styles.nativeSegmentLine,
-                    { backgroundColor: arc.color, height: (arc.count / Math.max(1, sliceTotal)) * 140 },
+                    styles.sideLegendCard,
+                    (isSelected || isHovered) && styles.legendCardActive,
+                    { borderLeftColor: seg.color, borderLeftWidth: 4 },
                   ]}
-                />
-              ))}
-            </View>
-          )}
+                  onPress={() => {
+                    if (chartMode === 'status') {
+                      onSelectOrderStatusFilter(seg.statusValue);
+                    } else {
+                      onSelectPaymentStatusFilter(seg.statusValue);
+                    }
+                  }}
+                  {...({
+                    onMouseEnter: () => setHoveredSegment(seg.id),
+                    onMouseLeave: () => setHoveredSegment(null),
+                  } as any)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
+                    <MaterialIcons name={seg.icon as any} size={13} color="#FFF" />
+                  </View>
 
-          {/* Donut Hole Center Summary Content */}
-          <View style={styles.donutCenter}>
-            <Text style={styles.donutCenterValue}>
-              {activeSegmentItem ? activeSegmentItem.count : displayTotal}
-            </Text>
-            <Text style={styles.donutCenterLabel}>
-              {activeSegmentItem ? activeSegmentItem.label : 'Total Orders'}
-            </Text>
-            {activeSegmentItem && (
-              <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+                  <View style={styles.legendTextWrapper}>
+                    <Text style={styles.legendTitle} numberOfLines={1}>
+                      {seg.label}
+                    </Text>
+                    <Text style={styles.legendSubtitle}>
+                      {seg.count} orders ({seg.pct}%)
+                    </Text>
+                  </View>
+
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={16}
+                    color={isSelected ? Colors.primary : Colors.outline}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* 🎯 CENTER SVG DONUT CHART WITH CONNECTOR LINES (KODU) */}
+          <View style={styles.chartCenterWrapper}>
+            {Platform.OS === 'web' ? (
+              <svg width="440" height="340" viewBox="0 0 440 340" style={{ overflow: 'visible' }}>
+                <defs>
+                  {arcs.map((arc, index) => (
+                    <React.Fragment key={`def_order_frag_${arc.id}_${index}`}>
+                      <path id={`orderTextPath_Name_${arc.id}_${index}`} d={arc.textArcD_Name} />
+                      <path id={`orderTextPath_Pct_${arc.id}_${index}`} d={arc.textArcD_Pct} />
+                    </React.Fragment>
+                  ))}
+                </defs>
+
+                {/* ── LEFT CONNECTOR LINES (KODU) - ONLY FOR ACTIVE STATUSES (> 0 ORDERS) ── */}
+                {leftSegments.map((seg) => {
+                  if (seg.count <= 0) return null; // No line for 0-count statuses!
+
+                  const isHovered = hoveredSegment === seg.id;
+                  const isSelected =
+                    chartMode === 'status'
+                      ? selectedOrderStatus === seg.statusValue
+                      : selectedPaymentStatus === seg.statusValue;
+                  return (
+                    <g key={`line_left_${seg.id}`}>
+                      {/* Connection Dot on Donut edge */}
+                      <circle
+                        cx={seg.x_donut}
+                        cy={seg.y_donut}
+                        r="4.5"
+                        fill={seg.color}
+                        stroke="#FFFFFF"
+                        strokeWidth="1.5"
+                      />
+                      {/* Leader Line (Kodu) from Left Card center (0, y_card) to Donut Edge */}
+                      <path
+                        d={`M 0 ${seg.y_card} L ${seg.x_donut} ${seg.y_donut}`}
+                        stroke={seg.color}
+                        strokeWidth={isHovered || isSelected ? '3.5' : '2.5'}
+                        opacity={isHovered || isSelected ? 1 : 0.9}
+                        fill="none"
+                        style={{ transition: 'all 0.2s ease-in-out' }}
+                      />
+                      {/* Anchor Dot on Left Card edge */}
+                      <circle cx="4" cy={seg.y_card} r="4" fill={seg.color} />
+                    </g>
+                  );
+                })}
+
+                {/* ── RIGHT CONNECTOR LINES (KODU) - ONLY FOR ACTIVE STATUSES (> 0 ORDERS) ── */}
+                {rightSegments.map((seg) => {
+                  if (seg.count <= 0) return null; // No line for 0-count statuses!
+
+                  const isHovered = hoveredSegment === seg.id;
+                  const isSelected =
+                    chartMode === 'status'
+                      ? selectedOrderStatus === seg.statusValue
+                      : selectedPaymentStatus === seg.statusValue;
+
+                  return (
+                    <g key={`line_right_${seg.id}`}>
+                      {/* Connection Dot on Donut edge */}
+                      <circle
+                        cx={seg.x_donut}
+                        cy={seg.y_donut}
+                        r="4.5"
+                        fill={seg.color}
+                        stroke="#FFFFFF"
+                        strokeWidth="1.5"
+                      />
+                      {/* Leader Line (Kodu) from Right Card center (440, y_card) to Donut Edge */}
+                      <path
+                        d={`M 440 ${seg.y_card} L ${seg.x_donut} ${seg.y_donut}`}
+                        stroke={seg.color}
+                        strokeWidth={isHovered || isSelected ? '3.5' : '2.5'}
+                        opacity={isHovered || isSelected ? 1 : 0.9}
+                        fill="none"
+                        style={{ transition: 'all 0.2s ease-in-out' }}
+                      />
+                      {/* Anchor Dot on Right Card edge */}
+                      <circle cx="436" cy={seg.y_card} r="4" fill={seg.color} />
+                    </g>
+                  );
+                })}
+
+                {/* Render Donut Slices */}
+                {arcs.map((arc) => {
+                  const isHovered = hoveredSegment === arc.id;
+                  const isSelected =
+                    chartMode === 'status'
+                      ? selectedOrderStatus === arc.statusValue
+                      : selectedPaymentStatus === arc.statusValue;
+
+                  return (
+                    <path
+                      key={`path_${arc.id}`}
+                      d={arc.pathD}
+                      fill={arc.color}
+                      opacity={isHovered || isSelected ? 1 : 0.88}
+                      style={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease-in-out',
+                        transform: isHovered || isSelected ? 'scale(1.03)' : 'scale(1)',
+                        transformOrigin: '220px 170px',
+                        filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.25))' : 'none',
+                      }}
+                      onMouseEnter={() => setHoveredSegment(arc.id)}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      onClick={() => {
+                        if (chartMode === 'status') {
+                          onSelectOrderStatusFilter(arc.statusValue);
+                        } else {
+                          onSelectPaymentStatusFilter(arc.statusValue);
+                        }
+                      }}
+                    />
+                  );
+                })}
+
+                {/* Curved Text Labels inside slices using SVG <textPath> */}
+                {arcs.map((arc, index) => {
+                  if (arc.angleDeg < 14) return null;
+
+                  return (
+                    <g key={`order_text_group_${arc.id}_${index}`}>
+                      <text
+                        style={{
+                          fontSize: arc.angleDeg < 25 ? '10px' : '12px',
+                          fontWeight: 'bold',
+                          fill: '#FFFFFF',
+                          pointerEvents: 'none',
+                          letterSpacing: '0.3px',
+                        }}
+                      >
+                        <textPath
+                          href={`#orderTextPath_Name_${arc.id}_${index}`}
+                          startOffset="50%"
+                          textAnchor="middle"
+                        >
+                          {arc.label}
+                        </textPath>
+                      </text>
+
+                      <text
+                        style={{
+                          fontSize: arc.angleDeg < 25 ? '9.5px' : '11px',
+                          fontWeight: '600',
+                          fill: 'rgba(255, 255, 255, 0.95)',
+                          pointerEvents: 'none',
+                          letterSpacing: '0.2px',
+                        }}
+                      >
+                        <textPath
+                          href={`#orderTextPath_Pct_${arc.id}_${index}`}
+                          startOffset="50%"
+                          textAnchor="middle"
+                        >
+                          {`${arc.count} (${arc.pct}%)`}
+                        </textPath>
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            ) : (
+              <View style={styles.nativeFallbackDonut}>
+                {arcs.map((arc) => (
+                  <View
+                    key={arc.id}
+                    style={[
+                      styles.nativeSegmentLine,
+                      { backgroundColor: arc.color, height: (arc.count / Math.max(1, sliceTotal)) * 140 },
+                    ]}
+                  />
+                ))}
+              </View>
             )}
+
+            {/* Donut Hole Center Summary Content */}
+            <View style={styles.donutCenter}>
+              <Text style={styles.donutCenterValue}>
+                {activeSegmentItem ? activeSegmentItem.count : displayTotal}
+              </Text>
+              <Text style={styles.donutCenterLabel}>
+                {activeSegmentItem ? activeSegmentItem.label : 'Total Orders'}
+              </Text>
+              {activeSegmentItem && (
+                <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+              )}
+            </View>
+          </View>
+
+          {/* 👉 RIGHT SIDE STATUS CARDS */}
+          <View style={styles.sideColumn}>
+            {rightSegments.map((seg) => {
+              const isSelected =
+                chartMode === 'status'
+                  ? selectedOrderStatus === seg.statusValue
+                  : selectedPaymentStatus === seg.statusValue;
+              const isHovered = hoveredSegment === seg.id;
+
+              return (
+                <TouchableOpacity
+                  key={`right_card_${seg.id}`}
+                  style={[
+                    styles.sideLegendCard,
+                    (isSelected || isHovered) && styles.legendCardActive,
+                    { borderLeftColor: seg.color, borderLeftWidth: 4 },
+                  ]}
+                  onPress={() => {
+                    if (chartMode === 'status') {
+                      onSelectOrderStatusFilter(seg.statusValue);
+                    } else {
+                      onSelectPaymentStatusFilter(seg.statusValue);
+                    }
+                  }}
+                  {...({
+                    onMouseEnter: () => setHoveredSegment(seg.id),
+                    onMouseLeave: () => setHoveredSegment(null),
+                  } as any)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
+                    <MaterialIcons name={seg.icon as any} size={13} color="#FFF" />
+                  </View>
+
+                  <View style={styles.legendTextWrapper}>
+                    <Text style={styles.legendTitle} numberOfLines={1}>
+                      {seg.label}
+                    </Text>
+                    <Text style={styles.legendSubtitle}>
+                      {seg.count} orders ({seg.pct}%)
+                    </Text>
+                  </View>
+
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={16}
+                    color={isSelected ? Colors.primary : Colors.outline}
+                  />
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       )}
-
-      {/* Interactive Legend Grid/List */}
-      <View style={styles.legendContainer}>
-        {formattedSegments.map((seg) => {
-          const isSelected =
-            chartMode === 'status'
-              ? selectedOrderStatus === seg.statusValue
-              : selectedPaymentStatus === seg.statusValue;
-          const isHovered = hoveredSegment === seg.id;
-
-          return (
-            <TouchableOpacity
-              key={seg.id}
-              style={[
-                styles.legendCard,
-                (isSelected || isHovered) && styles.legendCardActive,
-              ]}
-              onPress={() => {
-                if (chartMode === 'status') {
-                  onSelectOrderStatusFilter(seg.statusValue);
-                } else {
-                  onSelectPaymentStatusFilter(seg.statusValue);
-                }
-              }}
-              {...({
-                onMouseEnter: () => setHoveredSegment(seg.id),
-                onMouseLeave: () => setHoveredSegment(null),
-              } as any)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
-                <MaterialIcons name={seg.icon as any} size={12} color="#FFF" />
-              </View>
-
-              <View style={styles.legendTextWrapper}>
-                <Text style={styles.legendTitle} numberOfLines={1}>
-                  {seg.label}
-                </Text>
-                <Text style={styles.legendSubtitle}>
-                  {seg.count} orders ({seg.pct}%)
-                </Text>
-              </View>
-
-              <MaterialIcons
-                name="chevron-right"
-                size={16}
-                color={isSelected ? Colors.primary : Colors.outline}
-              />
-            </TouchableOpacity>
-          );
-        })}
-      </View>
     </View>
   );
 };
@@ -703,13 +893,76 @@ const styles = StyleSheet.create({
     height: 340,
     marginVertical: Spacing.xs,
   },
+  pieLayoutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginVertical: Spacing.xs,
+    width: '100%',
+  },
+  sideColumn: {
+    flex: 1,
+    minWidth: 160,
+    gap: 16,
+    justifyContent: 'center',
+  },
+  chartCenterWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 440,
+    height: 340,
+  },
+  sideLegendCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surfaceContainerLow,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    gap: 8,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  legendCardActive: {
+    backgroundColor: Colors.primaryContainer,
+    borderColor: Colors.primary,
+  },
+  colorBadgeCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  legendTextWrapper: {
+    flex: 1,
+  },
+  legendTitle: {
+    ...Typography.titleLg,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+  },
+  legendSubtitle: {
+    ...Typography.bodyMd,
+    fontSize: 10,
+    color: Colors.onSurfaceVariant,
+  },
   donutCenter: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 130,
-    height: 130,
-    borderRadius: 65,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: Colors.surfaceContainerLowest,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -720,19 +973,19 @@ const styles = StyleSheet.create({
   },
   donutCenterValue: {
     ...Typography.headlineLg,
-    fontSize: 28,
+    fontSize: 24,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   donutCenterLabel: {
     ...Typography.labelLg,
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.onSurfaceVariant,
     textAlign: 'center',
   },
   donutCenterPct: {
     ...Typography.labelLg,
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
     marginTop: 1,
@@ -751,50 +1004,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
     borderRadius: 6,
   },
-  legendContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: Spacing.xs,
-    justifyContent: 'center',
-  },
-  legendCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.xs + 2,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.surfaceContainerLow,
-    borderWidth: 1,
-    borderColor: Colors.surfaceContainerHigh,
-    gap: Spacing.xs,
-    minWidth: 135,
-    flex: 1,
-  },
-  legendCardActive: {
-    backgroundColor: Colors.primaryContainer,
-    borderColor: Colors.primary,
-  },
-  colorBadgeCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  legendTextWrapper: {
-    flex: 1,
-  },
-  legendTitle: {
-    ...Typography.titleLg,
-    fontSize: 11.5,
-    fontFamily: 'Inter-Bold',
-    color: Colors.onSurface,
-  },
-  legendSubtitle: {
-    ...Typography.bodyMd,
-    fontSize: 9.5,
-    color: Colors.onSurfaceVariant,
-  },
 });
 
 export default OrderDistributionPieChart;
+

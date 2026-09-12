@@ -527,7 +527,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                         <Text style={styles.paymentOptionTitle}>UPI QR Payment</Text>
                       </View>
                       <Text style={styles.paymentOptionDesc}>
-                        Scan QR Code from Google Pay, PhonePe, Paytm, or any UPI App
+                        Receive payment QR Code on your registered email or pay via UPI App
                       </Text>
                     </View>
                   </View>
@@ -674,7 +674,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   {isPlacingOrder && (
                     <View style={styles.loadingIndicatorRow}>
                       <ActivityIndicator size="small" color={Colors.primary} />
-                      <Text style={styles.loadingText}>Generating secure UPI QR Code...</Text>
+                      <Text style={styles.loadingText}>Processing order & sending payment QR to email...</Text>
                     </View>
                   )}
                 </View>

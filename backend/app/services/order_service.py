@@ -379,6 +379,12 @@ class OrderService:
             await self.order_repo.update(order, {"order_status": new_status})
             logger.info(f"Order {order.order_number} status updated from '{old_status}' to '{new_status}'")
 
+        try:
+            from app.services.dashboard_service import DashboardService
+            DashboardService.clear_cache()
+        except Exception:
+            pass
+
         return await self._format_order_response(order)
 
     async def update_payment_status_admin(
@@ -408,6 +414,12 @@ class OrderService:
                 payment.payment_status = "Success" if new_payment_status == "Paid" else new_payment_status
                 payment.updated_at = datetime.utcnow()
                 await payment.save()
+        except Exception:
+            pass
+
+        try:
+            from app.services.dashboard_service import DashboardService
+            DashboardService.clear_cache()
         except Exception:
             pass
 

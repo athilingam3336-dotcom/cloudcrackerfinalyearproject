@@ -161,125 +161,139 @@ export const CategoryDistributionPieChart: React.FC<CategoryDistributionPieChart
         ))}
       </View>
 
-      {viewType === 'pie' ? (
-        <View style={styles.pieWrapper}>
-          {isWeb ? (
-            <svg
-              width={PIE_SIZE}
-              height={PIE_SIZE}
-              viewBox={`0 0 ${PIE_SIZE} ${PIE_SIZE}`}
-              style={{ display: 'block' } as any}
-            >
-              {pieSlices.map((slice) => {
-                const isHovered = hoveredSegment === slice.id;
-                const scale = isHovered ? 1.04 : 1;
-                const pct = Math.round(slice.frac * 100);
-                return (
-                  <g
-                    key={slice.id}
-                    style={{
-                      transform: `translate(${CX}px,${CY}px) scale(${scale}) translate(-${CX}px,-${CY}px)`,
-                      transition: 'transform 0.18s ease',
-                      cursor: slice.filter ? 'pointer' : 'default',
-                    } as any}
-                    onMouseEnter={() => setHoveredSegment(slice.id)}
-                    onMouseLeave={() => setHoveredSegment(null)}
-                    onClick={() => slice.filter && onSelectFilter(slice.filter)}
-                  >
-                    <path d={slice.path} fill={slice.color} opacity={isHovered ? 1 : 0.88} stroke={Colors.background} strokeWidth={3} />
-                    {slice.frac > 0.05 && (
-                      <text x={slice.lx} y={slice.ly} fill="#fff" fontSize={12} fontWeight="700" textAnchor="middle" dominantBaseline="middle">
-                        {pct}%
-                      </text>
-                    )}
-                    {slice.frac > 0.08 && (
-                      <>
-                        <text x={slice.tx} y={slice.ty - 7} fill={slice.color} fontSize={10} fontWeight="700" textAnchor="middle">{slice.label}</text>
-                        <text x={slice.tx} y={slice.ty + 7} fill={Colors.onSurfaceVariant} fontSize={9} textAnchor="middle">{slice.count}</text>
-                      </>
-                    )}
-                  </g>
-                );
-              })}
-              {/* Center */}
-              <text x={CX} y={CY - 16} fill={Colors.onSurface} fontSize={32} fontWeight="800" textAnchor="middle" dominantBaseline="middle">
-                {categories.length}
-              </text>
-              <text x={CX} y={CY + 14} fill={Colors.onSurfaceVariant} fontSize={12} textAnchor="middle">
-                Categories
-              </text>
-              <text x={CX} y={CY + 30} fill={Colors.tertiary} fontSize={10} textAnchor="middle">
-                {categories.filter((c) => c.isActive !== false).length} active
-              </text>
-            </svg>
-          ) : (
-            <View style={styles.nativePieHint}>
-              <MaterialIcons name="pie-chart" size={64} color={Colors.primary} />
-              <Text style={styles.nativePieText}>{categories.length} Categories</Text>
-            </View>
-          )}
-        </View>
-      ) : (
-        <View style={styles.barChartContainer}>
+      {/* Side-by-side Chart & Legend Wrapper */}
+      <View style={styles.chartAndLegendWrapper}>
+        {viewType === 'pie' ? (
+          <View style={styles.pieWrapper}>
+            {isWeb ? (
+              <svg
+                width={PIE_SIZE}
+                height={PIE_SIZE}
+                viewBox={`0 0 ${PIE_SIZE} ${PIE_SIZE}`}
+                style={{ display: 'block' } as any}
+              >
+                {pieSlices.map((slice) => {
+                  const isHovered = hoveredSegment === slice.id;
+                  const scale = isHovered ? 1.04 : 1;
+                  const pct = Math.round(slice.frac * 100);
+                  return (
+                    <g
+                      key={slice.id}
+                      style={{
+                        transform: `translate(${CX}px,${CY}px) scale(${scale}) translate(-${CX}px,-${CY}px)`,
+                        transition: 'transform 0.18s ease',
+                        cursor: slice.filter ? 'pointer' : 'default',
+                      } as any}
+                      onMouseEnter={() => setHoveredSegment(slice.id)}
+                      onMouseLeave={() => setHoveredSegment(null)}
+                      onClick={() => slice.filter && onSelectFilter(slice.filter)}
+                    >
+                      <path d={slice.path} fill={slice.color} opacity={isHovered ? 1 : 0.88} stroke={Colors.background} strokeWidth={3} />
+                      {slice.frac > 0.05 && (
+                        <text x={slice.lx} y={slice.ly} fill="#fff" fontSize={12} fontWeight="700" textAnchor="middle" dominantBaseline="middle">
+                          {pct}%
+                        </text>
+                      )}
+                      {slice.frac > 0.08 && (
+                        <>
+                          <text x={slice.tx} y={slice.ty - 7} fill={slice.color} fontSize={10} fontWeight="700" textAnchor="middle">{slice.label}</text>
+                          <text x={slice.tx} y={slice.ty + 7} fill={Colors.onSurfaceVariant} fontSize={9} textAnchor="middle">{slice.count}</text>
+                        </>
+                      )}
+                    </g>
+                  );
+                })}
+                {/* Center */}
+                <text x={CX} y={CY - 16} fill={Colors.onSurface} fontSize={32} fontWeight="800" textAnchor="middle" dominantBaseline="middle">
+                  {categories.length}
+                </text>
+                <text x={CX} y={CY + 14} fill={Colors.onSurfaceVariant} fontSize={12} textAnchor="middle">
+                  Categories
+                </text>
+                <text x={CX} y={CY + 30} fill={Colors.tertiary} fontSize={10} textAnchor="middle">
+                  {categories.filter((c) => c.isActive !== false).length} active
+                </text>
+              </svg>
+            ) : (
+              <View style={styles.nativePieHint}>
+                <MaterialIcons name="pie-chart" size={64} color={Colors.primary} />
+                <Text style={styles.nativePieText}>{categories.length} Categories</Text>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.barChartContainer}>
+            {segments.map((seg) => {
+              const barPct = (seg.count / maxBarCount) * 100;
+              const isHovered = hoveredSegment === seg.id;
+              return (
+                <TouchableOpacity
+                  key={seg.id}
+                  activeOpacity={0.85}
+                  onPress={() => seg.filter && onSelectFilter(seg.filter)}
+                  style={styles.barRow}
+                  {...(isWeb
+                    ? {
+                        onMouseEnter: () => setHoveredSegment(seg.id),
+                        onMouseLeave: () => setHoveredSegment(null),
+                      }
+                    : {} ) as any}
+                >
+                  <Text style={styles.barLabel} numberOfLines={1}>{seg.label}</Text>
+                  <View style={styles.barTrack}>
+                    <View style={[styles.barFill, { width: `${Math.max(barPct, 4)}%` as any, backgroundColor: seg.color, opacity: isHovered ? 1 : 0.82 }]} />
+                  </View>
+                  <Text style={[styles.barCount, { color: seg.color }]}>{seg.count}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Breakdown Legend Side List */}
+        <View style={styles.legendContainer}>
           {segments.map((seg) => {
-            const barPct = (seg.count / maxBarCount) * 100;
+            const isActive = seg.filter && activeFilter === seg.filter;
             const isHovered = hoveredSegment === seg.id;
             return (
               <TouchableOpacity
                 key={seg.id}
-                activeOpacity={0.85}
-                onPress={() => seg.filter && onSelectFilter(seg.filter)}
-                style={styles.barRow}
-                {...(isWeb
-                  ? {
-                      onMouseEnter: () => setHoveredSegment(seg.id),
-                      onMouseLeave: () => setHoveredSegment(null),
-                    }
-                  : {} ) as any}
+                style={[
+                  styles.legendCard,
+                  { borderLeftColor: seg.color, borderLeftWidth: 4 },
+                  (isActive || isHovered) && styles.legendCardActive,
+                ]}
+                onPress={() => {
+                  if (seg.filter) onSelectFilter(activeFilter === seg.filter ? 'All' : seg.filter);
+                }}
+                {...({
+                  onMouseEnter: () => setHoveredSegment(seg.id),
+                  onMouseLeave: () => setHoveredSegment(null),
+                } as any)}
+                activeOpacity={0.8}
               >
-                <Text style={styles.barLabel} numberOfLines={1}>{seg.label}</Text>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { width: `${Math.max(barPct, 4)}%` as any, backgroundColor: seg.color, opacity: isHovered ? 1 : 0.82 }]} />
+                <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
+                  <MaterialIcons name={seg.icon as any} size={12} color="#FFF" />
                 </View>
-                <Text style={[styles.barCount, { color: seg.color }]}>{seg.count}</Text>
+
+                <View style={styles.legendTextWrapper}>
+                  <Text style={styles.legendTitle} numberOfLines={1}>
+                    {seg.label}
+                  </Text>
+                  <Text style={styles.legendSubtitle}>
+                    {seg.count} categories ({Math.round((seg.count / totalForPie) * 100)}%)
+                  </Text>
+                </View>
+
+                <MaterialIcons
+                  name="chevron-right"
+                  size={16}
+                  color={isActive ? Colors.primary : Colors.outline}
+                />
               </TouchableOpacity>
             );
           })}
         </View>
-      )}
-
-      {/* Legend */}
-      <View style={styles.legendRow}>
-        {segments.map((seg) => {
-          const isActive = seg.filter && activeFilter === seg.filter;
-          return (
-            <TouchableOpacity
-              key={seg.id}
-              style={[styles.legendChip, isActive && styles.legendChipActive, { borderColor: seg.color }]}
-              onPress={() => {
-                if (seg.filter) onSelectFilter(activeFilter === seg.filter ? 'All' : seg.filter);
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.legendDot, { backgroundColor: seg.color }]} />
-              <Text style={[styles.legendChipText, isActive && { color: seg.color, fontFamily: 'Inter-Bold' }]}>{seg.label}</Text>
-              <View style={[styles.legendCountBadge, { backgroundColor: seg.color + '22' }]}>
-                <Text style={[styles.legendCountText, { color: seg.color }]}>{seg.count}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-        <TouchableOpacity
-          style={[styles.legendChip, activeFilter === 'All' && styles.legendChipAllActive]}
-          onPress={() => onSelectFilter('All')}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="select-all" size={12} color={activeFilter === 'All' ? Colors.primary : Colors.onSurfaceVariant} />
-          <Text style={[styles.legendChipText, activeFilter === 'All' && { color: Colors.primary, fontFamily: 'Inter-Bold' }]}>All</Text>
-          <View style={[styles.legendCountBadge, { backgroundColor: Colors.primaryContainer }]}>
-            <Text style={[styles.legendCountText, { color: Colors.primary }]}>{categories.length}</Text>
-          </View>
-        </TouchableOpacity>
       </View>
 
       {/* Quick Summary Pill Footer */}
@@ -402,8 +416,21 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontFamily: 'Inter-Bold',
   },
-  pieWrapper: {
+  chartAndLegendWrapper: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+    flexWrap: 'wrap',
+    marginTop: Spacing.xs,
+  },
+  pieWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 340,
+    flex: 1,
+    minWidth: 280,
     marginVertical: Spacing.xs,
   },
   nativePieHint: {
@@ -454,49 +481,45 @@ const styles = StyleSheet.create({
     width: 30,
     textAlign: 'left',
   },
-  legendRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.surfaceContainerHigh,
-    paddingTop: Spacing.sm,
+  legendContainer: {
+    flex: 1,
+    minWidth: 280,
+    gap: 6,
+    marginTop: Spacing.xs,
   },
-  legendChip: {
+  legendCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 6,
+    padding: Spacing.xs + 2,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
+    gap: Spacing.xs,
   },
-  legendChipActive: { backgroundColor: Colors.surfaceContainerHigh },
-  legendChipAllActive: {
+  legendCardActive: {
     backgroundColor: Colors.primaryContainer,
     borderColor: Colors.primary,
   },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  colorBadgeCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  legendChipText: {
-    ...Typography.labelLg,
-    fontSize: 11,
-    color: Colors.onSurfaceVariant,
-    fontFamily: 'Inter-Medium',
+  legendTextWrapper: {
+    flex: 1,
   },
-  legendCountBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: BorderRadius.sm,
-  },
-  legendCountText: {
-    fontSize: 10,
+  legendTitle: {
+    ...Typography.titleLg,
+    fontSize: 12,
     fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+  },
+  legendSubtitle: {
+    ...Typography.bodyMd,
+    fontSize: 10,
+    color: Colors.onSurfaceVariant,
   },
 });
