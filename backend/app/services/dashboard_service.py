@@ -55,7 +55,7 @@ class DashboardService:
         pending_condition = {
             "admin_deleted_at": None,
             "payment_status": re.compile(r"^(pending|under review|payment pending)$", re.IGNORECASE),
-            "order_status": {"$ne": re.compile(r"^(cancelled|canceled|delivered)$", re.IGNORECASE)}
+            "order_status": {"$not": re.compile(r"^(cancelled|canceled|delivered)$", re.IGNORECASE)}
         }
         failed_condition = {
             "admin_deleted_at": None,
@@ -119,8 +119,16 @@ class DashboardService:
             Order.find(Order.admin_deleted_at == None, Order.order_status == re.compile(r"^delivered$", re.IGNORECASE)).count(),
             Order.find(Order.admin_deleted_at == None, Order.order_status == re.compile(r"^cancelled$", re.IGNORECASE)).count(),
             Order.find(Order.admin_deleted_at == None, Order.created_at >= today_start).count(),
-            Order.find(Order.admin_deleted_at == None, Order.created_at >= last_30_start, Order.order_status != re.compile(r"^cancelled$", re.IGNORECASE)).count(),
-            Order.find(Order.admin_deleted_at == None, Order.created_at >= prev_30_start, Order.created_at < last_30_start, Order.order_status != re.compile(r"^cancelled$", re.IGNORECASE)).count(),
+            Order.find({
+                "admin_deleted_at": None,
+                "created_at": {"$gte": last_30_start},
+                "order_status": {"$not": re.compile(r"^(cancelled|canceled)$", re.IGNORECASE)}
+            }).count(),
+            Order.find({
+                "admin_deleted_at": None,
+                "created_at": {"$gte": prev_30_start, "$lt": last_30_start},
+                "order_status": {"$not": re.compile(r"^(cancelled|canceled)$", re.IGNORECASE)}
+            }).count(),
             User.find(User.created_at >= last_30_start).count(),
             User.find(User.created_at >= prev_30_start, User.created_at < last_30_start).count(),
             Product.get_pymongo_collection().aggregate(stock_pipeline).to_list(length=None),
