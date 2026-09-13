@@ -12,6 +12,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { AdminProductItemUI, AdminCategoryItem } from '@/services/adminService';
+import { UniversalSvgChart } from '@/components/common/UniversalSvgChart';
 
 export interface ProductDistributionPieChartProps {
   products: AdminProductItemUI[];
@@ -148,107 +149,95 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
     return totalProductsCount || sliceTotal;
   }, [totalProductsCount, sliceTotal]);
 
-  // Calculate percentages, SVG Slice Paths, and 2-Line Curved Text Paths (<textPath>)
-  const { arcs, formattedSegments } = useMemo(() => {
-    const cx = 140;
-    const cy = 140;
-    const R = 125;
-    const r = 62;
-
-    let accumulatedDeg = -90; // Start at top center (-90deg)
-
-    const formatted = segments.map((seg) => {
-      const pctVal = (seg.count / Math.max(1, sliceTotal)) * 100;
-      return {
-        ...seg,
-        pct: pctVal.toFixed(1),
-      };
-    });
-
-    const validSegs = formatted.filter((s) => s.count > 0);
-
-    const arcItems = validSegs.map((seg) => {
-      const fraction = seg.count / Math.max(1, sliceTotal);
-      const angleDeg = fraction * 360;
-
-      const startDeg = accumulatedDeg;
-      const endDeg = accumulatedDeg + angleDeg;
-      accumulatedDeg = endDeg;
-
-      const midDeg = startDeg + angleDeg / 2;
-
-      // Outer donut slice path
-      let pathD = '';
-      if (angleDeg >= 359.9) {
-        pathD = `
-          M ${cx} ${cy - R}
-          A ${R} ${R} 0 1 1 ${cx} ${cy + R}
-          A ${R} ${R} 0 1 1 ${cx} ${cy - R}
-          M ${cx} ${cy - r}
-          A ${r} ${r} 0 1 0 ${cx} ${cy + r}
-          A ${r} ${r} 0 1 0 ${cx} ${cy - r}
-          Z
-        `;
-      } else {
-        const startRad = (startDeg * Math.PI) / 180;
-        const endRad = (endDeg * Math.PI) / 180;
-
-        const x1 = cx + R * Math.cos(startRad);
-        const y1 = cy + R * Math.sin(startRad);
-        const x2 = cx + R * Math.cos(endRad);
-        const y2 = cy + R * Math.sin(endRad);
-
-        const x3 = cx + r * Math.cos(endRad);
-        const y3 = cy + r * Math.sin(endRad);
-        const x4 = cx + r * Math.cos(startRad);
-        const y4 = cy + r * Math.sin(startRad);
-
-        const largeArc = angleDeg > 180 ? 1 : 0;
-
-        pathD = `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)} A ${r} ${r} 0 ${largeArc} 0 ${x4.toFixed(2)} ${y4.toFixed(2)} Z`;
-      }
-
-      // Calculate 2 Concentric Curved Text Paths along arc (textPath)
-      const normMid = ((midDeg % 360) + 360) % 360;
-      // If segment is in lower half (between 20deg and 160deg), invert arc direction so text is right-side up
-      const isLowerHalf = normMid > 20 && normMid < 160;
-
-      const pStartRad = (isLowerHalf ? endDeg : startDeg) * (Math.PI / 180);
-      const pEndRad = (isLowerHalf ? startDeg : endDeg) * (Math.PI / 180);
-      const sweepFlag = isLowerHalf ? 0 : 1;
-      const largeArcText = angleDeg > 180 ? 1 : 0;
-
-      // Line 1: Category Name (Top Line)
-      // Line 2: Count & Percentage (Bottom Line)
-      const R_name = isLowerHalf ? 78 : 108;
-      const R_pct = isLowerHalf ? 108 : 78;
-
-      const tx1_n = cx + R_name * Math.cos(pStartRad);
-      const ty1_n = cy + R_name * Math.sin(pStartRad);
-      const tx2_n = cx + R_name * Math.cos(pEndRad);
-      const ty2_n = cy + R_name * Math.sin(pEndRad);
-      const textArcD_Name = `M ${tx1_n.toFixed(2)} ${ty1_n.toFixed(2)} A ${R_name} ${R_name} 0 ${largeArcText} ${sweepFlag} ${tx2_n.toFixed(2)} ${ty2_n.toFixed(2)}`;
-
-      const tx1_p = cx + R_pct * Math.cos(pStartRad);
-      const ty1_p = cy + R_pct * Math.sin(pStartRad);
-      const tx2_p = cx + R_pct * Math.cos(pEndRad);
-      const ty2_p = cy + R_pct * Math.sin(pEndRad);
-      const textArcD_Pct = `M ${tx1_p.toFixed(2)} ${ty1_p.toFixed(2)} A ${R_pct} ${R_pct} 0 ${largeArcText} ${sweepFlag} ${tx2_p.toFixed(2)} ${ty2_p.toFixed(2)}`;
-
-      return {
-        ...seg,
-        pathD,
-        textArcD_Name,
-        textArcD_Pct,
-        angleDeg,
-      };
-    });
-
-    return {
-      arcs: arcItems,
-      formattedSegments: formatted,
-    };
+  const formattedSegments = useMemo(() => {
+    return segments.map((seg) => ({
+      ...seg,
+      pct: ((seg.count / Math.max(1, sliceTotal)) * 100).toFixed(1),
+    }));
   }, [segments, sliceTotal]);
+
+  // Clean Mobile Donut Slices (CX=140, CY=140, R_OUTER=105, R_INNER=56)
+  const mobilePieSlices = useMemo(() => {
+    const CX = 140;
+    const CY = 140;
+    const R_OUTER = 105;
+    const R_INNER = 56;
+
+    let startAngle = -Math.PI / 2;
+    const validSegs = formattedSegments.filter((s) => s.count > 0);
+
+    if (validSegs.length === 0) {
+      const path1 =
+        `M ${CX} ${CY - R_OUTER} ` +
+        `A ${R_OUTER} ${R_OUTER} 0 0 1 ${CX} ${CY + R_OUTER} ` +
+        `L ${CX} ${CY + R_INNER} ` +
+        `A ${R_INNER} ${R_INNER} 0 0 0 ${CX} ${CY - R_INNER} Z`;
+      const path2 =
+        `M ${CX} ${CY + R_OUTER} ` +
+        `A ${R_OUTER} ${R_OUTER} 0 0 1 ${CX} ${CY - R_OUTER} ` +
+        `L ${CX} ${CY - R_INNER} ` +
+        `A ${R_INNER} ${R_INNER} 0 0 0 ${CX} ${CY + R_INNER} Z`;
+      return [
+        { id: 'empty1', label: 'No Products', count: 0, color: '#CBD5E1', categoryId: 'All', icon: 'help-outline', path: path1, pct: '0' },
+        { id: 'empty2', label: 'No Products', count: 0, color: '#CBD5E1', categoryId: 'All', icon: 'help-outline', path: path2, pct: '0' },
+      ];
+    }
+
+    const resultSlices: Array<typeof validSegs[0] & { path: string }> = [];
+
+    validSegs.forEach((seg) => {
+      const frac = seg.count / Math.max(1, sliceTotal);
+      const sweep = frac * 2 * Math.PI;
+
+      if (sweep >= 2 * Math.PI - 0.01) {
+        const midAngle = startAngle + Math.PI;
+
+        const p1_out = { x: CX + R_OUTER * Math.cos(startAngle), y: CY + R_OUTER * Math.sin(startAngle) };
+        const p2_out = { x: CX + R_OUTER * Math.cos(midAngle), y: CY + R_OUTER * Math.sin(midAngle) };
+        const p1_in = { x: CX + R_INNER * Math.cos(startAngle), y: CY + R_INNER * Math.sin(startAngle) };
+        const p2_in = { x: CX + R_INNER * Math.cos(midAngle), y: CY + R_INNER * Math.sin(midAngle) };
+
+        const path1 =
+          `M ${p1_out.x.toFixed(2)} ${p1_out.y.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p2_out.x.toFixed(2)} ${p2_out.y.toFixed(2)} ` +
+          `L ${p2_in.x.toFixed(2)} ${p2_in.y.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 0 0 ${p1_in.x.toFixed(2)} ${p1_in.y.toFixed(2)} Z`;
+
+        const path2 =
+          `M ${p2_out.x.toFixed(2)} ${p2_out.y.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p1_out.x.toFixed(2)} ${p1_out.y.toFixed(2)} ` +
+          `L ${p1_in.x.toFixed(2)} ${p1_in.y.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 0 0 ${p2_in.x.toFixed(2)} ${p2_in.y.toFixed(2)} Z`;
+
+        resultSlices.push({ ...seg, path: path1 });
+        resultSlices.push({ ...seg, id: `${seg.id}_h2`, path: path2 });
+      } else {
+        const endAngle = startAngle + sweep;
+        const x1 = CX + R_OUTER * Math.cos(startAngle);
+        const y1 = CY + R_OUTER * Math.sin(startAngle);
+        const x2 = CX + R_OUTER * Math.cos(endAngle);
+        const y2 = CY + R_OUTER * Math.sin(endAngle);
+
+        const ix1 = CX + R_INNER * Math.cos(endAngle);
+        const iy1 = CY + R_INNER * Math.sin(endAngle);
+        const ix2 = CX + R_INNER * Math.cos(startAngle);
+        const iy2 = CY + R_INNER * Math.sin(startAngle);
+
+        const largeArc = sweep > Math.PI ? 1 : 0;
+
+        const path =
+          `M ${x1.toFixed(2)} ${y1.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} ` +
+          `L ${ix1.toFixed(2)} ${iy1.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 ${largeArc} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)} Z`;
+
+        resultSlices.push({ ...seg, path });
+        startAngle = endAngle;
+      }
+    });
+
+    return resultSlices;
+  }, [formattedSegments, sliceTotal]);
 
   // Bar Chart positioning calculations
   const barChartData = useMemo(() => {
@@ -292,6 +281,50 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
     return null;
   }, [hoveredSegment, formattedSegments]);
 
+  // Generate Mobile Donut SVG HTML for UniversalSvgChart
+  const mobileSvgHtml = useMemo(() => {
+    return `
+      <svg width="280" height="280" viewBox="0 0 280 280">
+        <g>
+          ${mobilePieSlices.map((slice) => `<path d="${slice.path}" fill="${slice.color}" stroke="#FFFFFF" stroke-width="2.5" opacity="0.95" />`).join('')}
+        </g>
+      </svg>
+    `;
+  }, [mobilePieSlices]);
+
+  // Generate Bar SVG HTML for UniversalSvgChart
+  const barSvgHtml = useMemo(() => {
+    return `
+      <svg width="860" height="250" viewBox="0 0 860 250" style="display:block;">
+        <defs>
+          ${barChartData.bars.map((bar) => `
+            <linearGradient id="barGrad_${bar.id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${bar.color}" stop-opacity="1" />
+              <stop offset="100%" stop-color="${bar.color}" stop-opacity="0.65" />
+            </linearGradient>
+          `).join('')}
+        </defs>
+        ${[0, 0.5, 1].map((ratio) => {
+          const yLine = barChartData.paddingTop + barChartData.chartH * (1 - ratio);
+          const val = Math.round(barChartData.maxVal * ratio);
+          return `
+            <g>
+              <line x1="${barChartData.paddingLeft}" y1="${yLine}" x2="${barChartData.paddingLeft + barChartData.chartW}" y2="${yLine}" stroke="#E2E8F0" stroke-dasharray="${ratio === 0 ? 'none' : '3 3'}" stroke-width="1" />
+              <text x="${barChartData.paddingLeft - 8}" y="${yLine + 4}" text-anchor="end" font-size="11" fill="#94A3B8" font-family="sans-serif">${val}</text>
+            </g>
+          `;
+        }).join('')}
+        ${barChartData.bars.map((bar) => `
+          <g>
+            <rect x="${bar.x}" y="${bar.y}" width="${bar.barWidth}" height="${Math.max(4, bar.barH)}" rx="6" ry="6" fill="url(#barGrad_${bar.id})" opacity="0.9" />
+            <text x="${bar.x + bar.barWidth / 2}" y="${Math.max(16, bar.y - 6)}" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569" font-family="sans-serif">${bar.count}</text>
+            <text x="${bar.x + bar.barWidth / 2}" y="${barChartData.paddingTop + barChartData.chartH + 18}" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569" font-family="sans-serif">${bar.label}</text>
+          </g>
+        `).join('')}
+      </svg>
+    `;
+  }, [barChartData]);
+
   return (
     <View style={styles.card}>
       {/* Header with Mode Toggle Tabs */}
@@ -328,41 +361,22 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
             </TouchableOpacity>
           </View>
 
-          {/* Zoom Controls & View Type */}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={styles.modeTabs}>
-              <TouchableOpacity
-                style={styles.modeTabBtn}
-                onPress={() => setZoomScale((s) => Math.max(s - 0.4, 1))}
-                activeOpacity={0.8}
-              >
-                <MaterialIcons name="zoom-out" size={13} color={Colors.onSurfaceVariant} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modeTabBtn}
-                onPress={() => setZoomScale((s) => Math.min(s + 0.4, 3))}
-                activeOpacity={0.8}
-              >
-                <MaterialIcons name="zoom-in" size={13} color={Colors.onSurfaceVariant} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modeTabs}>
-              <TouchableOpacity
-                style={[styles.modeTabBtn, viewType === 'pie' && styles.modeTabBtnActive]}
-                onPress={() => setViewType('pie')}
-                activeOpacity={0.8}
-              >
-                <MaterialIcons name="pie-chart" size={13} color={viewType === 'pie' ? '#FFF' : Colors.onSurfaceVariant} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modeTabBtn, viewType === 'bar' && styles.modeTabBtnActive]}
-                onPress={() => setViewType('bar')}
-                activeOpacity={0.8}
-              >
-                <MaterialIcons name="bar-chart" size={13} color={viewType === 'bar' ? '#FFF' : Colors.onSurfaceVariant} />
-              </TouchableOpacity>
-            </View>
+          {/* View Type Toggle */}
+          <View style={styles.modeTabs}>
+            <TouchableOpacity
+              style={[styles.modeTabBtn, viewType === 'pie' && styles.modeTabBtnActive]}
+              onPress={() => setViewType('pie')}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="pie-chart" size={13} color={viewType === 'pie' ? '#FFF' : Colors.onSurfaceVariant} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modeTabBtn, viewType === 'bar' && styles.modeTabBtnActive]}
+              onPress={() => setViewType('bar')}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="bar-chart" size={13} color={viewType === 'bar' ? '#FFF' : Colors.onSurfaceVariant} />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -374,8 +388,6 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={true}
-            maximumZoomScale={4}
-            minimumZoomScale={1}
             style={styles.chartContainer}
             contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minWidth: '100%' }}
           >
@@ -448,7 +460,6 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
                         }
                       }}
                     >
-                      {/* Bar Rect */}
                       <rect
                         x={bar.x}
                         y={bar.y}
@@ -458,15 +469,8 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
                         ry="6"
                         fill={`url(#barGrad_${bar.id})`}
                         opacity={isHovered || isSelected ? 1 : 0.88}
-                        style={{
-                          transition: 'all 0.2s ease-in-out',
-                          transform: isHovered || isSelected ? 'scaleY(1.02)' : 'scaleY(1)',
-                          transformOrigin: `${bar.x + bar.barWidth / 2}px ${barChartData.paddingTop + barChartData.chartH}px`,
-                          filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.2))' : 'none',
-                        }}
                       />
 
-                      {/* Top Count Text */}
                       <text
                         x={bar.x + bar.barWidth / 2}
                         y={Math.max(16, bar.y - 6)}
@@ -479,7 +483,6 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
                         {bar.count}
                       </text>
 
-                      {/* X-axis Label */}
                       <text
                         x={bar.x + bar.barWidth / 2}
                         y={barChartData.paddingTop + barChartData.chartH + 18}
@@ -496,137 +499,54 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
                 })}
               </svg>
             ) : (
-              <View style={styles.nativeFallbackDonut} />
+              <UniversalSvgChart height={250} width={860} svgHtml={barSvgHtml} />
             )}
           </ScrollView>
         ) : (
           /* Center Donut SVG Pie Chart */
-          <ScrollView 
-            maximumZoomScale={4}
-            minimumZoomScale={1}
-            style={styles.chartContainer}
-            contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}
-          >
-            {Platform.OS === 'web' ? (
-              <svg width={280 * zoomScale} height={280 * zoomScale} viewBox="0 0 280 280" style={{ overflow: 'visible' }}>
-                <defs>
-                  {arcs.map((arc, index) => (
-                    <React.Fragment key={`def_prod_frag_${arc.id}_${index}`}>
-                      <path id={`prodTextPath_Name_${arc.id}_${index}`} d={arc.textArcD_Name} />
-                      <path id={`prodTextPath_Pct_${arc.id}_${index}`} d={arc.textArcD_Pct} />
-                    </React.Fragment>
-                  ))}
-                </defs>
-
-                {/* Render Donut Slices */}
-                {arcs.map((arc) => {
-                  const isHovered = hoveredSegment === arc.id;
-                  const isSelected =
-                    chartMode === 'category'
-                      ? selectedCategory === arc.categoryId
-                      : false;
-
-                  return (
-                    <path
-                      key={`path_${arc.id}`}
-                      d={arc.pathD}
-                      fill={arc.color}
-                      opacity={isHovered || isSelected ? 1 : 0.88}
-                      style={{
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease-in-out',
-                        transform: isHovered || isSelected ? 'scale(1.03)' : 'scale(1)',
-                        transformOrigin: '140px 140px',
-                        filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.25))' : 'none',
-                      }}
-                      onMouseEnter={() => setHoveredSegment(arc.id)}
-                      onMouseLeave={() => setHoveredSegment(null)}
-                      onClick={() => {
-                        if (chartMode === 'category') {
-                          onSelectCategory(arc.categoryId);
-                        } else if (onSelectPromoFilter) {
-                          onSelectPromoFilter(arc.label);
-                        }
-                      }}
-                    />
-                  );
-                })}
-
-                {/* Render 2-Line Curved Text Labels inside slices using SVG <textPath> */}
-                {arcs.map((arc, index) => {
-                  if (arc.angleDeg < 14) return null; // Don't render text inside tiny slices to avoid overflow
-
-                  return (
-                    <g key={`prod_text_group_${arc.id}_${index}`}>
-                      {/* Line 1: Category Name */}
-                      <text
-                        style={{
-                          fontSize: arc.angleDeg < 25 ? '10px' : '11px',
-                          fontWeight: 'bold',
-                          fill: '#FFFFFF',
-                          pointerEvents: 'none',
-                          letterSpacing: '0.4px',
+          <View style={styles.chartContainer}>
+            <View style={{ width: 280, height: 280, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+              {Platform.OS === 'web' ? (
+                <svg width={280 * zoomScale} height={280 * zoomScale} viewBox="0 0 280 280" style={{ overflow: 'visible' }}>
+                  <g>
+                    {mobilePieSlices.map((slice) => (
+                      <path
+                        key={`prod_web_path_${slice.id}`}
+                        d={slice.path}
+                        fill={slice.color}
+                        stroke="#FFFFFF"
+                        strokeWidth="2.5"
+                        opacity="0.95"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          if (chartMode === 'category') {
+                            onSelectCategory(slice.categoryId);
+                          } else if (onSelectPromoFilter) {
+                            onSelectPromoFilter(slice.label);
+                          }
                         }}
-                      >
-                        <textPath
-                          href={`#prodTextPath_Name_${arc.id}_${index}`}
-                          startOffset="50%"
-                          textAnchor="middle"
-                        >
-                          {arc.label}
-                        </textPath>
-                      </text>
-
-                      {/* Line 2: Count & Percentage */}
-                      <text
-                        style={{
-                          fontSize: arc.angleDeg < 25 ? '9px' : '10px',
-                          fontWeight: '600',
-                          fill: 'rgba(255, 255, 255, 0.95)',
-                          pointerEvents: 'none',
-                          letterSpacing: '0.2px',
-                        }}
-                      >
-                        <textPath
-                          href={`#prodTextPath_Pct_${arc.id}_${index}`}
-                          startOffset="50%"
-                          textAnchor="middle"
-                        >
-                          {`${arc.count} (${arc.pct}%)`}
-                        </textPath>
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-            ) : (
-              /* Fallback for non-web native views */
-              <View style={styles.nativeFallbackDonut}>
-                {arcs.map((arc) => (
-                  <View
-                    key={arc.id}
-                    style={[
-                      styles.nativeSegmentLine,
-                      { backgroundColor: arc.color, height: (arc.count / Math.max(1, sliceTotal)) * 140 },
-                    ]}
-                  />
-                ))}
-              </View>
-            )}
-
-            {/* Donut Hole Center Summary Content */}
-            <View style={styles.donutCenter}>
-              <Text style={styles.donutCenterValue}>
-                {activeSegmentItem ? activeSegmentItem.count : displayTotal}
-              </Text>
-              <Text style={styles.donutCenterLabel}>
-                {activeSegmentItem ? activeSegmentItem.label : 'Products'}
-              </Text>
-              {activeSegmentItem && (
-                <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+                      />
+                    ))}
+                  </g>
+                </svg>
+              ) : (
+                <UniversalSvgChart height={280} svgHtml={mobileSvgHtml} />
               )}
+
+              {/* Donut Hole Center Summary Content */}
+              <View style={styles.donutCenter}>
+                <Text style={styles.donutCenterValue}>
+                  {activeSegmentItem ? activeSegmentItem.count : displayTotal}
+                </Text>
+                <Text style={styles.donutCenterLabel}>
+                  {activeSegmentItem ? activeSegmentItem.label : 'Products'}
+                </Text>
+                {activeSegmentItem && (
+                  <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+                )}
+              </View>
             </View>
-          </ScrollView>
+          </View>
         )}
 
         {/* Interactive Legend Side List */}
@@ -798,8 +718,6 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
     height: 280,
     flex: 1,
     minWidth: 280,
@@ -838,20 +756,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
     marginTop: 1,
-  },
-  nativeFallbackDonut: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: Colors.surfaceContainerLow,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  nativeSegmentLine: {
-    width: 12,
-    marginHorizontal: 2,
-    borderRadius: 6,
   },
   legendContainer: {
     flex: 1,

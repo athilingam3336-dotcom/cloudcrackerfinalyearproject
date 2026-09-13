@@ -3,13 +3,13 @@ import { Platform } from 'react-native';
 const PROD_API_URL = 'https://cloudcrackerfinalyearproject.onrender.com/api/v1';
 
 const getApiBaseUrl = (): string => {
-  const envUrl = process.env.EXPO_PUBLIC_API_URL || PROD_API_URL;
+  let envUrl = process.env.EXPO_PUBLIC_API_URL || PROD_API_URL;
 
-  // On Native Mobile App (Expo Go on mobile phone via QR code)
+  // On Native Mobile App (Expo Go on physical phone via QR code)
   if (Platform.OS !== 'web') {
-    // If testing on a physical device, ensure EXPO_PUBLIC_API_URL in .env is set to your machine's local IP address (e.g., http://192.168.x.x:8000/api/v1) instead of localhost.
     if (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
-      console.warn("WARNING: You are using 'localhost' on a mobile device. This may fail unless using an Android Emulator. Consider changing EXPO_PUBLIC_API_URL in .env to your computer's LAN IP.");
+      envUrl = envUrl.replace(/localhost|127\.0\.0\.1/g, '10.45.220.11');
+      console.log(`[API Config] Mobile auto-rewrote localhost to LAN IP: ${envUrl}`);
     }
   }
 

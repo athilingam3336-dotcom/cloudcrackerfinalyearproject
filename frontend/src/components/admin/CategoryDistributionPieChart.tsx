@@ -12,6 +12,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { AdminCategoryItem } from '@/services/adminService';
+import { UniversalSvgChart } from '@/components/common/UniversalSvgChart';
 
 export interface CategoryDistributionPieChartProps {
   categories: AdminCategoryItem[];
@@ -82,41 +83,112 @@ export const CategoryDistributionPieChart: React.FC<CategoryDistributionPieChart
   const totalForPie = segments.reduce((s, seg) => s + seg.count, 0) || 1;
   const maxBarCount = Math.max(...segments.map((s) => s.count), 1);
 
-  const PIE_SIZE = 340;
-  const CX = PIE_SIZE / 2;
-  const CY = PIE_SIZE / 2;
-  const R_OUTER = 130;
-  const R_INNER = 72;
-
-  const pieSlices = useMemo(() => {
-    let startAngle = -Math.PI / 2;
-    return segments.map((seg) => {
-      const frac = seg.count / totalForPie;
-      const sweep = frac * 2 * Math.PI;
-      const endAngle = startAngle + sweep;
-      const x1 = CX + R_OUTER * Math.cos(startAngle);
-      const y1 = CY + R_OUTER * Math.sin(startAngle);
-      const x2 = CX + R_OUTER * Math.cos(endAngle);
-      const y2 = CY + R_OUTER * Math.sin(endAngle);
-      const ix1 = CX + R_INNER * Math.cos(endAngle);
-      const iy1 = CY + R_INNER * Math.sin(endAngle);
-      const ix2 = CX + R_INNER * Math.cos(startAngle);
-      const iy2 = CY + R_INNER * Math.sin(startAngle);
-      const largeArc = sweep > Math.PI ? 1 : 0;
-      const midAngle = startAngle + sweep / 2;
-      const path =
-        `M ${x1} ${y1} A ${R_OUTER} ${R_OUTER} 0 ${largeArc} 1 ${x2} ${y2} ` +
-        `L ${ix1} ${iy1} A ${R_INNER} ${R_INNER} 0 ${largeArc} 0 ${ix2} ${iy2} Z`;
-      const labelR = (R_OUTER + R_INNER) / 2;
-      const lx = CX + labelR * Math.cos(midAngle);
-      const ly = CY + labelR * Math.sin(midAngle);
-      const txtR = R_OUTER + 24;
-      const tx = CX + txtR * Math.cos(midAngle);
-      const ty = CY + txtR * Math.sin(midAngle);
-      startAngle = endAngle;
-      return { ...seg, path, lx, ly, midAngle, frac, sweep, tx, ty };
-    });
+  const formattedSegments = useMemo(() => {
+    return segments.map((seg) => ({
+      ...seg,
+      pct: ((seg.count / Math.max(1, totalForPie)) * 100).toFixed(1),
+    }));
   }, [segments, totalForPie]);
+
+  // Clean Mobile Donut Slices (CX=140, CY=140, R_OUTER=105, R_INNER=56)
+  const mobilePieSlices = useMemo(() => {
+    const CX = 140;
+    const CY = 140;
+    const R_OUTER = 105;
+    const R_INNER = 56;
+
+    let startAngle = -Math.PI / 2;
+    const validSegs = formattedSegments.filter((s) => s.count > 0);
+
+    if (validSegs.length === 0) {
+      const path1 =
+        `M ${CX} ${CY - R_OUTER} ` +
+        `A ${R_OUTER} ${R_OUTER} 0 0 1 ${CX} ${CY + R_OUTER} ` +
+        `L ${CX} ${CY + R_INNER} ` +
+        `A ${R_INNER} ${R_INNER} 0 0 0 ${CX} ${CY - R_INNER} Z`;
+      const path2 =
+        `M ${CX} ${CY + R_OUTER} ` +
+        `A ${R_OUTER} ${R_OUTER} 0 0 1 ${CX} ${CY - R_OUTER} ` +
+        `L ${CX} ${CY - R_INNER} ` +
+        `A ${R_INNER} ${R_INNER} 0 0 0 ${CX} ${CY + R_INNER} Z`;
+      return [
+        { id: 'empty1', label: 'No Categories', count: 0, color: '#CBD5E1', filter: 'All' as const, icon: 'help-outline', path: path1, pct: '0' },
+        { id: 'empty2', label: 'No Categories', count: 0, color: '#CBD5E1', filter: 'All' as const, icon: 'help-outline', path: path2, pct: '0' },
+      ];
+    }
+
+    const resultSlices: Array<typeof validSegs[0] & { path: string }> = [];
+
+    validSegs.forEach((seg) => {
+      const frac = seg.count / Math.max(1, totalForPie);
+      const sweep = frac * 2 * Math.PI;
+
+      if (sweep >= 2 * Math.PI - 0.01) {
+        const midAngle = startAngle + Math.PI;
+
+        const p1_out = { x: CX + R_OUTER * Math.cos(startAngle), y: CY + R_OUTER * Math.sin(startAngle) };
+        const p2_out = { x: CX + R_OUTER * Math.cos(midAngle), y: CY + R_OUTER * Math.sin(midAngle) };
+        const p1_in = { x: CX + R_INNER * Math.cos(startAngle), y: CY + R_INNER * Math.sin(startAngle) };
+        const p2_in = { x: CX + R_INNER * Math.cos(midAngle), y: CY + R_INNER * Math.sin(midAngle) };
+
+        const path1 =
+          `M ${p1_out.x.toFixed(2)} ${p1_out.y.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p2_out.x.toFixed(2)} ${p2_out.y.toFixed(2)} ` +
+          `L ${p2_in.x.toFixed(2)} ${p2_in.y.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 0 0 ${p1_in.x.toFixed(2)} ${p1_in.y.toFixed(2)} Z`;
+
+        const path2 =
+          `M ${p2_out.x.toFixed(2)} ${p2_out.y.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p1_out.x.toFixed(2)} ${p1_out.y.toFixed(2)} ` +
+          `L ${p1_in.x.toFixed(2)} ${p1_in.y.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 0 0 ${p2_in.x.toFixed(2)} ${p2_in.y.toFixed(2)} Z`;
+
+        resultSlices.push({ ...seg, path: path1 });
+        resultSlices.push({ ...seg, id: `${seg.id}_h2`, path: path2 });
+      } else {
+        const endAngle = startAngle + sweep;
+        const x1 = CX + R_OUTER * Math.cos(startAngle);
+        const y1 = CY + R_OUTER * Math.sin(startAngle);
+        const x2 = CX + R_OUTER * Math.cos(endAngle);
+        const y2 = CY + R_OUTER * Math.sin(endAngle);
+
+        const ix1 = CX + R_INNER * Math.cos(endAngle);
+        const iy1 = CY + R_INNER * Math.sin(endAngle);
+        const ix2 = CX + R_INNER * Math.cos(startAngle);
+        const iy2 = CY + R_INNER * Math.sin(startAngle);
+
+        const largeArc = sweep > Math.PI ? 1 : 0;
+
+        const path =
+          `M ${x1.toFixed(2)} ${y1.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} ` +
+          `L ${ix1.toFixed(2)} ${iy1.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 ${largeArc} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)} Z`;
+
+        resultSlices.push({ ...seg, path });
+        startAngle = endAngle;
+      }
+    });
+
+    return resultSlices;
+  }, [formattedSegments, totalForPie]);
+
+  const activeSegmentItem = useMemo(() => {
+    if (hoveredSegment) {
+      return formattedSegments.find((s) => s.id === hoveredSegment);
+    }
+    return null;
+  }, [hoveredSegment, formattedSegments]);
+
+  const mobileSvgHtml = useMemo(() => {
+    return `
+      <svg width="280" height="280" viewBox="0 0 280 280">
+        <g>
+          ${mobilePieSlices.map((slice) => `<path d="${slice.path}" fill="${slice.color}" stroke="#FFFFFF" stroke-width="2.5" opacity="0.95" />`).join('')}
+        </g>
+      </svg>
+    `;
+  }, [mobilePieSlices]);
 
   const isWeb = Platform.OS === 'web';
 
@@ -165,63 +237,44 @@ export const CategoryDistributionPieChart: React.FC<CategoryDistributionPieChart
       {/* Side-by-side Chart & Legend Wrapper */}
       <View style={styles.chartAndLegendWrapper}>
         {viewType === 'pie' ? (
-          <ScrollView style={styles.pieWrapper} maximumZoomScale={4} minimumZoomScale={1} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}>
-            {isWeb ? (
-              <svg
-                width={PIE_SIZE}
-                height={PIE_SIZE}
-                viewBox={`0 0 ${PIE_SIZE} ${PIE_SIZE}`}
-                style={{ display: 'block' } as any}
-              >
-                {pieSlices.map((slice) => {
-                  const isHovered = hoveredSegment === slice.id;
-                  const scale = isHovered ? 1.04 : 1;
-                  const pct = Math.round(slice.frac * 100);
-                  return (
-                    <g
-                      key={slice.id}
-                      style={{
-                        transform: `translate(${CX}px,${CY}px) scale(${scale}) translate(-${CX}px,-${CY}px)`,
-                        transition: 'transform 0.18s ease',
-                        cursor: slice.filter ? 'pointer' : 'default',
-                      } as any}
-                      onMouseEnter={() => setHoveredSegment(slice.id)}
-                      onMouseLeave={() => setHoveredSegment(null)}
-                      onClick={() => slice.filter && onSelectFilter(slice.filter)}
-                    >
-                      <path d={slice.path} fill={slice.color} opacity={isHovered ? 1 : 0.88} stroke={Colors.background} strokeWidth={3} />
-                      {slice.frac > 0.05 && (
-                        <text x={slice.lx} y={slice.ly} fill="#fff" fontSize={12} fontWeight="700" textAnchor="middle" dominantBaseline="middle">
-                          {pct}%
-                        </text>
-                      )}
-                      {slice.frac > 0.08 && (
-                        <>
-                          <text x={slice.tx} y={slice.ty - 7} fill={slice.color} fontSize={10} fontWeight="700" textAnchor="middle">{slice.label}</text>
-                          <text x={slice.tx} y={slice.ty + 7} fill={Colors.onSurfaceVariant} fontSize={9} textAnchor="middle">{slice.count}</text>
-                        </>
-                      )}
+          <View style={styles.pieWrapper}>
+            <View style={{ width: 280, height: 280, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+              {isWeb ? (
+                <View style={styles.webPieWrapper}>
+                  <svg width="280" height="280" viewBox="0 0 280 280">
+                    <g>
+                      {mobilePieSlices.map((slice) => (
+                        <path
+                          key={`cat_web_path_${slice.id}`}
+                          d={slice.path}
+                          fill={slice.color}
+                          stroke="#FFFFFF"
+                          strokeWidth="2.5"
+                          opacity="0.95"
+                          style={{ cursor: slice.filter ? 'pointer' : 'default' }}
+                          onClick={() => slice.filter && onSelectFilter(slice.filter as any)}
+                        />
+                      ))}
                     </g>
-                  );
-                })}
-                {/* Center */}
-                <text x={CX} y={CY - 16} fill={Colors.onSurface} fontSize={32} fontWeight="800" textAnchor="middle" dominantBaseline="middle">
-                  {categories.length}
-                </text>
-                <text x={CX} y={CY + 14} fill={Colors.onSurfaceVariant} fontSize={12} textAnchor="middle">
-                  Categories
-                </text>
-                <text x={CX} y={CY + 30} fill={Colors.tertiary} fontSize={10} textAnchor="middle">
-                  {categories.filter((c) => c.isActive !== false).length} active
-                </text>
-              </svg>
-            ) : (
-              <View style={styles.nativePieHint}>
-                <MaterialIcons name="pie-chart" size={64} color={Colors.primary} />
-                <Text style={styles.nativePieText}>{categories.length} Categories</Text>
+                  </svg>
+                </View>
+              ) : (
+                <UniversalSvgChart height={280} svgHtml={mobileSvgHtml} />
+              )}
+              {/* Center Summary */}
+              <View style={styles.donutCenter}>
+                <Text style={styles.donutCenterValue}>
+                  {activeSegmentItem ? activeSegmentItem.count : categories.length}
+                </Text>
+                <Text style={styles.donutCenterLabel}>
+                  {activeSegmentItem ? activeSegmentItem.label : 'Categories'}
+                </Text>
+                {activeSegmentItem && (
+                  <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+                )}
               </View>
-            )}
-          </ScrollView>
+            </View>
+          </View>
         ) : (
           <View style={styles.barChartContainer}>
             {segments.map((seg) => {
@@ -427,23 +480,50 @@ const styles = StyleSheet.create({
   },
   pieWrapper: {
     position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 340,
+    height: 280,
     flex: 1,
     minWidth: 280,
     marginVertical: Spacing.xs,
   },
-  nativePieHint: {
+  webPieWrapper: {
+    width: 280,
+    height: 280,
     alignItems: 'center',
-    paddingVertical: Spacing.lg,
-    gap: Spacing.xs,
+    justifyContent: 'center',
   },
-  nativePieText: {
+  donutCenter: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: Colors.surfaceContainerLowest,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    pointerEvents: 'none',
+  },
+  donutCenterValue: {
     ...Typography.headlineLg,
     fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
+  },
+  donutCenterLabel: {
+    ...Typography.labelLg,
+    fontSize: 10,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
+  },
+  donutCenterPct: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+    marginTop: 1,
   },
   barChartContainer: {
     width: '100%',

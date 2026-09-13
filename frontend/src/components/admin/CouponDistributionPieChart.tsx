@@ -12,6 +12,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { AdminCouponItem, CouponSummaryMetrics } from '@/services/adminService';
+import { UniversalSvgChart } from '@/components/common/UniversalSvgChart';
 
 export interface CouponDistributionPieChartProps {
   metrics: CouponSummaryMetrics;
@@ -125,98 +126,95 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
     }
   }, [chartMode, coupons, metrics]);
 
-  // Calculate percentages, SVG Slice Paths, and Curved Text Paths (<textPath>)
-  const { arcs, formattedSegments } = useMemo(() => {
-    const cx = 120;
-    const cy = 120;
-    const R = 104;
-    const r = 52;
-    const R_text = 77; // Midpoint radius for curved text path
-
-    let accumulatedDeg = -90; // Start at top center (-90deg)
-
-    const formatted = segments.map((seg) => {
-      const pctVal = (seg.count / Math.max(1, total)) * 100;
-      return {
-        ...seg,
-        pct: pctVal.toFixed(1),
-      };
-    });
-
-    const validSegs = formatted.filter((s) => s.count > 0);
-
-    const arcItems = validSegs.map((seg) => {
-      const fraction = seg.count / Math.max(1, total);
-      const angleDeg = fraction * 360;
-
-      const startDeg = accumulatedDeg;
-      const endDeg = accumulatedDeg + angleDeg;
-      accumulatedDeg = endDeg;
-
-      const midDeg = startDeg + angleDeg / 2;
-
-      // Outer donut slice path
-      let pathD = '';
-      if (angleDeg >= 359.9) {
-        pathD = `
-          M ${cx} ${cy - R}
-          A ${R} ${R} 0 1 1 ${cx} ${cy + R}
-          A ${R} ${R} 0 1 1 ${cx} ${cy - R}
-          M ${cx} ${cy - r}
-          A ${r} ${r} 0 1 0 ${cx} ${cy + r}
-          A ${r} ${r} 0 1 0 ${cx} ${cy - r}
-          Z
-        `;
-      } else {
-        const startRad = (startDeg * Math.PI) / 180;
-        const endRad = (endDeg * Math.PI) / 180;
-
-        const x1 = cx + R * Math.cos(startRad);
-        const y1 = cy + R * Math.sin(startRad);
-        const x2 = cx + R * Math.cos(endRad);
-        const y2 = cy + R * Math.sin(endRad);
-
-        const x3 = cx + r * Math.cos(endRad);
-        const y3 = cy + r * Math.sin(endRad);
-        const x4 = cx + r * Math.cos(startRad);
-        const y4 = cy + r * Math.sin(startRad);
-
-        const largeArc = angleDeg > 180 ? 1 : 0;
-
-        pathD = `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)} A ${r} ${r} 0 ${largeArc} 0 ${x4.toFixed(2)} ${y4.toFixed(2)} Z`;
-      }
-
-      // Calculate Curved Text Path along arc (textPath)
-      const normMid = ((midDeg % 360) + 360) % 360;
-      // If segment is in lower half (between 20deg and 160deg), invert arc direction so text is right-side up
-      const isLowerHalf = normMid > 20 && normMid < 160;
-
-      const pStartRad = (isLowerHalf ? endDeg : startDeg) * (Math.PI / 180);
-      const pEndRad = (isLowerHalf ? startDeg : endDeg) * (Math.PI / 180);
-
-      const tx1 = cx + R_text * Math.cos(pStartRad);
-      const ty1 = cy + R_text * Math.sin(pStartRad);
-      const tx2 = cx + R_text * Math.cos(pEndRad);
-      const ty2 = cy + R_text * Math.sin(pEndRad);
-
-      const sweepFlag = isLowerHalf ? 0 : 1;
-      const largeArcText = angleDeg > 180 ? 1 : 0;
-
-      const textArcD = `M ${tx1.toFixed(2)} ${ty1.toFixed(2)} A ${R_text} ${R_text} 0 ${largeArcText} ${sweepFlag} ${tx2.toFixed(2)} ${ty2.toFixed(2)}`;
-
-      return {
-        ...seg,
-        pathD,
-        textArcD,
-        angleDeg,
-      };
-    });
-
-    return {
-      arcs: arcItems,
-      formattedSegments: formatted,
-    };
+  const formattedSegments = useMemo(() => {
+    return segments.map((seg) => ({
+      ...seg,
+      pct: ((seg.count / Math.max(1, total)) * 100).toFixed(1),
+    }));
   }, [segments, total]);
+
+  // Clean Mobile Donut Slices (CX=140, CY=140, R_OUTER=105, R_INNER=56)
+  const mobilePieSlices = useMemo(() => {
+    const CX = 140;
+    const CY = 140;
+    const R_OUTER = 105;
+    const R_INNER = 56;
+
+    let startAngle = -Math.PI / 2;
+    const validSegs = formattedSegments.filter((s) => s.count > 0);
+
+    if (validSegs.length === 0) {
+      const path1 =
+        `M ${CX} ${CY - R_OUTER} ` +
+        `A ${R_OUTER} ${R_OUTER} 0 0 1 ${CX} ${CY + R_OUTER} ` +
+        `L ${CX} ${CY + R_INNER} ` +
+        `A ${R_INNER} ${R_INNER} 0 0 0 ${CX} ${CY - R_INNER} Z`;
+      const path2 =
+        `M ${CX} ${CY + R_OUTER} ` +
+        `A ${R_OUTER} ${R_OUTER} 0 0 1 ${CX} ${CY - R_OUTER} ` +
+        `L ${CX} ${CY - R_INNER} ` +
+        `A ${R_INNER} ${R_INNER} 0 0 0 ${CX} ${CY + R_INNER} Z`;
+      return [
+        { id: 'empty1', label: 'No Coupons', count: 0, color: '#CBD5E1', filter: 'All' as const, icon: 'help-outline', path: path1, pct: '0' },
+        { id: 'empty2', label: 'No Coupons', count: 0, color: '#CBD5E1', filter: 'All' as const, icon: 'help-outline', path: path2, pct: '0' },
+      ];
+    }
+
+    const resultSlices: Array<typeof validSegs[0] & { path: string }> = [];
+
+    validSegs.forEach((seg) => {
+      const frac = seg.count / Math.max(1, total);
+      const sweep = frac * 2 * Math.PI;
+
+      if (sweep >= 2 * Math.PI - 0.01) {
+        const midAngle = startAngle + Math.PI;
+
+        const p1_out = { x: CX + R_OUTER * Math.cos(startAngle), y: CY + R_OUTER * Math.sin(startAngle) };
+        const p2_out = { x: CX + R_OUTER * Math.cos(midAngle), y: CY + R_OUTER * Math.sin(midAngle) };
+        const p1_in = { x: CX + R_INNER * Math.cos(startAngle), y: CY + R_INNER * Math.sin(startAngle) };
+        const p2_in = { x: CX + R_INNER * Math.cos(midAngle), y: CY + R_INNER * Math.sin(midAngle) };
+
+        const path1 =
+          `M ${p1_out.x.toFixed(2)} ${p1_out.y.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p2_out.x.toFixed(2)} ${p2_out.y.toFixed(2)} ` +
+          `L ${p2_in.x.toFixed(2)} ${p2_in.y.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 0 0 ${p1_in.x.toFixed(2)} ${p1_in.y.toFixed(2)} Z`;
+
+        const path2 =
+          `M ${p2_out.x.toFixed(2)} ${p2_out.y.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p1_out.x.toFixed(2)} ${p1_out.y.toFixed(2)} ` +
+          `L ${p1_in.x.toFixed(2)} ${p1_in.y.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 0 0 ${p2_in.x.toFixed(2)} ${p2_in.y.toFixed(2)} Z`;
+
+        resultSlices.push({ ...seg, path: path1 });
+        resultSlices.push({ ...seg, id: `${seg.id}_h2`, path: path2 });
+      } else {
+        const endAngle = startAngle + sweep;
+        const x1 = CX + R_OUTER * Math.cos(startAngle);
+        const y1 = CY + R_OUTER * Math.sin(startAngle);
+        const x2 = CX + R_OUTER * Math.cos(endAngle);
+        const y2 = CY + R_OUTER * Math.sin(endAngle);
+
+        const ix1 = CX + R_INNER * Math.cos(endAngle);
+        const iy1 = CY + R_INNER * Math.sin(endAngle);
+        const ix2 = CX + R_INNER * Math.cos(startAngle);
+        const iy2 = CY + R_INNER * Math.sin(startAngle);
+
+        const largeArc = sweep > Math.PI ? 1 : 0;
+
+        const path =
+          `M ${x1.toFixed(2)} ${y1.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} ` +
+          `L ${ix1.toFixed(2)} ${iy1.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 ${largeArc} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)} Z`;
+
+        resultSlices.push({ ...seg, path });
+        startAngle = endAngle;
+      }
+    });
+
+    return resultSlices;
+  }, [formattedSegments, total]);
 
   const activeSegmentItem = useMemo(() => {
     if (hoveredSegment) {
@@ -224,6 +222,17 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
     }
     return null;
   }, [hoveredSegment, formattedSegments]);
+
+  // Generate Mobile Donut SVG HTML for UniversalSvgChart
+  const mobileSvgHtml = useMemo(() => {
+    return `
+      <svg width="280" height="280" viewBox="0 0 280 280">
+        <g>
+          ${mobilePieSlices.map((slice) => `<path d="${slice.path}" fill="${slice.color}" stroke="#FFFFFF" stroke-width="2.5" opacity="0.95" />`).join('')}
+        </g>
+      </svg>
+    `;
+  }, [mobilePieSlices]);
 
   return (
     <View style={styles.card}>
@@ -282,52 +291,46 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
       <View style={styles.chartAndLegendWrapper}>
         {/* Chart Area: Pie or Bar */}
         {viewType === 'pie' ? (
-          <ScrollView maximumZoomScale={4} minimumZoomScale={1} style={styles.chartContainer} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}>
-            {isWeb ? (
-              <View style={styles.webPieWrapper}>
-                <svg width="240" height="240" viewBox="0 0 240 240" style={{ overflow: 'visible' }}>
-                  <defs>
-                    {arcs.map((arc) => (
-                      <path key={`coupon-text-path-${arc.id}`} id={`coupon-text-path-${arc.id}`} d={arc.textArcD} />
-                    ))}
-                  </defs>
-                  {arcs.map((arc) => {
-                    const isHovered = hoveredSegment === arc.id;
-                    const isFilterActive = activeFilter === arc.filter;
-                    return (
-                      <g key={arc.id} onClick={() => onSelectFilter(arc.filter)} onMouseEnter={() => setHoveredSegment(arc.id)} onMouseLeave={() => setHoveredSegment(null)} style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}>
-                        <path d={arc.pathD} fill={arc.color} stroke="#FFFFFF" strokeWidth={isHovered || isFilterActive ? '3' : '2'} opacity={isHovered ? 0.92 : 1} />
-                        {arc.angleDeg > 18 && (
-                          <text fill="#FFFFFF" fontSize="11.5" fontWeight="bold" fontFamily="Inter-Bold, sans-serif" style={{ pointerEvents: 'none' }}>
-                            <textPath href={`#coupon-text-path-${arc.id}`} startOffset="50%" textAnchor="middle">
-                              {arc.label} {arc.count} ({arc.pct}%)
-                            </textPath>
-                          </text>
-                        )}
-                      </g>
-                    );
-                  })}
-                  <circle cx="120" cy="120" r="50" fill="#FFFFFF" style={{ filter: 'drop-shadow(0px 3px 8px rgba(0,0,0,0.12))' }} />
-                  <text x="120" y="114" fill={Colors.onSurface} fontSize="22" fontWeight="bold" fontFamily="Inter-Bold, sans-serif" textAnchor="middle" dominantBaseline="middle">
-                    {activeSegmentItem ? activeSegmentItem.count : total}
-                  </text>
-                  <text x="120" y="132" fill={Colors.onSurfaceVariant} fontSize="10" fontFamily="Inter-Medium, sans-serif" textAnchor="middle" dominantBaseline="middle">
-                    {activeSegmentItem ? activeSegmentItem.label : 'Total Coupons'}
-                  </text>
-                </svg>
-              </View>
-            ) : (
-              <View style={styles.nativeRingContainer}>
-                <View style={styles.nativeRingOuter}>
-                  <View style={styles.nativeRingInner}>
-                    <Text style={styles.donutCountText}>{total}</Text>
-                    <Text style={styles.donutLabelText}>Total Coupons</Text>
-                  </View>
+          <View style={styles.chartContainer}>
+            <View style={{ width: 280, height: 280, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+              {isWeb ? (
+                <View style={styles.webPieWrapper}>
+                  <svg width="280" height="280" viewBox="0 0 280 280" style={{ overflow: 'visible' }}>
+                    <g>
+                      {mobilePieSlices.map((slice) => (
+                        <path
+                          key={`coupon_web_path_${slice.id}`}
+                          d={slice.path}
+                          fill={slice.color}
+                          stroke="#FFFFFF"
+                          strokeWidth="2.5"
+                          opacity="0.95"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => onSelectFilter(slice.filter)}
+                        />
+                      ))}
+                    </g>
+                  </svg>
                 </View>
+              ) : (
+                <UniversalSvgChart height={280} svgHtml={mobileSvgHtml} />
+              )}
+              {/* Donut Center Summary */}
+              <View style={styles.donutCenter}>
+                <Text style={styles.donutCenterValue}>
+                  {activeSegmentItem ? activeSegmentItem.count : total}
+                </Text>
+                <Text style={styles.donutCenterLabel}>
+                  {activeSegmentItem ? activeSegmentItem.label : 'Total Coupons'}
+                </Text>
+                {activeSegmentItem && (
+                  <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+                )}
               </View>
-            )}
-          </ScrollView>
+            </View>
+          </View>
         ) : (
+          /* BAR CHART */
           <View style={styles.barChartContainer}>
             {formattedSegments.map((seg) => {
               const maxCount = Math.max(...formattedSegments.map((s) => s.count), 1);
@@ -371,7 +374,7 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
                   { borderLeftColor: seg.color, borderLeftWidth: 4 },
                   (isFilterActive || isHovered) && styles.legendCardActive,
                 ]}
-                onPress={() => onSelectFilter(seg.filter)}
+                onPress={() => onSelectFilter(activeFilter === seg.filter ? 'All' : seg.filter)}
                 {...({
                   onMouseEnter: () => setHoveredSegment(seg.id),
                   onMouseLeave: () => setHoveredSegment(null),
@@ -379,7 +382,7 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
                 activeOpacity={0.8}
               >
                 <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
-                  <MaterialIcons name={seg.icon as any} size={12} color="#FFF" />
+                  <MaterialIcons name={seg.icon as any} size={14} color="#FFF" />
                 </View>
 
                 <View style={styles.legendTextWrapper}>
@@ -387,7 +390,7 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
                     {seg.label}
                   </Text>
                   <Text style={styles.legendSubtitle}>
-                    {seg.count} ({seg.pct}%)
+                    {seg.count} coupons ({seg.pct}%)
                   </Text>
                 </View>
 
@@ -404,7 +407,7 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
 
       {/* Quick Summary Pill Footer */}
       <TouchableOpacity
-        style={styles.allUsersFooterBtn}
+        style={styles.allCouponsFooterBtn}
         onPress={() => {
           if (onToggleExpandList) {
             onToggleExpandList();
@@ -414,10 +417,8 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
         }}
         activeOpacity={0.8}
       >
-        <Text style={styles.allUsersFooterText}>
-          {isListExpanded
-            ? 'Hide Coupons'
-            : `Show All Coupon Codes (${total})`}
+        <Text style={styles.allCouponsFooterText}>
+          {isListExpanded ? 'Hide Coupons List' : `Show All Coupons (${total})`}
         </Text>
         <MaterialIcons
           name={isListExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
@@ -437,60 +438,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
     shadowColor: Colors.shadowColor,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
-    width: '100%',
-  },
-  viewToggleGroup: {
-    flexDirection: 'row',
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.surfaceContainerHigh,
-    overflow: 'hidden',
-  },
-  viewToggleBtn: {
-    padding: 6,
-    backgroundColor: Colors.surfaceContainerLow,
-  },
-  viewToggleBtnActive: { backgroundColor: Colors.primary },
-  barChartContainer: {
-    width: '100%',
-    paddingHorizontal: Spacing.xs,
-    gap: 10,
-    marginVertical: Spacing.sm,
-  },
-  barRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  barLabel: {
-    ...Typography.labelLg,
-    fontSize: 11,
-    color: Colors.onSurfaceVariant,
-    width: 90,
-    textAlign: 'right',
-    fontFamily: 'Inter-Medium',
-  },
-  barTrack: {
-    flex: 1,
-    height: 22,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surfaceContainerLow,
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: BorderRadius.md,
-  },
-  barCount: {
-    ...Typography.labelLg,
-    fontSize: 12,
-    fontFamily: 'Inter-Bold',
-    width: 28,
-    textAlign: 'left',
+    shadowRadius: 6,
+    elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
@@ -498,55 +449,66 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 2,
+    marginBottom: Spacing.xs,
   },
   titleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Spacing.xs,
     flexShrink: 1,
   },
   cardTitle: {
     ...Typography.titleLg,
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   cardSubtitle: {
     ...Typography.bodyMd,
-    fontSize: 11.5,
+    fontSize: 11,
     color: Colors.onSurfaceVariant,
     marginBottom: Spacing.xs,
+  },
+  viewToggleGroup: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: BorderRadius.full,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+  },
+  viewToggleBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+  },
+  viewToggleBtnActive: {
+    backgroundColor: Colors.primary,
   },
   modeTabs: {
     flexDirection: 'row',
     backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.full,
     padding: 2,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
-    flexShrink: 0,
   },
   modeTabBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
   },
   modeTabBtnActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: Colors.primary,
   },
   modeTabText: {
     ...Typography.labelLg,
     fontSize: 11,
     color: Colors.onSurfaceVariant,
+    fontFamily: 'Inter-Medium',
   },
   modeTabTextActive: {
-    color: Colors.primary,
+    color: Colors.onPrimary,
     fontFamily: 'Inter-Bold',
   },
   chartAndLegendWrapper: {
@@ -559,76 +521,113 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 240,
+    height: 280,
     flex: 1,
     minWidth: 280,
     marginVertical: Spacing.xs,
   },
   webPieWrapper: {
+    width: 280,
+    height: 280,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  donutCountText: {
+  donutCenter: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: Colors.surfaceContainerLowest,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    pointerEvents: 'none',
+  },
+  donutCenterValue: {
     ...Typography.headlineLg,
     fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
-    lineHeight: 24,
   },
-  donutLabelText: {
+  donutCenterLabel: {
     ...Typography.labelLg,
     fontSize: 10,
     color: Colors.onSurfaceVariant,
-    marginTop: 2,
+    textAlign: 'center',
   },
-  nativeRingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 160,
-    height: 160,
+  donutCenterPct: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+    marginTop: 1,
   },
-  nativeRingOuter: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: Colors.primaryContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
+  barChartContainer: {
+    flex: 1,
+    minWidth: 280,
+    gap: 12,
+    paddingVertical: Spacing.sm,
   },
-  nativeRingInner: {
-    width: 95,
-    height: 95,
-    borderRadius: 47.5,
-    backgroundColor: '#FFFFFF',
+  barRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 10,
+  },
+  barLabel: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    width: 90,
+    color: Colors.onSurface,
+  },
+  barTrack: {
+    flex: 1,
+    height: 12,
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 6,
+  },
+  barCount: {
+    ...Typography.labelLg,
+    fontSize: 12,
+    width: 32,
+    textAlign: 'right',
+    fontFamily: 'Inter-Bold',
   },
   legendContainer: {
     flex: 1,
     minWidth: 280,
-    gap: 6,
+    gap: 8,
     marginTop: Spacing.xs,
   },
   legendCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.xs + 2,
-    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs + 3,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
+    borderLeftWidth: 4,
     gap: Spacing.xs,
+    elevation: 1,
   },
   legendCardActive: {
     backgroundColor: Colors.primaryContainer,
     borderColor: Colors.primary,
   },
   colorBadgeCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -646,21 +645,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.onSurfaceVariant,
   },
-  allUsersFooterBtn: {
+  allCouponsFooterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    marginTop: Spacing.sm,
-    paddingVertical: 6,
+    gap: 6,
+    paddingVertical: 10,
+    marginTop: 12,
+    backgroundColor: Colors.primaryContainer + '33',
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
-    borderColor: Colors.surfaceContainerHigh,
+    borderColor: Colors.primaryContainer,
   },
-  allUsersFooterText: {
+  allCouponsFooterText: {
     ...Typography.labelLg,
-    fontSize: 11.5,
+    fontSize: 13,
     fontFamily: 'Inter-Bold',
     color: Colors.primary,
   },

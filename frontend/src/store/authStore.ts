@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService, GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
 import { tokenStorage } from '@/storage/tokenStorage';
 
@@ -45,27 +46,42 @@ export interface AuthState {
 const customStorage = {
   getItem: async (name: string): Promise<string | null> => {
     try {
+      const asyncVal = await AsyncStorage.getItem(name);
+      if (asyncVal !== null) return asyncVal;
       if (typeof window !== 'undefined' && window.localStorage) {
         return window.localStorage.getItem(name);
       }
       return null;
     } catch {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(name);
+      }
       return null;
     }
   },
   setItem: async (name: string, value: string): Promise<void> => {
     try {
+      await AsyncStorage.setItem(name, value);
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem(name, value);
       }
-    } catch {}
+    } catch {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(name, value);
+      }
+    }
   },
   removeItem: async (name: string): Promise<void> => {
     try {
+      await AsyncStorage.removeItem(name);
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(name);
       }
-    } catch {}
+    } catch {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(name);
+      }
+    }
   },
 };
 

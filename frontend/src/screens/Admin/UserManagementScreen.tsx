@@ -448,7 +448,10 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
           navigation.navigate('UserProfile');
         }}
         onNotificationPress={() => navigation.navigate('Notifications')}
-        onProfilePress={() => navigation.navigate('UserProfile')}
+        onProfilePress={() => {
+          useProductStore.getState().setLastProfileScreen(null);
+          navigation.navigate('UserProfile');
+        }}
         onCartPress={() => navigation.navigate('Cart')}
         notificationCount={unreadNotifs}
       />

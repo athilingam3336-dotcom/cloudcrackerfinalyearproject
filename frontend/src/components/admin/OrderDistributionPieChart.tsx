@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   Platform,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { AdminOrderItem } from '@/services/adminService';
+import { UniversalSvgChart } from '@/components/common/UniversalSvgChart';
 
 export interface OrderDistributionPieChartProps {
   orders: AdminOrderItem[];
@@ -48,6 +50,122 @@ const STATUS_ICONS: Record<string, string> = {
   Failed: 'error-outline',
 };
 
+function calculateDesktopDonutArcs(
+  formattedSegments: Array<{
+    id: string;
+    label: string;
+    count: number;
+    color: string;
+    statusValue: string;
+    pct: string;
+    icon: string;
+  }>,
+  sliceTotal: number,
+  cx: number,
+  cy: number,
+  R: number,
+  r: number
+) {
+  let accumulatedDeg = -90;
+
+  const validSegs = formattedSegments.filter((s) => s.count > 0);
+  const segsToDraw =
+    validSegs.length > 0
+      ? validSegs
+      : [
+          {
+            id: 'empty_placeholder',
+            label: 'No Orders',
+            count: 0,
+            color: '#CBD5E1',
+            statusValue: 'None',
+            pct: '0.0',
+            icon: 'help-outline',
+          },
+        ];
+
+  const totalForCalc = validSegs.length > 0 ? sliceTotal : 1;
+
+  return segsToDraw.map((seg) => {
+    const fraction = validSegs.length > 0 ? seg.count / Math.max(1, totalForCalc) : 1;
+    const angleDeg = fraction * 360;
+
+    const startDeg = accumulatedDeg;
+    const endDeg = accumulatedDeg + angleDeg;
+    accumulatedDeg = endDeg;
+
+    const midDeg = startDeg + angleDeg / 2;
+
+    let pathD = '';
+    if (angleDeg >= 359.9) {
+      pathD = `
+        M ${cx} ${cy - R}
+        A ${R} ${R} 0 1 1 ${cx} ${cy + R}
+        A ${R} ${R} 0 1 1 ${cx} ${cy - R}
+        M ${cx} ${cy - r}
+        A ${r} ${r} 0 1 0 ${cx} ${cy + r}
+        A ${r} ${r} 0 1 0 ${cx} ${cy - r}
+        Z
+      `;
+    } else {
+      const startRad = (startDeg * Math.PI) / 180;
+      const endRad = (endDeg * Math.PI) / 180;
+
+      const x1 = cx + R * Math.cos(startRad);
+      const y1 = cy + R * Math.sin(startRad);
+      const x2 = cx + R * Math.cos(endRad);
+      const y2 = cy + R * Math.sin(endRad);
+
+      const x3 = cx + r * Math.cos(endRad);
+      const y3 = cy + r * Math.sin(endRad);
+      const x4 = cx + r * Math.cos(startRad);
+      const y4 = cy + r * Math.sin(startRad);
+
+      const largeArc = angleDeg > 180 ? 1 : 0;
+
+      pathD = `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)} A ${r} ${r} 0 ${largeArc} 0 ${x4.toFixed(2)} ${y4.toFixed(2)} Z`;
+    }
+
+    const normMid = ((midDeg % 360) + 360) % 360;
+    const isLowerHalf = normMid > 20 && normMid < 160;
+
+    const pStartRad = (isLowerHalf ? endDeg : startDeg) * (Math.PI / 180);
+    const pEndRad = (isLowerHalf ? startDeg : endDeg) * (Math.PI / 180);
+    const sweepFlag = isLowerHalf ? 0 : 1;
+    const largeArcText = angleDeg > 180 ? 1 : 0;
+
+    const R_name = isLowerHalf ? r + (R - r) * 0.3 : r + (R - r) * 0.7;
+    const R_pct = isLowerHalf ? r + (R - r) * 0.7 : r + (R - r) * 0.3;
+
+    const tx1_n = cx + R_name * Math.cos(pStartRad);
+    const ty1_n = cy + R_name * Math.sin(pStartRad);
+    const tx2_n = cx + R_name * Math.cos(pEndRad);
+    const ty2_n = cy + R_name * Math.sin(pEndRad);
+    const textArcD_Name = `M ${tx1_n.toFixed(2)} ${ty1_n.toFixed(2)} A ${R_name.toFixed(2)} ${R_name.toFixed(2)} 0 ${largeArcText} ${sweepFlag} ${tx2_n.toFixed(2)} ${ty2_n.toFixed(2)}`;
+
+    const tx1_p = cx + R_pct * Math.cos(pStartRad);
+    const ty1_p = cy + R_pct * Math.sin(pStartRad);
+    const tx2_p = cx + R_pct * Math.cos(pEndRad);
+    const ty2_p = cy + R_pct * Math.sin(pEndRad);
+    const textArcD_Pct = `M ${tx1_p.toFixed(2)} ${ty1_p.toFixed(2)} A ${R_pct.toFixed(2)} ${R_pct.toFixed(2)} 0 ${largeArcText} ${sweepFlag} ${tx2_p.toFixed(2)} ${ty2_p.toFixed(2)}`;
+
+    const midRad = (midDeg * Math.PI) / 180;
+    const x_donut = cx + R * Math.cos(midRad);
+    const y_donut = cy + R * Math.sin(midRad);
+
+    return {
+      ...seg,
+      pathD,
+      textArcD_Name,
+      textArcD_Pct,
+      angleDeg,
+      midDeg,
+      x_donut,
+      y_donut,
+    };
+  });
+}
+
 export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps> = ({
   orders,
   totalOrdersCount,
@@ -56,6 +174,9 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
   onSelectOrderStatusFilter,
   onSelectPaymentStatusFilter,
 }) => {
+  const { width: windowWidth } = useWindowDimensions();
+  const isMobile = windowWidth < 768;
+
   const [chartMode, setChartMode] = useState<ChartMode>('status');
   const [viewType, setViewType] = useState<'pie' | 'bar'>('pie');
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
@@ -130,118 +251,112 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
     return totalOrdersCount || sliceTotal;
   }, [totalOrdersCount, sliceTotal]);
 
-  // Calculate percentages, SVG Slice Paths, and Leader Line Points for Left/Right Status Cards
-  const { arcs, formattedSegments, leftSegments, rightSegments } = useMemo(() => {
+  const formattedSegments = useMemo(() => {
+    return segments.map((seg) => ({
+      ...seg,
+      pct: ((seg.count / Math.max(1, sliceTotal)) * 100).toFixed(1),
+    }));
+  }, [segments, sliceTotal]);
+
+  // Clean Mobile Donut Slices (CX=140, CY=140, R_OUTER=105, R_INNER=56)
+  const mobilePieSlices = useMemo(() => {
+    const CX = 140;
+    const CY = 140;
+    const R_OUTER = 105;
+    const R_INNER = 56;
+
+    let startAngle = -Math.PI / 2;
+    const validSegs = formattedSegments.filter((s) => s.count > 0);
+
+    if (validSegs.length === 0) {
+      const path1 =
+        `M ${CX} ${CY - R_OUTER} ` +
+        `A ${R_OUTER} ${R_OUTER} 0 0 1 ${CX} ${CY + R_OUTER} ` +
+        `L ${CX} ${CY + R_INNER} ` +
+        `A ${R_INNER} ${R_INNER} 0 0 0 ${CX} ${CY - R_INNER} Z`;
+      const path2 =
+        `M ${CX} ${CY + R_OUTER} ` +
+        `A ${R_OUTER} ${R_OUTER} 0 0 1 ${CX} ${CY - R_OUTER} ` +
+        `L ${CX} ${CY - R_INNER} ` +
+        `A ${R_INNER} ${R_INNER} 0 0 0 ${CX} ${CY + R_INNER} Z`;
+      return [
+        { id: 'empty1', label: 'No Orders', count: 0, color: '#CBD5E1', statusValue: 'None', icon: 'help-outline', path: path1, pct: '0', frac: 1, sweep: 2 * Math.PI },
+        { id: 'empty2', label: 'No Orders', count: 0, color: '#CBD5E1', statusValue: 'None', icon: 'help-outline', path: path2, pct: '0', frac: 1, sweep: 2 * Math.PI },
+      ];
+    }
+
+    const resultSlices: Array<typeof validSegs[0] & { path: string; frac: number; sweep: number }> = [];
+
+    validSegs.forEach((seg) => {
+      const frac = seg.count / Math.max(1, sliceTotal);
+      const sweep = frac * 2 * Math.PI;
+
+      if (sweep >= 2 * Math.PI - 0.01) {
+        const midAngle = startAngle + Math.PI;
+
+        const p1_out = { x: CX + R_OUTER * Math.cos(startAngle), y: CY + R_OUTER * Math.sin(startAngle) };
+        const p2_out = { x: CX + R_OUTER * Math.cos(midAngle), y: CY + R_OUTER * Math.sin(midAngle) };
+        const p1_in = { x: CX + R_INNER * Math.cos(startAngle), y: CY + R_INNER * Math.sin(startAngle) };
+        const p2_in = { x: CX + R_INNER * Math.cos(midAngle), y: CY + R_INNER * Math.sin(midAngle) };
+
+        const path1 =
+          `M ${p1_out.x.toFixed(2)} ${p1_out.y.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p2_out.x.toFixed(2)} ${p2_out.y.toFixed(2)} ` +
+          `L ${p2_in.x.toFixed(2)} ${p2_in.y.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 0 0 ${p1_in.x.toFixed(2)} ${p1_in.y.toFixed(2)} Z`;
+
+        const path2 =
+          `M ${p2_out.x.toFixed(2)} ${p2_out.y.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 0 1 ${p1_out.x.toFixed(2)} ${p1_out.y.toFixed(2)} ` +
+          `L ${p1_in.x.toFixed(2)} ${p1_in.y.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 0 0 ${p2_in.x.toFixed(2)} ${p2_in.y.toFixed(2)} Z`;
+
+        resultSlices.push({ ...seg, path: path1, frac, sweep });
+        resultSlices.push({ ...seg, id: `${seg.id}_h2`, path: path2, frac, sweep });
+      } else {
+        const endAngle = startAngle + sweep;
+        const x1 = CX + R_OUTER * Math.cos(startAngle);
+        const y1 = CY + R_OUTER * Math.sin(startAngle);
+        const x2 = CX + R_OUTER * Math.cos(endAngle);
+        const y2 = CY + R_OUTER * Math.sin(endAngle);
+
+        const ix1 = CX + R_INNER * Math.cos(endAngle);
+        const iy1 = CY + R_INNER * Math.sin(endAngle);
+        const ix2 = CX + R_INNER * Math.cos(startAngle);
+        const iy2 = CY + R_INNER * Math.sin(startAngle);
+
+        const largeArc = sweep > Math.PI ? 1 : 0;
+
+        const path =
+          `M ${x1.toFixed(2)} ${y1.toFixed(2)} ` +
+          `A ${R_OUTER} ${R_OUTER} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} ` +
+          `L ${ix1.toFixed(2)} ${iy1.toFixed(2)} ` +
+          `A ${R_INNER} ${R_INNER} 0 ${largeArc} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)} Z`;
+
+        resultSlices.push({ ...seg, path, frac, sweep });
+        startAngle = endAngle;
+      }
+    });
+
+    return resultSlices;
+  }, [formattedSegments, sliceTotal]);
+
+  // Desktop Donut Arcs & Connector Line Coordinates (cx=220, cy=170, R=110, r=58)
+  const { desktopArcs, leftSegments, rightSegments } = useMemo(() => {
     const cx = 220;
     const cy = 170;
     const R = 110;
     const r = 58;
 
-    let accumulatedDeg = -90; // Start at top center (-90deg)
+    const arcItems = calculateDesktopDonutArcs(formattedSegments, sliceTotal, cx, cy, R, r);
 
-    const formatted = segments.map((seg) => {
-      const pctVal = (seg.count / Math.max(1, sliceTotal)) * 100;
-      return {
-        ...seg,
-        pct: pctVal.toFixed(1),
-      };
-    });
+    const half = Math.ceil(formattedSegments.length / 2);
+    const leftRaw = formattedSegments.slice(0, half);
+    const rightRaw = formattedSegments.slice(half);
 
-    const validSegs = formatted.filter((s) => s.count > 0);
-
-    const arcItems = validSegs.map((seg) => {
-      const fraction = seg.count / Math.max(1, sliceTotal);
-      const angleDeg = fraction * 360;
-
-      const startDeg = accumulatedDeg;
-      const endDeg = accumulatedDeg + angleDeg;
-      accumulatedDeg = endDeg;
-
-      const midDeg = startDeg + angleDeg / 2;
-
-      // Outer donut slice path
-      let pathD = '';
-      if (angleDeg >= 359.9) {
-        pathD = `
-          M ${cx} ${cy - R}
-          A ${R} ${R} 0 1 1 ${cx} ${cy + R}
-          A ${R} ${R} 0 1 1 ${cx} ${cy - R}
-          M ${cx} ${cy - r}
-          A ${r} ${r} 0 1 0 ${cx} ${cy + r}
-          A ${r} ${r} 0 1 0 ${cx} ${cy - r}
-          Z
-        `;
-      } else {
-        const startRad = (startDeg * Math.PI) / 180;
-        const endRad = (endDeg * Math.PI) / 180;
-
-        const x1 = cx + R * Math.cos(startRad);
-        const y1 = cy + R * Math.sin(startRad);
-        const x2 = cx + R * Math.cos(endRad);
-        const y2 = cy + R * Math.sin(endRad);
-
-        const x3 = cx + r * Math.cos(endRad);
-        const y3 = cy + r * Math.sin(endRad);
-        const x4 = cx + r * Math.cos(startRad);
-        const y4 = cy + r * Math.sin(startRad);
-
-        const largeArc = angleDeg > 180 ? 1 : 0;
-
-        pathD = `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)} A ${r} ${r} 0 ${largeArc} 0 ${x4.toFixed(2)} ${y4.toFixed(2)} Z`;
-      }
-
-      // Calculate 2 Concentric Curved Text Paths along arc (textPath)
-      const normMid = ((midDeg % 360) + 360) % 360;
-      const isLowerHalf = normMid > 20 && normMid < 160;
-
-      const pStartRad = (isLowerHalf ? endDeg : startDeg) * (Math.PI / 180);
-      const pEndRad = (isLowerHalf ? startDeg : endDeg) * (Math.PI / 180);
-      const sweepFlag = isLowerHalf ? 0 : 1;
-      const largeArcText = angleDeg > 180 ? 1 : 0;
-
-      const R_name = isLowerHalf ? 72 : 94;
-      const R_pct = isLowerHalf ? 94 : 72;
-
-      const tx1_n = cx + R_name * Math.cos(pStartRad);
-      const ty1_n = cy + R_name * Math.sin(pStartRad);
-      const tx2_n = cx + R_name * Math.cos(pEndRad);
-      const ty2_n = cy + R_name * Math.sin(pEndRad);
-      const textArcD_Name = `M ${tx1_n.toFixed(2)} ${ty1_n.toFixed(2)} A ${R_name} ${R_name} 0 ${largeArcText} ${sweepFlag} ${tx2_n.toFixed(2)} ${ty2_n.toFixed(2)}`;
-
-      const tx1_p = cx + R_pct * Math.cos(pStartRad);
-      const ty1_p = cy + R_pct * Math.sin(pStartRad);
-      const tx2_p = cx + R_pct * Math.cos(pEndRad);
-      const ty2_p = cy + R_pct * Math.sin(pEndRad);
-      const textArcD_Pct = `M ${tx1_p.toFixed(2)} ${ty1_p.toFixed(2)} A ${R_pct} ${R_pct} 0 ${largeArcText} ${sweepFlag} ${tx2_p.toFixed(2)} ${ty2_p.toFixed(2)}`;
-
-      const midRad = (midDeg * Math.PI) / 180;
-      const x_donut = cx + R * Math.cos(midRad);
-      const y_donut = cy + R * Math.sin(midRad);
-
-      return {
-        ...seg,
-        pathD,
-        textArcD_Name,
-        textArcD_Pct,
-        angleDeg,
-        midDeg,
-        x_donut,
-        y_donut,
-      };
-    });
-
-    // Split formatted into Left & Right groups
-    const half = Math.ceil(formatted.length / 2);
-    const leftRaw = formatted.slice(0, half);
-    const rightRaw = formatted.slice(half);
-
-    // Calculate Y positions for connector lines matching card vertical centers
     const getTargetY = (index: number, count: number) => {
-      if (count === 3) {
-        return 100 + index * 70; // 100, 170, 240
-      } else if (count === 2) {
-        return 135 + index * 70; // 135, 205
-      }
+      if (count === 3) return 100 + index * 70;
+      if (count === 2) return 135 + index * 70;
       return 170;
     };
 
@@ -250,21 +365,11 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
       const dy = y_card - cy;
       let x_donut = cx - R;
       let y_donut = y_card;
-
       if (Math.abs(dy) < R) {
         const dx = Math.sqrt(R * R - dy * dy);
         x_donut = cx - dx;
-      } else {
-        x_donut = cx - R;
-        y_donut = cy;
       }
-
-      return {
-        ...item,
-        y_card,
-        x_donut,
-        y_donut,
-      };
+      return { ...item, y_card, x_donut, y_donut };
     });
 
     const rightSegs = rightRaw.map((item, idx) => {
@@ -272,32 +377,21 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
       const dy = y_card - cy;
       let x_donut = cx + R;
       let y_donut = y_card;
-
       if (Math.abs(dy) < R) {
         const dx = Math.sqrt(R * R - dy * dy);
         x_donut = cx + dx;
-      } else {
-        x_donut = cx + R;
-        y_donut = cy;
       }
-
-      return {
-        ...item,
-        y_card,
-        x_donut,
-        y_donut,
-      };
+      return { ...item, y_card, x_donut, y_donut };
     });
 
     return {
-      arcs: arcItems,
-      formattedSegments: formatted,
+      desktopArcs: arcItems,
       leftSegments: leftSegs,
       rightSegments: rightSegs,
     };
-  }, [segments, sliceTotal]);
+  }, [formattedSegments, sliceTotal]);
 
-  // Bar Chart positioning calculations
+  // Bar Chart calculations
   const barChartData = useMemo(() => {
     const maxVal = Math.max(1, ...formattedSegments.map((s) => s.count));
     const width = 860;
@@ -338,6 +432,103 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
     }
     return null;
   }, [hoveredSegment, formattedSegments]);
+
+  // Generate Mobile Donut SVG HTML for UniversalSvgChart
+  const mobileSvgHtml = useMemo(() => {
+    return `
+      <svg width="280" height="280" viewBox="0 0 280 280">
+        <g>
+          ${mobilePieSlices.map((slice) => `<path d="${slice.path}" fill="${slice.color}" stroke="#FFFFFF" stroke-width="2.5" opacity="0.95" />`).join('')}
+        </g>
+      </svg>
+    `;
+  }, [mobilePieSlices]);
+
+  // Generate Desktop Donut SVG HTML for UniversalSvgChart
+  const desktopSvgHtml = useMemo(() => {
+    return `
+      <svg width="440" height="340" viewBox="0 0 440 340" style="display:block;margin:auto;">
+        <defs>
+          ${desktopArcs.map((arc, index) => `
+            <path id="deskTextPath_Name_${arc.id}_${index}" d="${arc.textArcD_Name}" />
+            <path id="deskTextPath_Pct_${arc.id}_${index}" d="${arc.textArcD_Pct}" />
+          `).join('')}
+        </defs>
+
+        ${leftSegments.map((seg) => {
+          if (seg.count <= 0) return '';
+          return `
+            <g>
+              <circle cx="${seg.x_donut}" cy="${seg.y_donut}" r="4.5" fill="${seg.color}" stroke="#FFFFFF" stroke-width="1.5" />
+              <path d="M 0 ${seg.y_card} L ${seg.x_donut} ${seg.y_donut}" stroke="${seg.color}" stroke-width="2.5" opacity="0.9" fill="none" />
+              <circle cx="4" cy="${seg.y_card}" r="4" fill="${seg.color}" />
+            </g>
+          `;
+        }).join('')}
+
+        ${rightSegments.map((seg) => {
+          if (seg.count <= 0) return '';
+          return `
+            <g>
+              <circle cx="${seg.x_donut}" cy="${seg.y_donut}" r="4.5" fill="${seg.color}" stroke="#FFFFFF" stroke-width="1.5" />
+              <path d="M 440 ${seg.y_card} L ${seg.x_donut} ${seg.y_donut}" stroke="${seg.color}" stroke-width="2.5" opacity="0.9" fill="none" />
+              <circle cx="436" cy="${seg.y_card}" r="4" fill="${seg.color}" />
+            </g>
+          `;
+        }).join('')}
+
+        ${desktopArcs.map((arc) => `
+          <path d="${arc.pathD}" fill="${arc.color}" opacity="0.92" stroke="#FFFFFF" stroke-width="2" />
+        `).join('')}
+
+        ${desktopArcs.map((arc, index) => arc.angleDeg >= 14 ? `
+          <text font-size="${arc.angleDeg < 25 ? '10' : '12'}" font-weight="bold" fill="#FFFFFF" text-anchor="middle" font-family="sans-serif">
+            <textPath href="#deskTextPath_Name_${arc.id}_${index}" startOffset="50%">${arc.label}</textPath>
+          </text>
+          <text font-size="${arc.angleDeg < 25 ? '9.5' : '11'}" font-weight="600" fill="rgba(255, 255, 255, 0.95)" text-anchor="middle" font-family="sans-serif">
+            <textPath href="#deskTextPath_Pct_${arc.id}_${index}" startOffset="50%">${arc.count} (${arc.pct}%)</textPath>
+          </text>
+        ` : '').join('')}
+
+        <circle cx="220" cy="170" r="54" fill="#FFFFFF" />
+        <text x="220" y="162" text-anchor="middle" font-size="24" font-weight="800" fill="#0F172A" font-family="sans-serif">${displayTotal}</text>
+        <text x="220" y="180" text-anchor="middle" font-size="10" font-weight="600" fill="#64748B" font-family="sans-serif">Total Orders</text>
+      </svg>
+    `;
+  }, [desktopArcs, leftSegments, rightSegments, displayTotal]);
+
+  // Generate Bar SVG HTML
+  const barSvgHtml = useMemo(() => {
+    return `
+      <svg width="860" height="250" viewBox="0 0 860 250" style="display:block;">
+        <defs>
+          ${barChartData.bars.map((bar) => `
+            <linearGradient id="orderBarGrad_${bar.id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${bar.color}" stop-opacity="1" />
+              <stop offset="100%" stop-color="${bar.color}" stop-opacity="0.65" />
+            </linearGradient>
+          `).join('')}
+        </defs>
+        ${[0, 0.5, 1].map((ratio) => {
+          const yLine = barChartData.paddingTop + barChartData.chartH * (1 - ratio);
+          const val = Math.round(barChartData.maxVal * ratio);
+          return `
+            <g>
+              <line x1="${barChartData.paddingLeft}" y1="${yLine}" x2="${barChartData.paddingLeft + barChartData.chartW}" y2="${yLine}" stroke="#E2E8F0" stroke-dasharray="${ratio === 0 ? 'none' : '3 3'}" stroke-width="1" />
+              <text x="${barChartData.paddingLeft - 8}" y="${yLine + 4}" text-anchor="end" font-size="11" fill="#94A3B8" font-family="sans-serif">${val}</text>
+            </g>
+          `;
+        }).join('')}
+        ${barChartData.bars.map((bar) => `
+          <g>
+            <rect x="${bar.x}" y="${bar.y}" width="${bar.barWidth}" height="${Math.max(4, bar.barH)}" rx="6" ry="6" fill="url(#orderBarGrad_${bar.id})" opacity="0.9" />
+            <text x="${bar.x + bar.barWidth / 2}" y="${Math.max(16, bar.y - 6)}" text-anchor="middle" font-size="11" font-weight="bold" fill="#475569" font-family="sans-serif">${bar.count}</text>
+            <text x="${bar.x + bar.barWidth / 2}" y="${barChartData.paddingTop + barChartData.chartH + 18}" text-anchor="middle" font-size="12" font-weight="bold" fill="#475569" font-family="sans-serif">${bar.label}</text>
+          </g>
+        `).join('')}
+      </svg>
+    `;
+  }, [barChartData]);
 
   return (
     <View style={styles.card}>
@@ -402,13 +593,11 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={true}
-          maximumZoomScale={4}
-          minimumZoomScale={1}
           style={styles.chartContainer}
           contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minWidth: '100%' }}
         >
           {Platform.OS === 'web' ? (
-            <svg width="100%" height="250" viewBox="0 0 860 250" style={{ overflow: 'visible', maxWidth: '100%' }}>
+            <svg width="860" height="250" viewBox="0 0 860 250" style={{ overflow: 'visible', maxWidth: '100%' }}>
               <defs>
                 {barChartData.bars.map((bar) => (
                   <linearGradient
@@ -476,7 +665,6 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                       }
                     }}
                   >
-                    {/* Bar Rect */}
                     <rect
                       x={bar.x}
                       y={bar.y}
@@ -486,15 +674,8 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                       ry="6"
                       fill={`url(#orderBarGrad_${bar.id})`}
                       opacity={isHovered || isSelected ? 1 : 0.88}
-                      style={{
-                        transition: 'all 0.2s ease-in-out',
-                        transform: isHovered || isSelected ? 'scaleY(1.02)' : 'scaleY(1)',
-                        transformOrigin: `${bar.x + bar.barWidth / 2}px ${barChartData.paddingTop + barChartData.chartH}px`,
-                        filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.2))' : 'none',
-                      }}
                     />
 
-                    {/* Top Count Text */}
                     <text
                       x={bar.x + bar.barWidth / 2}
                       y={Math.max(16, bar.y - 6)}
@@ -507,7 +688,6 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                       {bar.count}
                     </text>
 
-                    {/* X-axis Label */}
                     <text
                       x={bar.x + bar.barWidth / 2}
                       y={barChartData.paddingTop + barChartData.chartH + 18}
@@ -524,11 +704,104 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
               })}
             </svg>
           ) : (
-            <View style={styles.nativeFallbackDonut} />
+            <UniversalSvgChart height={250} width={860} svgHtml={barSvgHtml} />
           )}
         </ScrollView>
+      ) : isMobile ? (
+        /* 📱 MOBILE VIEW: CENTERED DONUT CHART + RESPONSIVE STATUS CARDS GRID */
+        <View style={styles.mobilePieContainer}>
+          <View style={styles.mobileChartCenterWrapper}>
+            {Platform.OS === 'web' ? (
+              <svg width="280" height="280" viewBox="0 0 280 280" style={{ overflow: 'visible', margin: 'auto' }}>
+                <g>
+                  {mobilePieSlices.map((slice) => (
+                    <path
+                      key={`mob_web_slice_${slice.id}`}
+                      d={slice.path}
+                      fill={slice.color}
+                      stroke="#FFFFFF"
+                      strokeWidth="2.5"
+                      opacity="0.95"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        if (chartMode === 'status') {
+                          onSelectOrderStatusFilter(slice.statusValue);
+                        } else {
+                          onSelectPaymentStatusFilter(slice.statusValue);
+                        }
+                      }}
+                    />
+                  ))}
+                </g>
+              </svg>
+            ) : (
+              <UniversalSvgChart height={280} svgHtml={mobileSvgHtml} />
+            )}
+
+            {/* Center Summary Overlay */}
+            <View style={styles.donutCenter}>
+              <Text style={styles.donutCenterValue}>
+                {activeSegmentItem ? activeSegmentItem.count : displayTotal}
+              </Text>
+              <Text style={styles.donutCenterLabel}>
+                {activeSegmentItem ? activeSegmentItem.label : 'Total Orders'}
+              </Text>
+              {activeSegmentItem && (
+                <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Mobile Status Cards Grid */}
+          <View style={styles.mobileLegendGrid}>
+            {formattedSegments.map((seg) => {
+              const isSelected =
+                chartMode === 'status'
+                  ? selectedOrderStatus === seg.statusValue
+                  : selectedPaymentStatus === seg.statusValue;
+
+              return (
+                <TouchableOpacity
+                  key={`mob_card_${seg.id}`}
+                  style={[
+                    styles.mobileLegendCard,
+                    isSelected && styles.legendCardActive,
+                    { borderLeftColor: seg.color, borderLeftWidth: 4 },
+                  ]}
+                  onPress={() => {
+                    if (chartMode === 'status') {
+                      onSelectOrderStatusFilter(seg.statusValue);
+                    } else {
+                      onSelectPaymentStatusFilter(seg.statusValue);
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.colorBadgeCircle, { backgroundColor: seg.color }]}>
+                    <MaterialIcons name={seg.icon as any} size={13} color="#FFF" />
+                  </View>
+
+                  <View style={styles.legendTextWrapper}>
+                    <Text style={styles.legendTitle} numberOfLines={1}>
+                      {seg.label}
+                    </Text>
+                    <Text style={styles.legendSubtitle}>
+                      {seg.count} orders ({seg.pct}%)
+                    </Text>
+                  </View>
+
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={16}
+                    color={isSelected ? Colors.primary : Colors.outline}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
       ) : (
-        /* Pie View with LEFT & RIGHT Status Cards + Leader Lines (kodu) */
+        /* 💻 DESKTOP VIEW: 3-COLUMN LAYOUT WITH CONNECTOR LINES & STATUS CARDS */
         <View style={styles.pieLayoutRow}>
           {/* 👈 LEFT SIDE STATUS CARDS */}
           <View style={styles.sideColumn}>
@@ -583,17 +856,12 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
             })}
           </View>
 
-          {/* 🎯 CENTER SVG DONUT CHART WITH CONNECTOR LINES (KODU) */}
-          <ScrollView
-            maximumZoomScale={4}
-            minimumZoomScale={1}
-            style={styles.chartCenterWrapper}
-            contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}
-          >
+          {/* 🎯 CENTER SVG DONUT CHART WITH CONNECTOR LINES */}
+          <View style={styles.chartCenterWrapper}>
             {Platform.OS === 'web' ? (
-              <svg width="440" height="340" viewBox="0 0 440 340" style={{ overflow: 'visible' }}>
+              <svg width="440" height="340" viewBox="0 0 440 340" style={{ overflow: 'visible', margin: 'auto' }}>
                 <defs>
-                  {arcs.map((arc, index) => (
+                  {desktopArcs.map((arc, index) => (
                     <React.Fragment key={`def_order_frag_${arc.id}_${index}`}>
                       <path id={`orderTextPath_Name_${arc.id}_${index}`} d={arc.textArcD_Name} />
                       <path id={`orderTextPath_Pct_${arc.id}_${index}`} d={arc.textArcD_Pct} />
@@ -601,10 +869,9 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                   ))}
                 </defs>
 
-                {/* ── LEFT CONNECTOR LINES (KODU) - ONLY FOR ACTIVE STATUSES (> 0 ORDERS) ── */}
+                {/* Left Connector Lines */}
                 {leftSegments.map((seg) => {
-                  if (seg.count <= 0) return null; // No line for 0-count statuses!
-
+                  if (seg.count <= 0) return null;
                   const isHovered = hoveredSegment === seg.id;
                   const isSelected =
                     chartMode === 'status'
@@ -612,68 +879,44 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                       : selectedPaymentStatus === seg.statusValue;
                   return (
                     <g key={`line_left_${seg.id}`}>
-                      {/* Connection Dot on Donut edge */}
-                      <circle
-                        cx={seg.x_donut}
-                        cy={seg.y_donut}
-                        r="4.5"
-                        fill={seg.color}
-                        stroke="#FFFFFF"
-                        strokeWidth="1.5"
-                      />
-                      {/* Leader Line (Kodu) from Left Card center (0, y_card) to Donut Edge */}
+                      <circle cx={seg.x_donut} cy={seg.y_donut} r="4.5" fill={seg.color} stroke="#FFFFFF" strokeWidth="1.5" />
                       <path
                         d={`M 0 ${seg.y_card} L ${seg.x_donut} ${seg.y_donut}`}
                         stroke={seg.color}
                         strokeWidth={isHovered || isSelected ? '3.5' : '2.5'}
                         opacity={isHovered || isSelected ? 1 : 0.9}
                         fill="none"
-                        style={{ transition: 'all 0.2s ease-in-out' }}
                       />
-                      {/* Anchor Dot on Left Card edge */}
                       <circle cx="4" cy={seg.y_card} r="4" fill={seg.color} />
                     </g>
                   );
                 })}
 
-                {/* ── RIGHT CONNECTOR LINES (KODU) - ONLY FOR ACTIVE STATUSES (> 0 ORDERS) ── */}
+                {/* Right Connector Lines */}
                 {rightSegments.map((seg) => {
-                  if (seg.count <= 0) return null; // No line for 0-count statuses!
-
+                  if (seg.count <= 0) return null;
                   const isHovered = hoveredSegment === seg.id;
                   const isSelected =
                     chartMode === 'status'
                       ? selectedOrderStatus === seg.statusValue
                       : selectedPaymentStatus === seg.statusValue;
-
                   return (
                     <g key={`line_right_${seg.id}`}>
-                      {/* Connection Dot on Donut edge */}
-                      <circle
-                        cx={seg.x_donut}
-                        cy={seg.y_donut}
-                        r="4.5"
-                        fill={seg.color}
-                        stroke="#FFFFFF"
-                        strokeWidth="1.5"
-                      />
-                      {/* Leader Line (Kodu) from Right Card center (440, y_card) to Donut Edge */}
+                      <circle cx={seg.x_donut} cy={seg.y_donut} r="4.5" fill={seg.color} stroke="#FFFFFF" strokeWidth="1.5" />
                       <path
                         d={`M 440 ${seg.y_card} L ${seg.x_donut} ${seg.y_donut}`}
                         stroke={seg.color}
                         strokeWidth={isHovered || isSelected ? '3.5' : '2.5'}
                         opacity={isHovered || isSelected ? 1 : 0.9}
                         fill="none"
-                        style={{ transition: 'all 0.2s ease-in-out' }}
                       />
-                      {/* Anchor Dot on Right Card edge */}
                       <circle cx="436" cy={seg.y_card} r="4" fill={seg.color} />
                     </g>
                   );
                 })}
 
-                {/* Render Donut Slices */}
-                {arcs.map((arc) => {
+                {/* Donut Slices */}
+                {desktopArcs.map((arc) => {
                   const isHovered = hoveredSegment === arc.id;
                   const isSelected =
                     chartMode === 'status'
@@ -691,7 +934,6 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                         transition: 'all 0.2s ease-in-out',
                         transform: isHovered || isSelected ? 'scale(1.03)' : 'scale(1)',
                         transformOrigin: '220px 170px',
-                        filter: isHovered ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.25))' : 'none',
                       }}
                       onMouseEnter={() => setHoveredSegment(arc.id)}
                       onMouseLeave={() => setHoveredSegment(null)}
@@ -706,44 +948,18 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                   );
                 })}
 
-                {/* Curved Text Labels inside slices using SVG <textPath> */}
-                {arcs.map((arc, index) => {
+                {/* Curved Text Labels inside slices */}
+                {desktopArcs.map((arc, index) => {
                   if (arc.angleDeg < 14) return null;
-
                   return (
                     <g key={`order_text_group_${arc.id}_${index}`}>
-                      <text
-                        style={{
-                          fontSize: arc.angleDeg < 25 ? '10px' : '12px',
-                          fontWeight: 'bold',
-                          fill: '#FFFFFF',
-                          pointerEvents: 'none',
-                          letterSpacing: '0.3px',
-                        }}
-                      >
-                        <textPath
-                          href={`#orderTextPath_Name_${arc.id}_${index}`}
-                          startOffset="50%"
-                          textAnchor="middle"
-                        >
+                      <text style={{ fontSize: arc.angleDeg < 25 ? '10px' : '12px', fontWeight: 'bold', fill: '#FFFFFF', pointerEvents: 'none' }}>
+                        <textPath href={`#orderTextPath_Name_${arc.id}_${index}`} startOffset="50%" textAnchor="middle">
                           {arc.label}
                         </textPath>
                       </text>
-
-                      <text
-                        style={{
-                          fontSize: arc.angleDeg < 25 ? '9.5px' : '11px',
-                          fontWeight: '600',
-                          fill: 'rgba(255, 255, 255, 0.95)',
-                          pointerEvents: 'none',
-                          letterSpacing: '0.2px',
-                        }}
-                      >
-                        <textPath
-                          href={`#orderTextPath_Pct_${arc.id}_${index}`}
-                          startOffset="50%"
-                          textAnchor="middle"
-                        >
+                      <text style={{ fontSize: arc.angleDeg < 25 ? '9.5px' : '11px', fontWeight: '600', fill: 'rgba(255, 255, 255, 0.95)', pointerEvents: 'none' }}>
+                        <textPath href={`#orderTextPath_Pct_${arc.id}_${index}`} startOffset="50%" textAnchor="middle">
                           {`${arc.count} (${arc.pct}%)`}
                         </textPath>
                       </text>
@@ -752,20 +968,10 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                 })}
               </svg>
             ) : (
-              <View style={styles.nativeFallbackDonut}>
-                {arcs.map((arc) => (
-                  <View
-                    key={arc.id}
-                    style={[
-                      styles.nativeSegmentLine,
-                      { backgroundColor: arc.color, height: (arc.count / Math.max(1, sliceTotal)) * 140 },
-                    ]}
-                  />
-                ))}
-              </View>
+              <UniversalSvgChart height={340} svgHtml={desktopSvgHtml} />
             )}
 
-            {/* Donut Hole Center Summary Content */}
+            {/* Donut Center Summary */}
             <View style={styles.donutCenter}>
               <Text style={styles.donutCenterValue}>
                 {activeSegmentItem ? activeSegmentItem.count : displayTotal}
@@ -777,7 +983,7 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                 <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
               )}
             </View>
-          </ScrollView>
+          </View>
 
           {/* 👉 RIGHT SIDE STATUS CARDS */}
           <View style={styles.sideColumn}>
@@ -901,10 +1107,41 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     position: 'relative',
+    height: 270,
+    marginVertical: Spacing.xs,
+  },
+  mobilePieContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 340,
-    marginVertical: Spacing.xs,
+    width: '100%',
+    paddingVertical: Spacing.xs,
+  },
+  mobileChartCenterWrapper: {
+    position: 'relative',
+    width: 280,
+    height: 280,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mobileLegendGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: Spacing.md,
+    width: '100%',
+  },
+  mobileLegendCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surfaceContainerLow,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    gap: 8,
+    width: '48%',
+    minWidth: 140,
+    flexGrow: 1,
   },
   pieLayoutRow: {
     flexDirection: 'row',
@@ -923,10 +1160,10 @@ const styles = StyleSheet.create({
   },
   chartCenterWrapper: {
     position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
     width: 440,
     height: 340,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sideLegendCard: {
     flexDirection: 'row',
@@ -973,9 +1210,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: Colors.surfaceContainerLowest,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -986,7 +1223,7 @@ const styles = StyleSheet.create({
   },
   donutCenterValue: {
     ...Typography.headlineLg,
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
@@ -1003,21 +1240,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginTop: 1,
   },
-  nativeFallbackDonut: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: Colors.surfaceContainerLow,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  nativeSegmentLine: {
-    width: 12,
-    marginHorizontal: 2,
-    borderRadius: 6,
-  },
 });
 
 export default OrderDistributionPieChart;
-

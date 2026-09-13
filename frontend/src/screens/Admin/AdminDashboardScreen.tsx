@@ -243,19 +243,19 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
   },
   titleSection: {
-    marginVertical: Spacing.md,
+    marginVertical: Spacing.sm,
   },
   title: {
     ...Typography.headlineLg,
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
   },
   subtitle: {
     ...Typography.bodyMd,
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.onSurfaceVariant,
-    marginTop: 2,
+    marginTop: 1,
   },
 });
 

@@ -26,11 +26,69 @@ export const FooterSection: React.FC = React.memo(() => {
     Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`);
   };
 
+  // ── 1. COMPACT & STREAMLINED MOBILE FOOTER (HEIGHT ~110px) ──
+  if (isMobile) {
+    return (
+      <View style={styles.footerWrapperMobile}>
+        {/* Brand Name & License Header */}
+        <View style={styles.mobileHeaderRow}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <MaterialIcons name="local-fire-department" size={18} color="#E11D48" />
+            <Text style={styles.brandTitleMobile}>{CLIENT_INFO.name}</Text>
+          </View>
+          <View style={styles.licenseBadgeMobile}>
+            <Text style={styles.licenseTextMobile}>Lic: E/SC/TN/24/685</Text>
+          </View>
+        </View>
+
+        {/* Essential Navigation Links */}
+        <View style={styles.mobileNavRow}>
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} activeOpacity={0.7}>
+            <Text style={styles.navLinkText}>Home</Text>
+          </TouchableOpacity>
+          <Text style={styles.dot}>•</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Categories')} activeOpacity={0.7}>
+            <Text style={styles.navLinkText}>Categories</Text>
+          </TouchableOpacity>
+          <Text style={styles.dot}>•</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Cart')} activeOpacity={0.7}>
+            <Text style={styles.navLinkText}>Cart</Text>
+          </TouchableOpacity>
+          <Text style={styles.dot}>•</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('UserProfile')} activeOpacity={0.7}>
+            <Text style={styles.navLinkText}>Account</Text>
+          </TouchableOpacity>
+          <Text style={styles.dot}>•</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} activeOpacity={0.7}>
+            <Text style={styles.navLinkAdmin}>Admin</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Contact & Store Map */}
+        <View style={styles.mobileContactRow}>
+          <TouchableOpacity style={styles.mobileContactItem} onPress={handlePhonePress} activeOpacity={0.7}>
+            <MaterialIcons name="phone" size={13} color="#E11D48" />
+            <Text style={styles.contactTextMobile}>{CLIENT_INFO.primaryPhone}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.mobileMapItem} onPress={handleOpenMap} activeOpacity={0.7}>
+            <MaterialIcons name="place" size={14} color="#FACC15" />
+            <Text style={styles.mapTextMobile}>Store Location 📍</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Copyright */}
+        <Text style={styles.copyrightTextMobile}>{CLIENT_INFO.copyright}</Text>
+      </View>
+    );
+  }
+
+  // ── 2. DESKTOP & TABLET FOOTER (3-COLUMN LAYOUT) ──
   return (
     <View style={styles.footerWrapper}>
-      <View style={[styles.footerInner, isMobile && styles.footerInnerMobile]}>
+      <View style={styles.footerInner}>
         {/* Column 1: Store Branding & License */}
-        <View style={[styles.columnContainer, isMobile && styles.columnMobile]}>
+        <View style={styles.columnContainer}>
           <View style={styles.brandTitleRow}>
             <MaterialIcons name="local-fire-department" size={24} color="#E11D48" />
             <Text style={styles.brandTitle}>{CLIENT_INFO.name}</Text>
@@ -43,50 +101,30 @@ export const FooterSection: React.FC = React.memo(() => {
         </View>
 
         {/* Column 2: Essential Quick Links */}
-        <View style={[styles.columnContainer, isMobile && styles.columnMobile]}>
+        <View style={styles.columnContainer}>
           <Text style={styles.columnHeader}>Quick Navigation</Text>
-          <View style={styles.linksGridMobile}>
-            <TouchableOpacity
-              style={styles.linkChip}
-              onPress={() => navigation.navigate('Home')}
-              activeOpacity={0.7}
-            >
+          <View style={styles.linksGrid}>
+            <TouchableOpacity style={styles.linkChip} onPress={() => navigation.navigate('Home')} activeOpacity={0.7}>
               <MaterialIcons name="home" size={15} color="#94A3B8" />
               <Text style={styles.linkText}>Home</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.linkChip}
-              onPress={() => navigation.navigate('Categories')}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.linkChip} onPress={() => navigation.navigate('Categories')} activeOpacity={0.7}>
               <MaterialIcons name="grid-view" size={15} color="#94A3B8" />
               <Text style={styles.linkText}>Categories</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.linkChip}
-              onPress={() => navigation.navigate('Cart')}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.linkChip} onPress={() => navigation.navigate('Cart')} activeOpacity={0.7}>
               <MaterialIcons name="shopping-cart" size={15} color="#94A3B8" />
               <Text style={styles.linkText}>My Cart</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.linkChip}
-              onPress={() => navigation.navigate('UserProfile')}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.linkChip} onPress={() => navigation.navigate('UserProfile')} activeOpacity={0.7}>
               <MaterialIcons name="person" size={15} color="#94A3B8" />
               <Text style={styles.linkText}>Account</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.linkChip, styles.adminLinkChip]}
-              onPress={() => navigation.navigate('AdminDashboard')}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={[styles.linkChip, styles.adminLinkChip]} onPress={() => navigation.navigate('AdminDashboard')} activeOpacity={0.7}>
               <MaterialIcons name="admin-panel-settings" size={15} color="#E11D48" />
               <Text style={styles.linkTextAdmin}>Admin Panel</Text>
             </TouchableOpacity>
@@ -94,7 +132,7 @@ export const FooterSection: React.FC = React.memo(() => {
         </View>
 
         {/* Column 3: Contact & Store Location */}
-        <View style={[styles.columnContainer, isMobile && styles.columnMobile]}>
+        <View style={styles.columnContainer}>
           <Text style={styles.columnHeader}>Contact & Store</Text>
           <View style={styles.contactList}>
             <TouchableOpacity style={styles.contactRow} onPress={handlePhonePress} activeOpacity={0.7}>
@@ -128,6 +166,111 @@ export const FooterSection: React.FC = React.memo(() => {
 });
 
 const styles = StyleSheet.create({
+  // ── MOBILE STYLES (Clean, Compact, Minimal) ──
+  footerWrapperMobile: {
+    width: '100%',
+    backgroundColor: '#0F172A',
+    borderTopWidth: 2,
+    borderTopColor: Colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    gap: 10,
+    marginTop: Spacing.md,
+  },
+  mobileHeaderRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  brandTitleMobile: {
+    fontSize: 15,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+  },
+  licenseBadgeMobile: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.25)',
+  },
+  licenseTextMobile: {
+    fontSize: 10,
+    fontFamily: 'Inter-Medium',
+    color: '#F59E0B',
+  },
+  mobileNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+    paddingVertical: 2,
+  },
+  navLinkText: {
+    fontSize: 12,
+    color: '#CBD5E1',
+    fontFamily: 'Inter-Medium',
+  },
+  navLinkAdmin: {
+    fontSize: 12,
+    color: '#E11D48',
+    fontFamily: 'Inter-Bold',
+  },
+  dot: {
+    color: '#475569',
+    fontSize: 12,
+  },
+  mobileContactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 14,
+  },
+  mobileContactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  contactTextMobile: {
+    fontSize: 11.5,
+    color: '#F1F5F9',
+    fontFamily: 'Inter-Medium',
+  },
+  mobileMapItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  mapTextMobile: {
+    fontSize: 11.5,
+    color: '#FACC15',
+    fontFamily: 'Inter-SemiBold',
+  },
+  copyrightTextMobile: {
+    fontSize: 10,
+    color: '#64748B',
+    textAlign: 'center',
+    fontFamily: 'Inter-Regular',
+    marginTop: 2,
+  },
+
+  // ── DESKTOP STYLES ──
   footerWrapper: {
     width: '100%',
     backgroundColor: '#0F172A',
@@ -142,23 +285,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.lg,
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: Spacing.lg,
     justifyContent: 'space-between',
-  },
-  footerInnerMobile: {
-    flexDirection: 'column',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.sm + 4,
-    paddingVertical: Spacing.md,
   },
   columnContainer: {
     flex: 1,
     minWidth: 220,
-  },
-  columnMobile: {
-    width: '100%',
-    minWidth: '100%',
   },
   brandTitleRow: {
     flexDirection: 'row',
@@ -201,7 +333,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs + 4,
     letterSpacing: 0.3,
   },
-  linksGridMobile: {
+  linksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,

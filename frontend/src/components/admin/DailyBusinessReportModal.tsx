@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Platform, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { formatCurrency } from '@/utils/currency';
 import { BusinessAnalyticsData, TodayReportData } from '@/services/adminService';
@@ -30,6 +30,8 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
   isDownloading,
   isEmailing,
 }) => {
+  const { width: windowWidth } = useWindowDimensions();
+  const isMobile = windowWidth < 650;
 
   const reportDate = new Date();
   
@@ -196,21 +198,21 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
           `}</style>
         )}
 
-        <View style={styles.modalContentWrapper}>
+        <View style={[styles.modalContentWrapper, isMobile && { width: '98%', height: '95%' }]}>
           {/* Non-printable action header */}
-          <View style={[styles.actionHeader, { paddingRight: 16 }]} nativeID="action-header">
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity style={styles.btnPrimary} onPress={onDownloadPdf} disabled={isDownloading}>
-                <MaterialIcons name="picture-as-pdf" size={20} color="#fff" />
-                <Text style={styles.btnText}>{isDownloading ? 'Generating...' : 'Download PDF'}</Text>
+          <View style={[styles.actionHeader, { paddingRight: 12 }]} nativeID="action-header">
+            <View style={{ flexDirection: 'row', gap: 8, flexShrink: 1, flexWrap: 'wrap' }}>
+              <TouchableOpacity style={[styles.btnPrimary, isMobile && { paddingHorizontal: 10, paddingVertical: 8 }]} onPress={onDownloadPdf} disabled={isDownloading}>
+                <MaterialIcons name="picture-as-pdf" size={18} color="#fff" />
+                <Text style={[styles.btnText, isMobile && { fontSize: 12 }]}>{isDownloading ? 'Generating...' : 'PDF'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.btnSecondary} onPress={onEmailReport} disabled={isEmailing}>
-                <MaterialIcons name="email" size={20} color="#fff" />
-                <Text style={styles.btnText}>{isEmailing ? 'Sending...' : 'Email Report'}</Text>
+              <TouchableOpacity style={[styles.btnSecondary, isMobile && { paddingHorizontal: 10, paddingVertical: 8 }]} onPress={onEmailReport} disabled={isEmailing}>
+                <MaterialIcons name="email" size={18} color="#fff" />
+                <Text style={[styles.btnText, isMobile && { fontSize: 12 }]}>{isEmailing ? 'Sending...' : 'Email'}</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={onClose} style={{ padding: 8 }}>
-              <MaterialIcons name="close" size={28} color="#333" />
+            <TouchableOpacity onPress={onClose} style={{ padding: 6 }}>
+              <MaterialIcons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
 
@@ -223,19 +225,19 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
             <ScrollView 
               nativeID="scroll-container"
               style={{ flex: 1, backgroundColor: '#fff' }} 
-              contentContainerStyle={{ padding: 40 }}
+              contentContainerStyle={{ padding: isMobile ? 14 : 32 }}
               showsVerticalScrollIndicator={false}
             >
               <View nativeID="printable-report">
                 
                 {/* 1. REPORT HEADER */}
-                <View style={styles.headerBox}>
+                <View style={[styles.headerBox, isMobile && { flexDirection: 'column', gap: 10, alignItems: 'flex-start', marginBottom: 16 }]}>
                   <View>
-                    <Text style={styles.brandTitle}>MEERA CRACKERS</Text>
+                    <Text style={[styles.brandTitle, isMobile && { fontSize: 20 }]}>MEERA CRACKERS</Text>
                     <Text style={styles.brandSub}>Sivakasi Pyrotechnics Store</Text>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.docTitle}>DAILY BUSINESS REPORT</Text>
+                  <View style={isMobile ? { alignItems: 'flex-start', marginTop: 4 } : { alignItems: 'flex-end' }}>
+                    <Text style={[styles.docTitle, isMobile && { fontSize: 16 }]}>DAILY BUSINESS REPORT</Text>
                     <Text style={styles.docMeta}>Date: {reportDate.toLocaleDateString('en-IN')}</Text>
                     <Text style={styles.docMeta}>Time: {reportDate.toLocaleTimeString('en-IN')}</Text>
                   </View>
@@ -243,94 +245,99 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
 
                 {/* 2. TODAY AT A GLANCE */}
                 <Text style={styles.sectionTitle}>TODAY AT A GLANCE</Text>
-                <View style={styles.kpiRow}>
-                  <View style={styles.kpiCard}>
-                    <Text style={styles.kpiLabel}>Today's Revenue</Text>
-                    <Text style={[styles.kpiVal, { color: BRAND_RED }]}>{formatCurrency(reportData.todayRevenue)}</Text>
+                <View style={[styles.kpiRow, isMobile && { flexWrap: 'wrap', gap: 8, marginBottom: 16 }]}>
+                  <View style={[styles.kpiCard, isMobile && { width: '48%', minWidth: '47%', flex: undefined, padding: 10 }]}>
+                    <Text style={styles.kpiLabel} numberOfLines={1}>Today's Revenue</Text>
+                    <Text style={[styles.kpiVal, { color: BRAND_RED, fontSize: isMobile ? 16 : 22 }]} numberOfLines={1}>{formatCurrency(reportData.todayRevenue)}</Text>
                   </View>
-                  <View style={styles.kpiCard}>
-                    <Text style={styles.kpiLabel}>Today's Orders</Text>
-                    <Text style={styles.kpiVal}>{reportData.orderCount}</Text>
+                  <View style={[styles.kpiCard, isMobile && { width: '48%', minWidth: '47%', flex: undefined, padding: 10 }]}>
+                    <Text style={styles.kpiLabel} numberOfLines={1}>Today's Orders</Text>
+                    <Text style={[styles.kpiVal, { fontSize: isMobile ? 16 : 22 }]} numberOfLines={1}>{reportData.orderCount}</Text>
                   </View>
-                  <View style={styles.kpiCard}>
-                    <Text style={styles.kpiLabel}>Avg Order Value</Text>
-                    <Text style={styles.kpiVal}>{formatCurrency(reportData.avgOrderValue)}</Text>
+                  <View style={[styles.kpiCard, isMobile && { width: '48%', minWidth: '47%', flex: undefined, padding: 10 }]}>
+                    <Text style={styles.kpiLabel} numberOfLines={1}>Avg Order Value</Text>
+                    <Text style={[styles.kpiVal, { fontSize: isMobile ? 16 : 22 }]} numberOfLines={1}>{formatCurrency(reportData.avgOrderValue)}</Text>
                   </View>
-                  <View style={styles.kpiCard}>
-                    <Text style={styles.kpiLabel}>Customers</Text>
-                    <Text style={styles.kpiVal}>{reportData.customerCount}</Text>
+                  <View style={[styles.kpiCard, isMobile && { width: '48%', minWidth: '47%', flex: undefined, padding: 10 }]}>
+                    <Text style={styles.kpiLabel} numberOfLines={1}>Customers</Text>
+                    <Text style={[styles.kpiVal, { fontSize: isMobile ? 16 : 22 }]} numberOfLines={1}>{reportData.customerCount}</Text>
                   </View>
                 </View>
 
                 {/* TWO COLUMN LAYOUT for Charts */}
-                <View style={styles.rowWrapper}>
+                <View style={[styles.rowWrapper, isMobile && { flexDirection: 'column', gap: 16, marginBottom: 16 }]}>
                   {/* 3. SALES PERFORMANCE */}
-                  <View style={[styles.colHalf, { paddingRight: 12 }]}>
+                  <View style={[styles.colHalf, !isMobile && { paddingRight: 12 }]}>
                     <Text style={styles.sectionTitle}>SALES PERFORMANCE (Hourly)</Text>
                     <View style={styles.chartBox}>
                        {Platform.OS === 'web' ? (
-                         // @ts-ignore
-                         <svg width="100%" height="180" viewBox="0 0 400 180" style={{ overflow: 'visible' }}>
-                           <defs>
-                             <linearGradient id="hourGrad" x1="0" y1="0" x2="0" y2="1">
-                               <stop offset="0%" stopColor={BRAND_RED} stopOpacity="0.2" />
-                               <stop offset="100%" stopColor={BRAND_RED} stopOpacity="0" />
-                             </linearGradient>
-                           </defs>
-                           {/* Grid */}
-                           <line x1="30" y1="20" x2="380" y2="20" stroke="#E2E8F0" strokeDasharray="3 3"/>
-                           <line x1="30" y1="80" x2="380" y2="80" stroke="#E2E8F0" strokeDasharray="3 3"/>
-                           <line x1="30" y1="140" x2="380" y2="140" stroke="#CBD5E1"/>
-                           
-                           {/* Axis Labels */}
-                           <text x="25" y="24" fontSize="10" fill="#64748B" textAnchor="end">{formatCurrency(reportData.maxHourSales).replace('₹','')}</text>
-                           <text x="25" y="84" fontSize="10" fill="#64748B" textAnchor="end">{formatCurrency(reportData.maxHourSales/2).replace('₹','')}</text>
-                           <text x="25" y="144" fontSize="10" fill="#64748B" textAnchor="end">0</text>
-                           
-                           {/* Data Path */}
-                           {(() => {
-                              const points = reportData.hourlySales.map((val, i) => {
-                                const x = 30 + (i/23) * 350;
-                                const y = 140 - (val / reportData.maxHourSales) * 120;
-                                return `${x},${y}`;
-                              });
-                              const d = `M ${points[0]} ` + points.slice(1).map(p => `L ${p}`).join(' ');
-                              const areaD = `${d} L 380,140 L 30,140 Z`;
-                              
-                              return (
-                                <>
-                                  <path d={areaD} fill="url(#hourGrad)" />
-                                  <path d={d} fill="none" stroke={BRAND_RED} strokeWidth="2" />
-                                </>
-                              );
-                           })()}
-                           
-                           {/* X Axis */}
-                           <text x="30" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">12am</text>
-                           <text x="117" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">6am</text>
-                           <text x="205" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">12pm</text>
-                           <text x="292" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">6pm</text>
-                           <text x="380" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">11pm</text>
-                         </svg>
-                       ) : <Text>Web Only</Text>}
+                          // @ts-ignore
+                          <svg width="100%" height="180" viewBox="0 0 400 180" style={{ overflow: 'visible' }}>
+                            <defs>
+                              <linearGradient id="hourGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={BRAND_RED} stopOpacity="0.2" />
+                                <stop offset="100%" stopColor={BRAND_RED} stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            {/* Grid */}
+                            <line x1="30" y1="20" x2="380" y2="20" stroke="#E2E8F0" strokeDasharray="3 3"/>
+                            <line x1="30" y1="80" x2="380" y2="80" stroke="#E2E8F0" strokeDasharray="3 3"/>
+                            <line x1="30" y1="140" x2="380" y2="140" stroke="#CBD5E1"/>
+                            
+                            {/* Axis Labels */}
+                            <text x="25" y="24" fontSize="10" fill="#64748B" textAnchor="end">{formatCurrency(reportData.maxHourSales).replace('₹','')}</text>
+                            <text x="25" y="84" fontSize="10" fill="#64748B" textAnchor="end">{formatCurrency(reportData.maxHourSales/2).replace('₹','')}</text>
+                            <text x="25" y="144" fontSize="10" fill="#64748B" textAnchor="end">0</text>
+                            
+                            {/* Data Path */}
+                            {(() => {
+                               const points = reportData.hourlySales.map((val, i) => {
+                                 const x = 30 + (i/23) * 350;
+                                 const y = 140 - (val / reportData.maxHourSales) * 120;
+                                 return `${x},${y}`;
+                               });
+                               const d = `M ${points[0]} ` + points.slice(1).map(p => `L ${p}`).join(' ');
+                               const areaD = `${d} L 380,140 L 30,140 Z`;
+                               
+                               return (
+                                 <>
+                                   <path d={areaD} fill="url(#hourGrad)" />
+                                   <path d={d} fill="none" stroke={BRAND_RED} strokeWidth="2" />
+                                 </>
+                               );
+                            })()}
+                            
+                            {/* X Axis */}
+                            <text x="30" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">12am</text>
+                            <text x="117" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">6am</text>
+                            <text x="205" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">12pm</text>
+                            <text x="292" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">6pm</text>
+                            <text x="380" y="156" fontSize="9" fill="#94A3B8" textAnchor="middle">11pm</text>
+                          </svg>
+                       ) : (
+                         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                           <MaterialIcons name="show-chart" size={32} color={BRAND_RED} />
+                           <Text style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Sales Trend (Hourly Activity)</Text>
+                         </View>
+                       )}
                     </View>
                   </View>
 
                   {/* 4. ORDER PERFORMANCE */}
-                  <View style={[styles.colHalf, { paddingLeft: 12 }]}>
+                  <View style={[styles.colHalf, !isMobile && { paddingLeft: 12 }]}>
                     <Text style={styles.sectionTitle}>ORDER PERFORMANCE</Text>
                     <View style={styles.chartBox}>
-                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                          <View>
-                            <Text style={styles.statLabel}>Completed</Text>
+                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, gap: 4 }}>
+                          <View style={{ flex: 1, alignItems: 'center' }}>
+                            <Text style={styles.statLabel} numberOfLines={1}>Completed</Text>
                             <Text style={[styles.statVal, { color: SUCCESS_GREEN }]}>{reportData.completed}</Text>
                           </View>
-                          <View>
-                            <Text style={styles.statLabel}>Pending</Text>
+                          <View style={{ flex: 1, alignItems: 'center' }}>
+                            <Text style={styles.statLabel} numberOfLines={1}>Pending</Text>
                             <Text style={[styles.statVal, { color: '#F59E0B' }]}>{reportData.pending}</Text>
                           </View>
-                          <View>
-                            <Text style={styles.statLabel}>Cancelled</Text>
+                          <View style={{ flex: 1, alignItems: 'center' }}>
+                            <Text style={styles.statLabel} numberOfLines={1}>Cancelled</Text>
                             <Text style={[styles.statVal, { color: BRAND_RED }]}>{reportData.cancelled}</Text>
                           </View>
                        </View>
@@ -347,9 +354,9 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
                 </View>
 
                 {/* TWO COLUMN LAYOUT for Tops */}
-                <View style={styles.rowWrapper}>
+                <View style={[styles.rowWrapper, isMobile && { flexDirection: 'column', gap: 16, marginBottom: 16 }]}>
                   {/* 5. TOP SELLING PRODUCTS */}
-                  <View style={[styles.colHalf, { paddingRight: 12 }]}>
+                  <View style={[styles.colHalf, !isMobile && { paddingRight: 12 }]}>
                     <Text style={styles.sectionTitle}>TOP SELLING PRODUCTS</Text>
                     <View style={styles.listBox}>
                       {reportData.topProducts.length === 0 ? (
@@ -367,7 +374,7 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
                   </View>
 
                   {/* 6. TOP DELIVERY AREAS */}
-                  <View style={[styles.colHalf, { paddingLeft: 12 }]}>
+                  <View style={[styles.colHalf, !isMobile && { paddingLeft: 12 }]}>
                     <Text style={styles.sectionTitle}>TOP DELIVERY AREAS</Text>
                     <View style={styles.listBox}>
                       {reportData.topAreas.length === 0 ? (
@@ -385,12 +392,12 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
                   </View>
                 </View>
 
-                <View style={styles.rowWrapper}>
+                <View style={[styles.rowWrapper, isMobile && { flexDirection: 'column', gap: 16, marginBottom: 16 }]}>
                   {/* 7. INVENTORY HEALTH */}
-                  <View style={[styles.colHalf, { paddingRight: 12 }]}>
+                  <View style={[styles.colHalf, !isMobile && { paddingRight: 12 }]}>
                     <Text style={styles.sectionTitle}>INVENTORY HEALTH</Text>
-                    <View style={[styles.chartBox, { padding: 16 }]}>
-                      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+                    <View style={[styles.chartBox, { padding: 12 }]}>
+                      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
                         <View style={[styles.invPill, { backgroundColor: '#E8F5E9' }]}>
                           <Text style={[styles.invPillText, { color: SUCCESS_GREEN }]}>{reportData.healthyStock} Healthy</Text>
                         </View>
@@ -404,9 +411,9 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
                       
                       {reportData.lowStockAlerts.length > 0 ? (
                         <View>
-                          <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#333', marginBottom: 8 }}>Critical Alerts (Top 3):</Text>
+                          <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#333', marginBottom: 4 }}>Critical Alerts (Top 3):</Text>
                           {reportData.lowStockAlerts.slice(0, 3).map(stk => (
-                            <Text key={stk.id} style={{ fontSize: 12, color: BRAND_RED, marginBottom: 4 }}>
+                            <Text key={stk.id} style={{ fontSize: 11, color: BRAND_RED, marginBottom: 2 }} numberOfLines={1}>
                               • {stk.name} ({stk.stock_left} left)
                             </Text>
                           ))}
@@ -418,17 +425,17 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
                   </View>
 
                   {/* 8. CUSTOMER ACTIVITY */}
-                  <View style={[styles.colHalf, { paddingLeft: 12 }]}>
+                  <View style={[styles.colHalf, !isMobile && { paddingLeft: 12 }]}>
                     <Text style={styles.sectionTitle}>CUSTOMER ACTIVITY</Text>
                     <View style={styles.chartBox}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', height: '100%' }}>
                         <View style={{ alignItems: 'center' }}>
-                          <Text style={{ fontSize: 32, fontFamily: 'Inter-Bold', color: '#1565C0' }}>{reportData.newCustomers}</Text>
+                          <Text style={{ fontSize: 28, fontFamily: 'Inter-Bold', color: '#1565C0' }}>{reportData.newCustomers}</Text>
                           <Text style={styles.statLabel}>New Today</Text>
                         </View>
                         <View style={{ height: 40, width: 1, backgroundColor: '#E2E8F0' }} />
                         <View style={{ alignItems: 'center' }}>
-                          <Text style={{ fontSize: 32, fontFamily: 'Inter-Bold', color: SUCCESS_GREEN }}>{reportData.returningCustomers}</Text>
+                          <Text style={{ fontSize: 28, fontFamily: 'Inter-Bold', color: SUCCESS_GREEN }}>{reportData.returningCustomers}</Text>
                           <Text style={styles.statLabel}>Returning</Text>
                         </View>
                       </View>
@@ -437,18 +444,18 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
                 </View>
 
                 {/* 9 & 10. INSIGHTS & ACTIONS */}
-                <View style={styles.rowWrapper}>
-                  <View style={[styles.colHalf, { paddingRight: 12 }]}>
+                <View style={[styles.rowWrapper, isMobile && { flexDirection: 'column', gap: 16, marginBottom: 16 }]}>
+                  <View style={[styles.colHalf, !isMobile && { paddingRight: 12 }]}>
                     <Text style={styles.sectionTitle}>KEY BUSINESS INSIGHTS</Text>
-                    <View style={[styles.insightBox, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' }]}>
+                    <View style={[styles.insightBox, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', height: isMobile ? 'auto' : 140 }]}>
                       {reportData.insights.map((ins, i) => (
                         <Text key={i} style={styles.insightText}>• {ins}</Text>
                       ))}
                     </View>
                   </View>
-                  <View style={[styles.colHalf, { paddingLeft: 12 }]}>
+                  <View style={[styles.colHalf, !isMobile && { paddingLeft: 12 }]}>
                     <Text style={styles.sectionTitle}>ACTION REQUIRED</Text>
-                    <View style={[styles.insightBox, { backgroundColor: '#FFF5F5', borderColor: '#FECACA' }]}>
+                    <View style={[styles.insightBox, { backgroundColor: '#FFF5F5', borderColor: '#FECACA', height: isMobile ? 'auto' : 140 }]}>
                       {reportData.actions.length > 0 ? reportData.actions.map((act, i) => (
                         <Text key={i} style={[styles.insightText, { color: '#991B1B' }]}>⚠️ {act}</Text>
                       )) : (
@@ -459,31 +466,33 @@ export const DailyBusinessReportModal: React.FC<DailyBusinessReportModalProps> =
                 </View>
 
                 {/* 11. DETAILED INVENTORY TABLE */}
-                <Text style={[styles.sectionTitle, { marginTop: 20 }]}>DETAILED INVENTORY</Text>
-                <View style={styles.table}>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.th, { flex: 3 }]}>Product Name</Text>
-                    <Text style={[styles.th, { flex: 2 }]}>Category</Text>
-                    <Text style={[styles.th, { flex: 1, textAlign: 'right' }]}>Stock</Text>
-                    <Text style={[styles.th, { flex: 1, textAlign: 'right' }]}>Sold</Text>
-                    <Text style={[styles.th, { flex: 1.5, textAlign: 'right' }]}>Status</Text>
+                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>DETAILED INVENTORY</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ marginBottom: 24 }}>
+                  <View style={[styles.table, { width: 640 }]}>
+                    <View style={styles.tableHeader}>
+                      <Text style={[styles.th, { width: 240 }]}>Product Name</Text>
+                      <Text style={[styles.th, { width: 140 }]}>Category</Text>
+                      <Text style={[styles.th, { width: 70, textAlign: 'right' }]}>Stock</Text>
+                      <Text style={[styles.th, { width: 70, textAlign: 'right' }]}>Sold</Text>
+                      <Text style={[styles.th, { width: 120, textAlign: 'right', borderRightWidth: 0 }]}>Status</Text>
+                    </View>
+                    {reportData.stockList.length > 0 ? (
+                      reportData.stockList.map((stk, i) => (
+                        <View key={stk.id} style={[styles.tableRow, i % 2 !== 0 && { backgroundColor: '#F8FAFC' }]}>
+                          <Text style={[styles.td, { width: 240 }]} numberOfLines={2}>{stk.name}</Text>
+                          <Text style={[styles.td, { width: 140 }]} numberOfLines={2}>{stk.category_name}</Text>
+                          <Text style={[styles.td, { width: 70, textAlign: 'right' }]}>{stk.stock_left}</Text>
+                          <Text style={[styles.td, { width: 70, textAlign: 'right' }]}>{stk.sold_today}</Text>
+                          <Text style={[styles.td, { width: 120, textAlign: 'right', borderRightWidth: 0, color: stk.status === 'Out of Stock' ? BRAND_RED : stk.status === 'Low Stock' ? '#E65100' : SUCCESS_GREEN }]}>
+                            {stk.status}
+                          </Text>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={[styles.emptyText, { padding: 16 }]}>No inventory data available.</Text>
+                    )}
                   </View>
-                  {reportData.stockList.length > 0 ? (
-                    reportData.stockList.map((stk, i) => (
-                      <View key={stk.id} style={[styles.tableRow, i % 2 !== 0 && { backgroundColor: '#F8FAFC' }]}>
-                        <Text style={[styles.td, { flex: 3 }]} numberOfLines={1}>{stk.name}</Text>
-                        <Text style={[styles.td, { flex: 2 }]} numberOfLines={1}>{stk.category_name}</Text>
-                        <Text style={[styles.td, { flex: 1, textAlign: 'right' }]}>{stk.stock_left}</Text>
-                        <Text style={[styles.td, { flex: 1, textAlign: 'right' }]}>{stk.sold_today}</Text>
-                        <Text style={[styles.td, { flex: 1.5, textAlign: 'right', color: stk.status === 'Out of Stock' ? BRAND_RED : stk.status === 'Low Stock' ? '#E65100' : SUCCESS_GREEN }]}>
-                          {stk.status}
-                        </Text>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={[styles.emptyText, { padding: 16 }]}>No inventory data available.</Text>
-                  )}
-                </View>
+                </ScrollView>
 
                 {/* FOOTER */}
                 <View style={styles.footer}>
@@ -705,35 +714,42 @@ const styles = StyleSheet.create({
   },
   table: {
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     borderRadius: 8,
     overflow: 'hidden',
     marginBottom: 24,
+    backgroundColor: '#FFFFFF',
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: '#E2E8F0',
+    borderBottomWidth: 1.5,
+    borderColor: '#CBD5E1',
+    alignItems: 'stretch',
   },
   th: {
     fontSize: 12,
     fontFamily: 'Inter-SemiBold',
-    color: '#64748B',
+    color: '#334155',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRightWidth: 1,
+    borderColor: '#CBD5E1',
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+    alignItems: 'stretch',
   },
   td: {
     fontSize: 13,
     fontFamily: 'Inter-Medium',
     color: '#334155',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRightWidth: 1,
+    borderColor: '#E2E8F0',
   },
   footer: {
     flexDirection: 'row',
