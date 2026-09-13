@@ -399,105 +399,211 @@ export const InventoryManagementScreen: React.FC<InventoryManagementScreenProps>
           </View>
         </View>
 
-        {/* Stretched Metric Summary Cards */}
-        <View style={[styles.kpiGridRow, { paddingHorizontal: 16, marginTop: 12 }]}>
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setStatusFilter('All');
-              setSelectedCategory('All');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
+        {/* Stretched Metric Summary Cards & Centered Analytics Chart */}
+        {!isListExpanded ? (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.collapsedScrollContent, !isDesktopWeb && styles.mobileBottomPadding]}
           >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
-              <MaterialIcons name="inventory-2" size={18} color="#1976D2" />
-            </View>
-            <Text style={styles.metricValue}>{metrics.totalProducts}</Text>
-            <Text style={styles.metricLabel}>TOTAL PRODUCTS</Text>
-          </TouchableOpacity>
+            <View style={styles.kpiGridRow}>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('All');
+                  setSelectedCategory('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
+                  <MaterialIcons name="inventory-2" size={18} color="#1976D2" />
+                </View>
+                <Text style={styles.metricValue}>{metrics.totalProducts}</Text>
+                <Text style={styles.metricLabel}>TOTAL PRODUCTS</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setStatusFilter('All');
-              setSelectedCategory('All');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
-              <MaterialIcons name="all-inbox" size={18} color="#2E7D32" />
-            </View>
-            <Text style={styles.metricValue}>{metrics.totalStockUnits}</Text>
-            <Text style={styles.metricLabel}>TOTAL UNITS</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('All');
+                  setSelectedCategory('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
+                  <MaterialIcons name="all-inbox" size={18} color="#2E7D32" />
+                </View>
+                <Text style={styles.metricValue}>{metrics.totalStockUnits}</Text>
+                <Text style={styles.metricLabel}>TOTAL UNITS</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.kpiCardFlex,
-              statusFilter === 'Low Stock' && styles.metricCardSelected,
-            ]}
-            onPress={() => {
-              setStatusFilter(statusFilter === 'Low Stock' ? 'All' : 'Low Stock');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
-              <MaterialIcons name="warning" size={18} color="#ED6C02" />
-            </View>
-            <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
-              {metrics.lowStockCount}
-            </Text>
-            <Text style={styles.metricLabel}>LOW STOCK</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  statusFilter === 'Low Stock' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setStatusFilter(statusFilter === 'Low Stock' ? 'All' : 'Low Stock');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
+                  <MaterialIcons name="warning" size={18} color="#ED6C02" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
+                  {metrics.lowStockCount}
+                </Text>
+                <Text style={styles.metricLabel}>LOW STOCK</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.kpiCardFlex,
-              statusFilter === 'Out of Stock' && styles.metricCardSelected,
-            ]}
-            onPress={() => {
-              setStatusFilter(statusFilter === 'Out of Stock' ? 'All' : 'Out of Stock');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#FFEBEE' }]}>
-              <MaterialIcons name="error-outline" size={18} color="#D32F2F" />
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  statusFilter === 'Out of Stock' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setStatusFilter(statusFilter === 'Out of Stock' ? 'All' : 'Out of Stock');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FFEBEE' }]}>
+                  <MaterialIcons name="error-outline" size={18} color="#D32F2F" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#D32F2F' }]}>
+                  {metrics.outOfStockCount}
+                </Text>
+                <Text style={styles.metricLabel}>OUT OF STOCK</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={[styles.metricValue, { color: '#D32F2F' }]}>
-              {metrics.outOfStockCount}
-            </Text>
-            <Text style={styles.metricLabel}>OUT OF STOCK</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Centered Analytics Chart (Pie & Bar Chart) */}
-        <InventoryDistributionPieChart
-          metrics={metrics}
-          items={items}
-          categories={categories}
-          activeStatusFilter={statusFilter}
-          selectedCategory={selectedCategory}
-          isListExpanded={isListExpanded}
-          onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
-          onSelectStatusFilter={(f) => {
-            setStatusFilter(f);
-            setPage(1);
-            setIsListExpanded(true);
-          }}
-          onSelectCategory={(catId) => {
-            setSelectedCategory(catId);
-            setPage(1);
-            setIsListExpanded(true);
-          }}
-        />
+            <InventoryDistributionPieChart
+              metrics={metrics}
+              items={items}
+              categories={categories}
+              activeStatusFilter={statusFilter}
+              selectedCategory={selectedCategory}
+              isListExpanded={isListExpanded}
+              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+              onSelectStatusFilter={(f) => {
+                setStatusFilter(f);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+              onSelectCategory={(catId) => {
+                setSelectedCategory(catId);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+            />
+          </ScrollView>
+        ) : (
+          <>
+            <View style={styles.kpiGridRow}>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('All');
+                  setSelectedCategory('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
+                  <MaterialIcons name="inventory-2" size={18} color="#1976D2" />
+                </View>
+                <Text style={styles.metricValue}>{metrics.totalProducts}</Text>
+                <Text style={styles.metricLabel}>TOTAL PRODUCTS</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('All');
+                  setSelectedCategory('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
+                  <MaterialIcons name="all-inbox" size={18} color="#2E7D32" />
+                </View>
+                <Text style={styles.metricValue}>{metrics.totalStockUnits}</Text>
+                <Text style={styles.metricLabel}>TOTAL UNITS</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  statusFilter === 'Low Stock' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setStatusFilter(statusFilter === 'Low Stock' ? 'All' : 'Low Stock');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
+                  <MaterialIcons name="warning" size={18} color="#ED6C02" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
+                  {metrics.lowStockCount}
+                </Text>
+                <Text style={styles.metricLabel}>LOW STOCK</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  statusFilter === 'Out of Stock' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setStatusFilter(statusFilter === 'Out of Stock' ? 'All' : 'Out of Stock');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FFEBEE' }]}>
+                  <MaterialIcons name="error-outline" size={18} color="#D32F2F" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#D32F2F' }]}>
+                  {metrics.outOfStockCount}
+                </Text>
+                <Text style={styles.metricLabel}>OUT OF STOCK</Text>
+              </TouchableOpacity>
+            </View>
+
+            <InventoryDistributionPieChart
+              metrics={metrics}
+              items={items}
+              categories={categories}
+              activeStatusFilter={statusFilter}
+              selectedCategory={selectedCategory}
+              isListExpanded={isListExpanded}
+              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+              onSelectStatusFilter={(f) => {
+                setStatusFilter(f);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+              onSelectCategory={(catId) => {
+                setSelectedCategory(catId);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+            />
+          </>
+        )}
 
         {/* Main Split View Layout - Collapsible */}
         {isListExpanded && (
@@ -617,7 +723,7 @@ export const InventoryManagementScreen: React.FC<InventoryManagementScreenProps>
                   renderItem={renderItemRow}
                   ListFooterComponent={renderFooter}
                   ListEmptyComponent={renderEmpty}
-                  contentContainerStyle={styles.listContent}
+                  contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
                   showsVerticalScrollIndicator={false}
                   onRefresh={fetchInventory}
                   refreshing={isLoading}
@@ -854,20 +960,28 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
     marginTop: 2,
   },
+  collapsedScrollContent: {
+    paddingTop: 4,
+  },
+  mobileBottomPadding: {
+    paddingBottom: 110,
+  },
   kpiGridRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    gap: Spacing.xs,
+    gap: 4,
     marginBottom: Spacing.sm,
+    flexWrap: 'wrap',
   },
   kpiCardFlex: {
     flex: 1,
+    minWidth: 70,
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.xl,
-    paddingVertical: Spacing.xs + 2,
-    paddingHorizontal: 4,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: 2,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
@@ -894,18 +1008,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryContainer,
   },
   metricIconCircle: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   metricLabel: {
     ...Typography.labelLg,
-    fontSize: 10,
+    fontSize: 9,
     color: Colors.onSurfaceVariant,
     fontFamily: 'Inter-Bold',
+    textAlign: 'center',
+    letterSpacing: 0.1,
   },
   metricValue: {
     ...Typography.titleLg,

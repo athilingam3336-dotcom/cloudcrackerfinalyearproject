@@ -27,6 +27,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useAppLayout } from '@/hooks/useAppLayout';
 import { useProductStore } from '@/store/productStore';
 import { OrderDistributionPieChart } from '@/components/admin/OrderDistributionPieChart';
 
@@ -97,6 +98,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   navigation,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
+  const { isDesktopWeb } = useAppLayout();
   const [orders, setOrders] = useState<AdminOrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -747,7 +749,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
           ListHeaderComponent={renderHeader}
           ListFooterComponent={orders.length > 0 ? renderFooter : null}
           ListEmptyComponent={renderEmpty}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
           showsVerticalScrollIndicator={false}
           onRefresh={() => fetchOrders()}
           refreshing={isLoading}
@@ -897,6 +899,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: Spacing.xl,
+  },
+  mobileBottomPadding: {
+    paddingBottom: 110,
   },
   headerContainer: {
     marginBottom: Spacing.xs,

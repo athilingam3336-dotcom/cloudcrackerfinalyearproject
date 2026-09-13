@@ -571,95 +571,191 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Stretched Metric KPI Cards */}
-        <View style={[styles.kpiGridRow, { paddingHorizontal: 16, marginTop: 12 }]}>
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setStatusFilter('All');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
+        {/* Stretched Metric KPI Cards & Centered Analytics Chart */}
+        {!isListExpanded ? (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.collapsedScrollContent, !isDesktopWeb && styles.mobileBottomPadding]}
           >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
-              <MaterialIcons name="discount" size={18} color="#1976D2" />
-            </View>
-            <Text style={styles.metricValue}>{metrics.totalCoupons}</Text>
-            <Text style={styles.metricLabel}>TOTAL COUPONS</Text>
-          </TouchableOpacity>
+            <View style={styles.kpiGridRow}>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
+                  <MaterialIcons name="discount" size={18} color="#1976D2" />
+                </View>
+                <Text style={styles.metricValue}>{metrics.totalCoupons}</Text>
+                <Text style={styles.metricLabel}>TOTAL COUPONS</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.kpiCardFlex,
-              statusFilter === 'Active' && styles.metricCardSelected,
-            ]}
-            onPress={() => {
-              setStatusFilter(statusFilter === 'Active' ? 'All' : 'Active');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
-              <MaterialIcons name="verified" size={18} color="#2E7D32" />
-            </View>
-            <Text style={[styles.metricValue, { color: '#2E7D32' }]}>
-              {metrics.activeCoupons}
-            </Text>
-            <Text style={styles.metricLabel}>ACTIVE CODES</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  statusFilter === 'Active' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setStatusFilter(statusFilter === 'Active' ? 'All' : 'Active');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
+                  <MaterialIcons name="verified" size={18} color="#2E7D32" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#2E7D32' }]}>
+                  {metrics.activeCoupons}
+                </Text>
+                <Text style={styles.metricLabel}>ACTIVE CODES</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setStatusFilter('Expired');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
-              <MaterialIcons name="hourglass-bottom" size={18} color="#ED6C02" />
-            </View>
-            <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
-              {metrics.expiringSoonCount}
-            </Text>
-            <Text style={styles.metricLabel}>EXPIRING SOON</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('Expired');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
+                  <MaterialIcons name="hourglass-bottom" size={18} color="#ED6C02" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
+                  {metrics.expiringSoonCount}
+                </Text>
+                <Text style={styles.metricLabel}>EXPIRING SOON</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setStatusFilter('All');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#F3E5F5' }]}>
-              <MaterialIcons name="shopping-bag" size={18} color="#7B1FA2" />
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#F3E5F5' }]}>
+                  <MaterialIcons name="shopping-bag" size={18} color="#7B1FA2" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#7B1FA2' }]}>
+                  {metrics.totalRedemptions}
+                </Text>
+                <Text style={styles.metricLabel}>REDEMPTIONS</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={[styles.metricValue, { color: '#7B1FA2' }]}>
-              {metrics.totalRedemptions}
-            </Text>
-            <Text style={styles.metricLabel}>REDEMPTIONS</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Centered Analytics Chart (Pie & Bar Chart) */}
-        <CouponDistributionPieChart
-          metrics={metrics}
-          coupons={coupons}
-          activeFilter={statusFilter}
-          isListExpanded={isListExpanded}
-          onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
-          onSelectFilter={(f) => {
-            setStatusFilter(f);
-            setPage(1);
-            setIsListExpanded(true);
-          }}
-        />
+            <CouponDistributionPieChart
+              metrics={metrics}
+              coupons={coupons}
+              activeFilter={statusFilter}
+              isListExpanded={isListExpanded}
+              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+              onSelectFilter={(f) => {
+                setStatusFilter(f);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+            />
+          </ScrollView>
+        ) : (
+          <>
+            <View style={styles.kpiGridRow}>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
+                  <MaterialIcons name="discount" size={18} color="#1976D2" />
+                </View>
+                <Text style={styles.metricValue}>{metrics.totalCoupons}</Text>
+                <Text style={styles.metricLabel}>TOTAL COUPONS</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  statusFilter === 'Active' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setStatusFilter(statusFilter === 'Active' ? 'All' : 'Active');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
+                  <MaterialIcons name="verified" size={18} color="#2E7D32" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#2E7D32' }]}>
+                  {metrics.activeCoupons}
+                </Text>
+                <Text style={styles.metricLabel}>ACTIVE CODES</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('Expired');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
+                  <MaterialIcons name="hourglass-bottom" size={18} color="#ED6C02" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
+                  {metrics.expiringSoonCount}
+                </Text>
+                <Text style={styles.metricLabel}>EXPIRING SOON</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setStatusFilter('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#F3E5F5' }]}>
+                  <MaterialIcons name="shopping-bag" size={18} color="#7B1FA2" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#7B1FA2' }]}>
+                  {metrics.totalRedemptions}
+                </Text>
+                <Text style={styles.metricLabel}>REDEMPTIONS</Text>
+              </TouchableOpacity>
+            </View>
+
+            <CouponDistributionPieChart
+              metrics={metrics}
+              coupons={coupons}
+              activeFilter={statusFilter}
+              isListExpanded={isListExpanded}
+              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+              onSelectFilter={(f) => {
+                setStatusFilter(f);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+            />
+          </>
+        )}
 
         {/* Main Split View Layout - Collapsible */}
         {isListExpanded && (
@@ -742,7 +838,7 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
                   renderItem={renderItemRow}
                   ListFooterComponent={renderFooter}
                   ListEmptyComponent={renderEmpty}
-                  contentContainerStyle={styles.listContent}
+                  contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
                   showsVerticalScrollIndicator={false}
                   onRefresh={fetchCoupons}
                   refreshing={isLoading}
@@ -1100,20 +1196,28 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: Colors.onPrimary,
   },
+  collapsedScrollContent: {
+    paddingTop: 4,
+  },
+  mobileBottomPadding: {
+    paddingBottom: 110,
+  },
   kpiGridRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    gap: Spacing.xs,
+    gap: 4,
     marginBottom: Spacing.sm,
+    flexWrap: 'wrap',
   },
   kpiCardFlex: {
     flex: 1,
+    minWidth: 70,
     backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: BorderRadius.xl,
-    paddingVertical: Spacing.xs + 2,
-    paddingHorizontal: 4,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: 2,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
@@ -1140,18 +1244,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryContainer,
   },
   metricIconCircle: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   metricLabel: {
     ...Typography.labelLg,
-    fontSize: 10,
+    fontSize: 9,
     color: Colors.onSurfaceVariant,
     fontFamily: 'Inter-Bold',
+    textAlign: 'center',
+    letterSpacing: 0.1,
   },
   metricValue: {
     ...Typography.titleLg,

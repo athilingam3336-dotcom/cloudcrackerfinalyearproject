@@ -291,39 +291,45 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
             </View>
           </View>
 
-          {/* 3 Summary Pills */}
-          <View style={styles.reportPillStack}>
+          {/* 3 Summary Pills - Stacked one-by-one on mobile so currency amounts never break */}
+          <View style={[styles.reportPillStack, !isDesktop && { flexDirection: 'column' }]}>
             <View style={[styles.reportPill, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <MaterialIcons name="check-circle" size={18} color={SUCCESS_GREEN} />
-                <Text style={styles.reportPillTitle}>Paid Revenue</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialIcons name="check-circle" size={18} color={SUCCESS_GREEN} />
+                  <Text style={styles.reportPillTitle}>Paid Revenue</Text>
+                </View>
+                <Text style={styles.reportPillSub}>{dateReportMetrics.paidCount} orders</Text>
               </View>
               <Text style={[styles.reportPillVal, { color: SUCCESS_GREEN }]}>
                 {formatCurrency(dateReportMetrics.paidRev)}
               </Text>
-              <Text style={styles.reportPillSub}>{dateReportMetrics.paidCount} orders</Text>
             </View>
 
             <View style={[styles.reportPill, { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <MaterialIcons name="hourglass-empty" size={18} color={WARNING_AMBER} />
-                <Text style={styles.reportPillTitle}>Pending Amount</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialIcons name="hourglass-empty" size={18} color={WARNING_AMBER} />
+                  <Text style={styles.reportPillTitle}>Pending Amount</Text>
+                </View>
+                <Text style={styles.reportPillSub}>{dateReportMetrics.pendingCount} orders</Text>
               </View>
               <Text style={[styles.reportPillVal, { color: WARNING_AMBER }]}>
                 {formatCurrency(dateReportMetrics.pendingRev)}
               </Text>
-              <Text style={styles.reportPillSub}>{dateReportMetrics.pendingCount} orders</Text>
             </View>
 
             <View style={[styles.reportPill, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <MaterialIcons name="shopping-cart" size={18} color={INFO_BLUE} />
-                <Text style={styles.reportPillTitle}>Total Orders</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialIcons name="shopping-cart" size={18} color={INFO_BLUE} />
+                  <Text style={styles.reportPillTitle}>Total Orders</Text>
+                </View>
+                <Text style={styles.reportPillSub}>{dateReportMetrics.totalCount} orders</Text>
               </View>
               <Text style={[styles.reportPillVal, { color: INFO_BLUE }]}>
-                {dateReportMetrics.totalCount}
+                {dateReportMetrics.totalCount} Orders
               </Text>
-              <Text style={styles.reportPillSub}>{dateReportMetrics.totalCount} orders</Text>
             </View>
           </View>
 
@@ -761,61 +767,87 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
               ))}
             </View>
 
-            {/* Tamil Nadu Vector SVG Map Graphic matching Image 7 perfectly */}
+            {/* Tamil Nadu Vector SVG Map Graphic - Geographically accurate outline & non-overlapping labels */}
             <View style={{ flex: 1.1, alignItems: 'center', justifyContent: 'center' }}>
               {Platform.OS === 'web' ? (
                 // @ts-ignore
-                <svg width="160" height="220" viewBox="0 0 160 230" style={{ overflow: 'visible' }}>
-                  {/* Detailed Contour vector map path of Tamil Nadu State */}
+                <svg width="190" height="230" viewBox="0 0 190 230" style={{ overflow: 'visible' }}>
+                  {/* Subtle Gradient & Drop Shadow Definition */}
+                  <defs>
+                    <linearGradient id="tnMapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FFE4E6" stopOpacity="0.9" />
+                      <stop offset="100%" stopColor="#FECDD3" stopOpacity="0.65" />
+                    </linearGradient>
+                    <filter id="tnMapShadow" x="-10%" y="-10%" width="120%" height="120%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#991B1B" floodOpacity="0.12" />
+                    </filter>
+                  </defs>
+
+                  {/* Geographically Accurate Contour path of Tamil Nadu State */}
                   <path
-                    d="M 150 15 C 148 24, 142 34, 136 44 C 130 54, 115 48, 100 46 C 85 44, 70 48, 65 75 C 62 85, 50 92, 35 100 C 26 106, 28 120, 38 135 C 42 142, 36 155, 30 170 C 26 182, 32 198, 38 210 C 40 214, 42 216, 44 214 C 50 206, 60 198, 68 190 C 78 182, 88 178, 95 175 C 105 172, 125 172, 138 170 C 142 168, 130 162, 105 155 C 118 145, 135 140, 142 130 C 146 122, 138 102, 132 85 C 128 70, 130 50, 136 34 C 142 24, 148 18, 150 15 Z"
-                    fill="#FFF0F2"
+                    d="M 168 35 
+                       C 174 44, 168 56, 164 68 
+                       C 158 84, 154 96, 156 110 
+                       C 158 120, 162 128, 154 136 
+                       C 146 143, 134 146, 130 152 
+                       C 126 156, 138 160, 144 163 
+                       C 136 170, 122 172, 114 182 
+                       C 104 192, 92 204, 82 216 
+                       C 76 212, 70 200, 62 188 
+                       C 54 176, 46 163, 40 148 
+                       C 34 134, 26 118, 24 106 
+                       C 22 90, 30 78, 40 70 
+                       C 50 63, 72 64, 92 60 
+                       C 114 56, 138 44, 158 35 
+                       Z"
+                    fill="url(#tnMapGrad)"
                     stroke="#E11D48"
                     strokeWidth="2.2"
                     strokeLinejoin="round"
                     strokeLinecap="round"
+                    filter="url(#tnMapShadow)"
                   />
 
-                  {/* Chennai Pin & Label */}
+                  {/* Chennai Pin & Label (Northeast Coast) */}
                   <g>
-                    <circle cx="146" cy="22" r="4.5" fill="#E11D48" stroke="#FFF" strokeWidth="1.5" />
-                    <circle cx="146" cy="22" r="1.5" fill="#FFF" />
-                    <text x="146" y="36" textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#1E293B" fontFamily="Inter-SemiBold, sans-serif">Chennai</text>
+                    <circle cx="164" cy="40" r="5" fill="#E11D48" stroke="#FFF" strokeWidth="1.8" />
+                    <circle cx="164" cy="40" r="1.8" fill="#FFF" />
+                    <text x="156" y="30" textAnchor="end" fontSize="10" fontWeight="700" fill="#0F172A" fontFamily="Inter-Bold, sans-serif">Chennai</text>
                   </g>
 
-                  {/* Coimbatore Pin & Label */}
+                  {/* Coimbatore Pin & Label (West Palakkad Gap) */}
                   <g>
-                    <circle cx="48" cy="102" r="4.5" fill="#E11D48" stroke="#FFF" strokeWidth="1.5" />
-                    <circle cx="48" cy="102" r="1.5" fill="#FFF" />
-                    <text x="56" y="106" textAnchor="start" fontSize="9.5" fontWeight="600" fill="#1E293B" fontFamily="Inter-SemiBold, sans-serif">Coimbatore</text>
+                    <circle cx="34" cy="106" r="5" fill="#E11D48" stroke="#FFF" strokeWidth="1.8" />
+                    <circle cx="34" cy="106" r="1.8" fill="#FFF" />
+                    <text x="42" y="102" textAnchor="start" fontSize="10" fontWeight="700" fill="#0F172A" fontFamily="Inter-Bold, sans-serif">Coimbatore</text>
                   </g>
 
-                  {/* Trichy Pin & Label */}
+                  {/* Trichy Pin & Label (Central Kaveri Region) */}
                   <g>
-                    <circle cx="102" cy="106" r="4.5" fill="#E11D48" stroke="#FFF" strokeWidth="1.5" />
-                    <circle cx="102" cy="106" r="1.5" fill="#FFF" />
-                    <text x="110" y="110" textAnchor="start" fontSize="9.5" fontWeight="600" fill="#1E293B" fontFamily="Inter-SemiBold, sans-serif">Trichy</text>
+                    <circle cx="110" cy="110" r="5" fill="#E11D48" stroke="#FFF" strokeWidth="1.8" />
+                    <circle cx="110" cy="110" r="1.8" fill="#FFF" />
+                    <text x="118" y="114" textAnchor="start" fontSize="10" fontWeight="700" fill="#0F172A" fontFamily="Inter-Bold, sans-serif">Trichy</text>
                   </g>
 
-                  {/* Madurai Pin & Label */}
+                  {/* Madurai Pin & Label (South Central) */}
                   <g>
-                    <circle cx="76" cy="148" r="4.5" fill="#E11D48" stroke="#FFF" strokeWidth="1.5" />
-                    <circle cx="76" cy="148" r="1.5" fill="#FFF" />
-                    <text x="84" y="152" textAnchor="start" fontSize="9.5" fontWeight="600" fill="#1E293B" fontFamily="Inter-SemiBold, sans-serif">Madurai</text>
+                    <circle cx="86" cy="146" r="5" fill="#E11D48" stroke="#FFF" strokeWidth="1.8" />
+                    <circle cx="86" cy="146" r="1.8" fill="#FFF" />
+                    <text x="94" y="148" textAnchor="start" fontSize="10" fontWeight="700" fill="#0F172A" fontFamily="Inter-Bold, sans-serif">Madurai</text>
                   </g>
 
-                  {/* Sivakasi Pin & Label */}
+                  {/* Sivakasi Pin & Label (South-West) */}
                   <g>
-                    <circle cx="60" cy="172" r="5" fill="#E11D48" stroke="#FFF" strokeWidth="1.5" />
-                    <circle cx="60" cy="172" r="1.8" fill="#FFF" />
-                    <text x="68" y="176" textAnchor="start" fontSize="9.5" fontWeight="600" fill="#1E293B" fontFamily="Inter-SemiBold, sans-serif">Sivakasi</text>
+                    <circle cx="62" cy="166" r="5.5" fill="#B91C1C" stroke="#FFF" strokeWidth="1.8" />
+                    <circle cx="62" cy="166" r="2" fill="#FFF" />
+                    <text x="54" y="170" textAnchor="end" fontSize="10" fontWeight="700" fill="#0F172A" fontFamily="Inter-Bold, sans-serif">Sivakasi</text>
                   </g>
 
-                  {/* Virudhunagar Pin & Label */}
+                  {/* Virudhunagar Pin & Label (South-East of Sivakasi) */}
                   <g>
-                    <circle cx="52" cy="188" r="4.5" fill="#E11D48" stroke="#FFF" strokeWidth="1.5" />
-                    <circle cx="52" cy="188" r="1.5" fill="#FFF" />
-                    <text x="60" y="192" textAnchor="start" fontSize="9.5" fontWeight="600" fill="#1E293B" fontFamily="Inter-SemiBold, sans-serif">Virudhunagar</text>
+                    <circle cx="84" cy="172" r="5" fill="#E11D48" stroke="#FFF" strokeWidth="1.8" />
+                    <circle cx="84" cy="172" r="1.8" fill="#FFF" />
+                    <text x="92" y="176" textAnchor="start" fontSize="10" fontWeight="700" fill="#0F172A" fontFamily="Inter-Bold, sans-serif">Virudhunagar</text>
                   </g>
                 </svg>
               ) : (

@@ -32,6 +32,8 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
     const cardWidth = isWebPlatform && windowWidth >= 900
       ? Math.min(Math.max(windowWidth * 0.42, 380), 650)
       : Math.min(Math.max(windowWidth * 0.84, 250), windowWidth - 32);
+    const cardHeight = windowWidth < 380 ? 240 : windowWidth < 600 ? 225 : 230;
+    const titleFontSize = windowWidth < 380 ? 17 : windowWidth < 600 ? 19 : 22;
     const cardGap = 12;
     const cardTotal = cardWidth + cardGap;
 
@@ -247,7 +249,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
               }}
             >
               {loopedBanners.map((item, idx) => (
-                <View key={`${item.id}-${idx}`} style={[styles.bannerSlide, { width: cardWidth, flexShrink: 0 }]}>
+                <View key={`${item.id}-${idx}`} style={[styles.bannerSlide, { width: cardWidth, height: cardHeight, flexShrink: 0 }]}>
                   <ImageBackground
                     source={resolveProductImage(item)}
                     style={styles.bannerImage}
@@ -267,7 +269,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
                         ) : null}
                       </View>
 
-                      <Text style={styles.title} numberOfLines={2}>
+                      <Text style={[styles.title, { fontSize: titleFontSize, lineHeight: titleFontSize + 5 }]} numberOfLines={2}>
                         {item.title}
                       </Text>
 
@@ -297,7 +299,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
               {loopedBanners.map((item, idx) => (
                 <View
                   key={`${item.id}-${idx}`}
-                  style={[styles.bannerSlide, { width: cardWidth, marginRight: cardGap }]}
+                  style={[styles.bannerSlide, { width: cardWidth, height: cardHeight, marginRight: cardGap }]}
                 >
                   <ImageBackground
                     source={resolveProductImage(item)}
@@ -318,7 +320,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = React.memo(
                         ) : null}
                       </View>
 
-                      <Text style={styles.title} numberOfLines={2}>
+                      <Text style={[styles.title, { fontSize: titleFontSize, lineHeight: titleFontSize + 5 }]} numberOfLines={2}>
                         {item.title}
                       </Text>
 

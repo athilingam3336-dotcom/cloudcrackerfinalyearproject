@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
@@ -195,7 +196,7 @@ export const UserDistributionPieChart: React.FC<UserDistributionPieChartProps> =
           <Text style={styles.cardTitle}>User Analytics</Text>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {/* Pie / Bar toggle */}
           <View style={styles.viewToggleGroup}>
             <TouchableOpacity
@@ -203,34 +204,35 @@ export const UserDistributionPieChart: React.FC<UserDistributionPieChartProps> =
               onPress={() => setViewType('pie')}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="pie-chart" size={18} color={viewType === 'pie' ? '#fff' : Colors.onSurfaceVariant} />
+              <MaterialIcons name="pie-chart" size={16} color={viewType === 'pie' ? '#fff' : Colors.onSurfaceVariant} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.viewToggleBtn, viewType === 'bar' && styles.viewToggleBtnActive]}
               onPress={() => setViewType('bar')}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="bar-chart" size={18} color={viewType === 'bar' ? '#fff' : Colors.onSurfaceVariant} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modeTabs}>
-            <TouchableOpacity
-              style={[styles.modeTabBtn, chartMode === 'role' && styles.modeTabBtnActive]}
-              onPress={() => setChartMode('role')}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.modeTabText, chartMode === 'role' && styles.modeTabTextActive]}>By Role</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modeTabBtn, chartMode === 'status' && styles.modeTabBtnActive]}
-              onPress={() => setChartMode('status')}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.modeTabText, chartMode === 'status' && styles.modeTabTextActive]}>By Status</Text>
+              <MaterialIcons name="bar-chart" size={16} color={viewType === 'bar' ? '#fff' : Colors.onSurfaceVariant} />
             </TouchableOpacity>
           </View>
         </View>
+      </View>
+
+      {/* Mode Tabs - on separate row to prevent overflow */}
+      <View style={styles.modeTabs}>
+        <TouchableOpacity
+          style={[styles.modeTabBtn, chartMode === 'role' && styles.modeTabBtnActive]}
+          onPress={() => setChartMode('role')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.modeTabText, chartMode === 'role' && styles.modeTabTextActive]}>By Role</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeTabBtn, chartMode === 'status' && styles.modeTabBtnActive]}
+          onPress={() => setChartMode('status')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.modeTabText, chartMode === 'status' && styles.modeTabTextActive]}>By Status</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Subtitle */}
@@ -244,7 +246,7 @@ export const UserDistributionPieChart: React.FC<UserDistributionPieChartProps> =
       <View style={styles.chartAndLegendWrapper}>
         {/* Chart Area: Pie or Bar */}
         {viewType === 'pie' ? (
-          <View style={styles.chartContainer}>
+          <ScrollView maximumZoomScale={4} minimumZoomScale={1} style={styles.chartContainer} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}>
             {isWeb ? (
               <View style={styles.webPieWrapper}>
                 <svg width="300" height="300" viewBox="0 0 300 300" style={{ overflow: 'visible' }}>
@@ -294,7 +296,7 @@ export const UserDistributionPieChart: React.FC<UserDistributionPieChartProps> =
                 </View>
               </View>
             )}
-          </View>
+          </ScrollView>
         ) : (
           /* BAR CHART */
           <View style={styles.barChartContainer}>
@@ -476,9 +478,10 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     ...Typography.titleLg,
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter-Bold',
     color: Colors.onSurface,
+    flexShrink: 1,
   },
   cardSubtitle: {
     ...Typography.bodyMd,
@@ -493,6 +496,8 @@ const styles = StyleSheet.create({
     padding: 2,
     borderWidth: 1,
     borderColor: Colors.surfaceContainerHigh,
+    alignSelf: 'flex-start',
+    marginTop: 6,
   },
   modeTabBtn: {
     paddingHorizontal: 8,

@@ -728,105 +728,211 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           </TouchableOpacity>
         </View>
 
-        {/* Stretched Metric KPI Cards */}
-        <View style={[styles.kpiGridRow, { paddingHorizontal: 16, marginTop: 12 }]}>
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setSelectedCategory('All');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
+        {/* Stretched Metric KPI Cards & Centered Analytics Chart */}
+        {!isListExpanded ? (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.collapsedScrollContent, !isDesktopWeb && styles.mobileBottomPadding]}
           >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
-              <MaterialIcons name="inventory-2" size={18} color="#1976D2" />
-            </View>
-            <Text style={styles.metricValue}>{totalProducts}</Text>
-            <Text style={styles.metricLabel}>PRODUCTS</Text>
-          </TouchableOpacity>
+            <View style={styles.kpiGridRow}>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setSelectedCategory('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
+                  <MaterialIcons name="inventory-2" size={18} color="#1976D2" />
+                </View>
+                <Text style={styles.metricValue}>{totalProducts}</Text>
+                <Text style={styles.metricLabel}>PRODUCTS</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setSelectedCategory('All');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
-              <MaterialIcons name="category" size={18} color="#2E7D32" />
-            </View>
-            <Text style={styles.metricValue}>{categories.length}</Text>
-            <Text style={styles.metricLabel}>CATEGORIES</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setSelectedCategory('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
+                  <MaterialIcons name="category" size={18} color="#2E7D32" />
+                </View>
+                <Text style={styles.metricValue}>{categories.length}</Text>
+                <Text style={styles.metricLabel}>CATEGORIES</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.kpiCardFlex,
-              selectedCategory === 'featured' && styles.metricCardSelected,
-            ]}
-            onPress={() => {
-              setSelectedCategory(selectedCategory === 'featured' ? 'All' : 'featured');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#FEF3C7' }]}>
-              <MaterialIcons name="star" size={18} color="#D97706" />
-            </View>
-            <Text style={[styles.metricValue, { color: '#D97706' }]}>
-              {products.filter((p) => p.isFeatured).length}
-            </Text>
-            <Text style={styles.metricLabel}>FEATURED</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  selectedCategory === 'featured' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setSelectedCategory(selectedCategory === 'featured' ? 'All' : 'featured');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FEF3C7' }]}>
+                  <MaterialIcons name="star" size={18} color="#D97706" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#D97706' }]}>
+                  {products.filter((p) => p.isFeatured).length}
+                </Text>
+                <Text style={styles.metricLabel}>FEATURED</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.kpiCardFlex,
-              selectedCategory === 'flash_sale' && styles.metricCardSelected,
-            ]}
-            onPress={() => {
-              setSelectedCategory(selectedCategory === 'flash_sale' ? 'All' : 'flash_sale');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.metricIconCircle, { backgroundColor: '#FFEBEE' }]}>
-              <MaterialIcons name="bolt" size={18} color="#D32F2F" />
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  selectedCategory === 'flash_sale' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setSelectedCategory(selectedCategory === 'flash_sale' ? 'All' : 'flash_sale');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FFEBEE' }]}>
+                  <MaterialIcons name="bolt" size={18} color="#D32F2F" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#D32F2F' }]}>
+                  {products.filter((p) => p.isFlashSale).length}
+                </Text>
+                <Text style={styles.metricLabel}>FLASH SALES</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={[styles.metricValue, { color: '#D32F2F' }]}>
-              {products.filter((p) => p.isFlashSale).length}
-            </Text>
-            <Text style={styles.metricLabel}>FLASH SALES</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Centered Analytics Chart (Pie & Bar Chart) */}
-        <ProductDistributionPieChart
-          products={products}
-          categories={categories}
-          totalProductsCount={totalProducts}
-          selectedCategory={selectedCategory}
-          isListExpanded={isListExpanded}
-          onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
-          onSelectCategory={(catId) => {
-            setSelectedCategory(catId);
-            setPage(1);
-            setIsListExpanded(true);
-          }}
-          onSelectPromoFilter={(promoName) => {
-            if (promoName.includes('Flash')) setSelectedCategory('flash_sale');
-            else if (promoName.includes('Featured')) setSelectedCategory('featured');
-            else if (promoName.includes('Bestseller')) setSelectedCategory('bestseller');
-            else setSelectedCategory('All');
-            setPage(1);
-            setIsListExpanded(true);
-          }}
-        />
+            <ProductDistributionPieChart
+              products={products}
+              categories={categories}
+              totalProductsCount={totalProducts}
+              selectedCategory={selectedCategory}
+              isListExpanded={isListExpanded}
+              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+              onSelectCategory={(catId) => {
+                setSelectedCategory(catId);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+              onSelectPromoFilter={(promoName) => {
+                if (promoName.includes('Flash')) setSelectedCategory('flash_sale');
+                else if (promoName.includes('Featured')) setSelectedCategory('featured');
+                else if (promoName.includes('Bestseller')) setSelectedCategory('bestseller');
+                else setSelectedCategory('All');
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+            />
+          </ScrollView>
+        ) : (
+          <>
+            <View style={styles.kpiGridRow}>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setSelectedCategory('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
+                  <MaterialIcons name="inventory-2" size={18} color="#1976D2" />
+                </View>
+                <Text style={styles.metricValue}>{totalProducts}</Text>
+                <Text style={styles.metricLabel}>PRODUCTS</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setSelectedCategory('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
+                  <MaterialIcons name="category" size={18} color="#2E7D32" />
+                </View>
+                <Text style={styles.metricValue}>{categories.length}</Text>
+                <Text style={styles.metricLabel}>CATEGORIES</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  selectedCategory === 'featured' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setSelectedCategory(selectedCategory === 'featured' ? 'All' : 'featured');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FEF3C7' }]}>
+                  <MaterialIcons name="star" size={18} color="#D97706" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#D97706' }]}>
+                  {products.filter((p) => p.isFeatured).length}
+                </Text>
+                <Text style={styles.metricLabel}>FEATURED</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.kpiCardFlex,
+                  selectedCategory === 'flash_sale' && styles.metricCardSelected,
+                ]}
+                onPress={() => {
+                  setSelectedCategory(selectedCategory === 'flash_sale' ? 'All' : 'flash_sale');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.metricIconCircle, { backgroundColor: '#FFEBEE' }]}>
+                  <MaterialIcons name="bolt" size={18} color="#D32F2F" />
+                </View>
+                <Text style={[styles.metricValue, { color: '#D32F2F' }]}>
+                  {products.filter((p) => p.isFlashSale).length}
+                </Text>
+                <Text style={styles.metricLabel}>FLASH SALES</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ProductDistributionPieChart
+              products={products}
+              categories={categories}
+              totalProductsCount={totalProducts}
+              selectedCategory={selectedCategory}
+              isListExpanded={isListExpanded}
+              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+              onSelectCategory={(catId) => {
+                setSelectedCategory(catId);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+              onSelectPromoFilter={(promoName) => {
+                if (promoName.includes('Flash')) setSelectedCategory('flash_sale');
+                else if (promoName.includes('Featured')) setSelectedCategory('featured');
+                else if (promoName.includes('Bestseller')) setSelectedCategory('bestseller');
+                else setSelectedCategory('All');
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+            />
+          </>
+        )}
 
         {/* Main Split View Layout - Collapsible */}
         {isListExpanded && (
@@ -955,7 +1061,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
                   renderItem={renderProductRow}
                   ListFooterComponent={renderFooter}
                   ListEmptyComponent={renderEmpty}
-                  contentContainerStyle={styles.listContent}
+                  contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
                   showsVerticalScrollIndicator={false}
                   onRefresh={fetchProducts}
                   refreshing={isLoading}
@@ -1479,6 +1585,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: Colors.tertiary,
     marginTop: 1,
+  },
+  collapsedScrollContent: {
+    paddingTop: 4,
+  },
+  mobileBottomPadding: {
+    paddingBottom: 110,
   },
   listContent: {
     paddingBottom: Spacing.xl,

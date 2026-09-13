@@ -482,101 +482,203 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* KPI Metrics Cards */}
-        <View style={[styles.kpiGridRow, { paddingHorizontal: 16, marginTop: 12 }]}>
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setActiveFilter('All');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
+        {/* KPI Metrics Cards & Centered Analytics Chart */}
+        {!isListExpanded ? (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.collapsedScrollContent, !isDesktopWeb && styles.mobileBottomPadding]}
           >
-            <View style={[styles.kpiIconWrapper, { backgroundColor: Colors.primaryContainer }]}>
-              <MaterialIcons name="people" size={20} color={Colors.primary} />
-            </View>
-            <Text style={styles.kpiValue}>{metrics.totalUsers}</Text>
-            <Text style={styles.kpiTitle}>Total Users</Text>
-          </TouchableOpacity>
+            <View style={styles.kpiGridRow}>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: Colors.primaryContainer }]}>
+                  <MaterialIcons name="people" size={20} color={Colors.primary} />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.totalUsers}</Text>
+                <Text style={styles.kpiTitle}>Total Users</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setActiveFilter('Customers');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.kpiIconWrapper, { backgroundColor: '#E0F2FE' }]}>
-              <MaterialIcons name="person" size={20} color="#0284C7" />
-            </View>
-            <Text style={styles.kpiValue}>{metrics.customerCount}</Text>
-            <Text style={styles.kpiTitle}>Customers</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('Customers');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: '#E0F2FE' }]}>
+                  <MaterialIcons name="person" size={20} color="#0284C7" />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.customerCount}</Text>
+                <Text style={styles.kpiTitle}>Customers</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setActiveFilter('Active');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.kpiIconWrapper, { backgroundColor: '#DCFCE7' }]}>
-              <MaterialIcons name="check-circle" size={20} color="#16A34A" />
-            </View>
-            <Text style={styles.kpiValue}>{metrics.activeUsers}</Text>
-            <Text style={styles.kpiTitle}>Active</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('Active');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: '#DCFCE7' }]}>
+                  <MaterialIcons name="check-circle" size={20} color="#16A34A" />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.activeUsers}</Text>
+                <Text style={styles.kpiTitle}>Active</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setActiveFilter('Blocked');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEE2E2' }]}>
-              <MaterialIcons name="block" size={20} color="#DC2626" />
-            </View>
-            <Text style={styles.kpiValue}>{metrics.blockedUsers}</Text>
-            <Text style={styles.kpiTitle}>Blocked</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('Blocked');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEE2E2' }]}>
+                  <MaterialIcons name="block" size={20} color="#DC2626" />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.blockedUsers}</Text>
+                <Text style={styles.kpiTitle}>Blocked</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.kpiCardFlex}
-            onPress={() => {
-              setActiveFilter('Admins');
-              setPage(1);
-              setIsListExpanded(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEF3C7' }]}>
-              <MaterialIcons name="admin-panel-settings" size={20} color="#D97706" />
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('Admins');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEF3C7' }]}>
+                  <MaterialIcons name="admin-panel-settings" size={20} color="#D97706" />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.adminCount}</Text>
+                <Text style={styles.kpiTitle}>Admins</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.kpiValue}>{metrics.adminCount}</Text>
-            <Text style={styles.kpiTitle}>Admins</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Centered Analytics Chart (Pie & Bar Chart) */}
-        <UserDistributionPieChart
-          metrics={metrics}
-          activeFilter={activeFilter}
-          isListExpanded={isListExpanded}
-          onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
-          onSelectFilter={(f) => {
-            setActiveFilter(f);
-            setPage(1);
-            setIsListExpanded(true);
-          }}
-        />
+            <UserDistributionPieChart
+              metrics={metrics}
+              activeFilter={activeFilter}
+              isListExpanded={isListExpanded}
+              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+              onSelectFilter={(f) => {
+                setActiveFilter(f);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+            />
+          </ScrollView>
+        ) : (
+          <>
+            <View style={styles.kpiGridRow}>
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('All');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: Colors.primaryContainer }]}>
+                  <MaterialIcons name="people" size={20} color={Colors.primary} />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.totalUsers}</Text>
+                <Text style={styles.kpiTitle}>Total Users</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('Customers');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: '#E0F2FE' }]}>
+                  <MaterialIcons name="person" size={20} color="#0284C7" />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.customerCount}</Text>
+                <Text style={styles.kpiTitle}>Customers</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('Active');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: '#DCFCE7' }]}>
+                  <MaterialIcons name="check-circle" size={20} color="#16A34A" />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.activeUsers}</Text>
+                <Text style={styles.kpiTitle}>Active</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('Blocked');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEE2E2' }]}>
+                  <MaterialIcons name="block" size={20} color="#DC2626" />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.blockedUsers}</Text>
+                <Text style={styles.kpiTitle}>Blocked</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.kpiCardFlex}
+                onPress={() => {
+                  setActiveFilter('Admins');
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEF3C7' }]}>
+                  <MaterialIcons name="admin-panel-settings" size={20} color="#D97706" />
+                </View>
+                <Text style={styles.kpiValue}>{metrics.adminCount}</Text>
+                <Text style={styles.kpiTitle}>Admins</Text>
+              </TouchableOpacity>
+            </View>
+
+            <UserDistributionPieChart
+              metrics={metrics}
+              activeFilter={activeFilter}
+              isListExpanded={isListExpanded}
+              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+              onSelectFilter={(f) => {
+                setActiveFilter(f);
+                setPage(1);
+                setIsListExpanded(true);
+              }}
+            />
+          </>
+        )}
 
         {/* Main Content Area - Collapsible */}
         {isListExpanded && (
@@ -640,7 +742,7 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
                   data={displayUsers}
                   keyExtractor={(item) => item.id}
                   renderItem={renderUserItem}
-                  contentContainerStyle={styles.listContent}
+                  contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
                   refreshing={isRefreshing}
                   onRefresh={handleRefresh}
                   ListEmptyComponent={
@@ -1401,6 +1503,12 @@ const styles = StyleSheet.create({
   loadingText: {
     ...Typography.bodyMd,
     color: Colors.onSurfaceVariant,
+  },
+  collapsedScrollContent: {
+    paddingTop: 4,
+  },
+  mobileBottomPadding: {
+    paddingBottom: 110,
   },
   listContent: {
     paddingBottom: 80,

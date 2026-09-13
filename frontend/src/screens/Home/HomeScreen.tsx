@@ -57,7 +57,7 @@ const IS_DESKTOP_OR_TABLET = Platform.OS === 'web';
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { handleTabPress } = useSmartTabNavigation();
-  const { numGridColumns } = useAppLayout();
+  const { numGridColumns, isDesktopWeb } = useAppLayout();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -300,28 +300,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const activeFlashItems = products.filter((p: any) => {
       const isFlash = Boolean(p.isFlashSale || p.is_flash_sale);
       const hasStock = p.stock === undefined || p.stock === null || p.stock > 0;
-      const notExpired = p.endsInSeconds === undefined || p.endsInSeconds === null || p.endsInSeconds > 0;
+      const endsInSecs = p.endsInSeconds !== undefined && p.endsInSeconds !== null ? p.endsInSeconds : p.ends_in_seconds;
+      const notExpired = endsInSecs === undefined || endsInSecs === null || endsInSecs > 0;
       return isFlash && hasStock && notExpired;
     });
 
     if (activeFlashItems.length > 0) {
-      const remainingSecondsList = activeFlashItems.map((p: any) => {
-        if (typeof p.endsInSeconds === 'number' && p.endsInSeconds > 0) {
-          return p.endsInSeconds;
-        }
-        const hrs = parseFloat(p.flashSaleHours || p.flash_sale_hours || 4);
-        return Math.max(60, Math.floor(hrs * 3600));
-      });
-      // Pick the max duration among active unexpired flash sale items
-      const maxRemainingSecs = Math.max(...remainingSecondsList);
-      const newTargetMs = Date.now() + maxRemainingSecs * 1000;
-
-      // Only update target if not set or if duration changed (> 30 seconds diff)
-      if (
-        !targetEndTimeRef.current ||
-        Math.abs(newTargetMs - targetEndTimeRef.current) > 30000
-      ) {
-        targetEndTimeRef.current = newTargetMs;
+      if (!targetEndTimeRef.current) {
+        const remainingSecondsList = activeFlashItems.map((p: any) => {
+          const val = p.endsInSeconds !== undefined && p.endsInSeconds !== null ? p.endsInSeconds : p.ends_in_seconds;
+          if (typeof val === 'number' && val > 0) {
+            return val;
+          }
+          const hrs = parseFloat(p.flashSaleHours || p.flash_sale_hours || 4);
+          return Math.max(60, Math.floor(hrs * 3600));
+        });
+        // Pick the max duration among active unexpired flash sale items
+        const maxRemainingSecs = Math.max(...remainingSecondsList);
+        targetEndTimeRef.current = Date.now() + maxRemainingSecs * 1000;
         setTimerSeconds(maxRemainingSecs);
       }
     } else {
@@ -566,7 +562,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           ListHeaderComponent={renderHeader}
           ListFooterComponent={<FooterSection />}
           columnWrapperStyle={numGridColumns > 1 ? styles.gridRow : undefined}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.listContentMobile]}
           showsVerticalScrollIndicator={false}
           initialNumToRender={6}
           maxToRenderPerBatch={10}
@@ -592,6 +588,9 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
+  listContentMobile: {
+    paddingBottom: 110,
+  },
   headerWrapper: {
     marginBottom: Spacing.xs,
   },
@@ -607,6 +606,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.xl,
     marginHorizontal: Spacing.marginMobile,
+    overflow: 'hidden',
   },
   flashSaleHeaderRow: {
     flexDirection: 'row',
@@ -614,6 +614,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
+    flexWrap: 'wrap',
+    gap: 6,
   },
   flashSaleTitleBox: {
     flexDirection: 'row',

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
@@ -164,7 +165,7 @@ export const CategoryDistributionPieChart: React.FC<CategoryDistributionPieChart
       {/* Side-by-side Chart & Legend Wrapper */}
       <View style={styles.chartAndLegendWrapper}>
         {viewType === 'pie' ? (
-          <View style={styles.pieWrapper}>
+          <ScrollView style={styles.pieWrapper} maximumZoomScale={4} minimumZoomScale={1} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}>
             {isWeb ? (
               <svg
                 width={PIE_SIZE}
@@ -220,7 +221,7 @@ export const CategoryDistributionPieChart: React.FC<CategoryDistributionPieChart
                 <Text style={styles.nativePieText}>{categories.length} Categories</Text>
               </View>
             )}
-          </View>
+          </ScrollView>
         ) : (
           <View style={styles.barChartContainer}>
             {segments.map((seg) => {

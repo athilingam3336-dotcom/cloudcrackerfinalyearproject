@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
@@ -324,7 +325,7 @@ export const InventoryDistributionPieChart: React.FC<InventoryDistributionPieCha
       <View style={styles.chartAndLegendWrapper}>
         {/* Chart Area: Pie or Bar */}
         {viewType === 'pie' ? (
-          <View style={styles.chartContainer}>
+          <ScrollView maximumZoomScale={4} minimumZoomScale={1} style={styles.chartContainer} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}>
             {isWeb ? (
               <svg width="240" height="240" viewBox="0 0 240 240" style={{ overflow: 'visible' }}>
                 <defs>
@@ -378,7 +379,7 @@ export const InventoryDistributionPieChart: React.FC<InventoryDistributionPieCha
               <Text style={styles.donutCenterLabel}>{activeSegmentItem ? activeSegmentItem.label : chartMode === 'status' ? 'Total Products' : 'Items'}</Text>
               {activeSegmentItem && (<Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>)}
             </View>
-          </View>
+          </ScrollView>
         ) : (
           /* BAR CHART */
           <View style={styles.barChartContainer}>

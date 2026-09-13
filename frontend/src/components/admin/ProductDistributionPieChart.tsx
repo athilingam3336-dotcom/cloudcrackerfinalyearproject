@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
@@ -51,6 +52,7 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
   const [chartMode, setChartMode] = useState<ChartMode>('category');
   const [viewType, setViewType] = useState<'pie' | 'bar'>('pie');
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
+  const [zoomScale, setZoomScale] = useState(1);
 
   // Calculate breakdown segments dynamically
   const segments = useMemo(() => {
@@ -326,22 +328,41 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
             </TouchableOpacity>
           </View>
 
-          {/* View Type Toggle (Pie vs Bar) */}
-          <View style={styles.modeTabs}>
-            <TouchableOpacity
-              style={[styles.modeTabBtn, viewType === 'pie' && styles.modeTabBtnActive]}
-              onPress={() => setViewType('pie')}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="pie-chart" size={13} color={viewType === 'pie' ? '#FFF' : Colors.onSurfaceVariant} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modeTabBtn, viewType === 'bar' && styles.modeTabBtnActive]}
-              onPress={() => setViewType('bar')}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="bar-chart" size={13} color={viewType === 'bar' ? '#FFF' : Colors.onSurfaceVariant} />
-            </TouchableOpacity>
+          {/* Zoom Controls & View Type */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={styles.modeTabs}>
+              <TouchableOpacity
+                style={styles.modeTabBtn}
+                onPress={() => setZoomScale((s) => Math.max(s - 0.4, 1))}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="zoom-out" size={13} color={Colors.onSurfaceVariant} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modeTabBtn}
+                onPress={() => setZoomScale((s) => Math.min(s + 0.4, 3))}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="zoom-in" size={13} color={Colors.onSurfaceVariant} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modeTabs}>
+              <TouchableOpacity
+                style={[styles.modeTabBtn, viewType === 'pie' && styles.modeTabBtnActive]}
+                onPress={() => setViewType('pie')}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="pie-chart" size={13} color={viewType === 'pie' ? '#FFF' : Colors.onSurfaceVariant} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modeTabBtn, viewType === 'bar' && styles.modeTabBtnActive]}
+                onPress={() => setViewType('bar')}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="bar-chart" size={13} color={viewType === 'bar' ? '#FFF' : Colors.onSurfaceVariant} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -350,9 +371,16 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
       <View style={styles.chartAndLegendWrapper}>
         {/* Main Visual Chart View */}
         {viewType === 'bar' ? (
-          <View style={styles.chartContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={true}
+            maximumZoomScale={4}
+            minimumZoomScale={1}
+            style={styles.chartContainer}
+            contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minWidth: '100%' }}
+          >
             {Platform.OS === 'web' ? (
-              <svg width="100%" height="250" viewBox="0 0 860 250" style={{ overflow: 'visible', maxWidth: '100%' }}>
+              <svg width={860 * zoomScale} height={250 * zoomScale} viewBox="0 0 860 250" style={{ overflow: 'visible', maxWidth: 'none' }}>
                 <defs>
                   {barChartData.bars.map((bar) => (
                     <linearGradient
@@ -470,12 +498,17 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
             ) : (
               <View style={styles.nativeFallbackDonut} />
             )}
-          </View>
+          </ScrollView>
         ) : (
           /* Center Donut SVG Pie Chart */
-          <View style={styles.chartContainer}>
+          <ScrollView 
+            maximumZoomScale={4}
+            minimumZoomScale={1}
+            style={styles.chartContainer}
+            contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}
+          >
             {Platform.OS === 'web' ? (
-              <svg width="280" height="280" viewBox="0 0 280 280" style={{ overflow: 'visible' }}>
+              <svg width={280 * zoomScale} height={280 * zoomScale} viewBox="0 0 280 280" style={{ overflow: 'visible' }}>
                 <defs>
                   {arcs.map((arc, index) => (
                     <React.Fragment key={`def_prod_frag_${arc.id}_${index}`}>
@@ -593,7 +626,7 @@ export const ProductDistributionPieChart: React.FC<ProductDistributionPieChartPr
                 <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
               )}
             </View>
-          </View>
+          </ScrollView>
         )}
 
         {/* Interactive Legend Side List */}

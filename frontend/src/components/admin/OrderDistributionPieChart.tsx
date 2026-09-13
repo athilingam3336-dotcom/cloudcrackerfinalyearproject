@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
@@ -398,7 +399,14 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
 
       {/* Main Visual Chart View */}
       {viewType === 'bar' ? (
-        <View style={styles.chartContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          maximumZoomScale={4}
+          minimumZoomScale={1}
+          style={styles.chartContainer}
+          contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minWidth: '100%' }}
+        >
           {Platform.OS === 'web' ? (
             <svg width="100%" height="250" viewBox="0 0 860 250" style={{ overflow: 'visible', maxWidth: '100%' }}>
               <defs>
@@ -518,7 +526,7 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
           ) : (
             <View style={styles.nativeFallbackDonut} />
           )}
-        </View>
+        </ScrollView>
       ) : (
         /* Pie View with LEFT & RIGHT Status Cards + Leader Lines (kodu) */
         <View style={styles.pieLayoutRow}>
@@ -576,7 +584,12 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
           </View>
 
           {/* 🎯 CENTER SVG DONUT CHART WITH CONNECTOR LINES (KODU) */}
-          <View style={styles.chartCenterWrapper}>
+          <ScrollView
+            maximumZoomScale={4}
+            minimumZoomScale={1}
+            style={styles.chartCenterWrapper}
+            contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}
+          >
             {Platform.OS === 'web' ? (
               <svg width="440" height="340" viewBox="0 0 440 340" style={{ overflow: 'visible' }}>
                 <defs>
@@ -764,7 +777,7 @@ export const OrderDistributionPieChart: React.FC<OrderDistributionPieChartProps>
                 <Text style={styles.donutCenterPct}>{activeSegmentItem.pct}%</Text>
               )}
             </View>
-          </View>
+          </ScrollView>
 
           {/* 👉 RIGHT SIDE STATUS CARDS */}
           <View style={styles.sideColumn}>

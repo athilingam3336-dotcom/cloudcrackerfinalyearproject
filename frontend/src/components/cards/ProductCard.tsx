@@ -259,18 +259,19 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginTop: Spacing.xs,
-    minHeight: 32,
+    minHeight: 34,
+    paddingRight: 42,
   },
   priceContainer: {
     flex: 1,
     flexShrink: 1,
-    maxWidth: '68%',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'baseline',
-    gap: 4,
+    gap: 3,
   },
   price: {
     ...Typography.titleLg,

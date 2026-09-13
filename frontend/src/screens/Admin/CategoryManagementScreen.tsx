@@ -33,6 +33,7 @@ import { useNotificationStore } from '@/store';
 import { RootStackParamList } from '@/navigation/types';
 import { resolveProductImage } from '@/constants/productImages';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useAppLayout } from '@/hooks/useAppLayout';
 import { useProductStore } from '@/store/productStore';
 import { CategoryDistributionPieChart } from '@/components/admin/CategoryDistributionPieChart';
 
@@ -56,6 +57,7 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
   navigation,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
+  const { isDesktopWeb } = useAppLayout();
   const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -476,7 +478,7 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
           renderItem={renderCategoryRow}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={isListExpanded ? renderEmpty : null}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
           showsVerticalScrollIndicator={false}
           onRefresh={fetchCategories}
           refreshing={isLoading}
@@ -596,6 +598,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: Spacing.xl,
+  },
+  mobileBottomPadding: {
+    paddingBottom: 110,
   },
   headerWrapper: {
     marginBottom: Spacing.sm,

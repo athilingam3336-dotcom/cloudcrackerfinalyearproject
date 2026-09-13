@@ -26,6 +26,7 @@ import {
 import { BusinessAnalyticsSection } from '@/components/admin/BusinessAnalyticsSection';
 import { useNotificationStore } from '@/store';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { useAppLayout } from '@/hooks/useAppLayout';
 import { DailyBusinessReportModal } from '@/components/admin/DailyBusinessReportModal';
 
 type AdminDashboardScreenProps = NativeStackScreenProps<
@@ -37,6 +38,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   navigation,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
+  const { isDesktopWeb } = useAppLayout();
   const [analyticsData, setAnalyticsData] = useState<BusinessAnalyticsData | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
   const [isAnalyticsError, setIsAnalyticsError] = useState(false);
@@ -179,7 +181,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
       />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, !isDesktopWeb && styles.mobileBottomPadding]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -236,6 +238,9 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
     width: '100%',
     paddingHorizontal: Spacing.marginMobile,
+  },
+  mobileBottomPadding: {
+    paddingBottom: 110,
   },
   titleSection: {
     marginVertical: Spacing.md,

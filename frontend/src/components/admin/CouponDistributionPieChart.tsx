@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
@@ -281,7 +282,7 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
       <View style={styles.chartAndLegendWrapper}>
         {/* Chart Area: Pie or Bar */}
         {viewType === 'pie' ? (
-          <View style={styles.chartContainer}>
+          <ScrollView maximumZoomScale={4} minimumZoomScale={1} style={styles.chartContainer} contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', minHeight: '100%' }}>
             {isWeb ? (
               <View style={styles.webPieWrapper}>
                 <svg width="240" height="240" viewBox="0 0 240 240" style={{ overflow: 'visible' }}>
@@ -325,7 +326,7 @@ export const CouponDistributionPieChart: React.FC<CouponDistributionPieChartProp
                 </View>
               </View>
             )}
-          </View>
+          </ScrollView>
         ) : (
           <View style={styles.barChartContainer}>
             {formattedSegments.map((seg) => {
