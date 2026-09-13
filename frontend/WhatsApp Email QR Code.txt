@@ -1,0 +1,34 @@
+📱 WhatsApp & Email QR Code System: Complete Step-by-Step Guide
+Neenga ketta maari, customer checkout / card-la buy pannum podhu:
+
+Customer-oda WhatsApp Number kettu வாங்கி,
+Order Confirmation, UPI QR Code Image, matrum Invoice Details-ai customer-oda WhatsApp matrum Email-ku automatic-a send panna mudiyum.
+Admin Number-la irundhu msg povathala, customer edhavadhu doubt ketka direct-a antha WhatsApp number-ku reply pannuvanga.
+💰 Amount/Cost Thevappaduma? (Free vs Paid Options)
+System	Provider	Monthly Free Limit	Extra Cost (If exceeded)	Best For
+Email API	Gmail SMTP / Resend	3,000 Emails / Month FREE	₹0	Order Confirmation & Invoice PDF
+WhatsApp API	Meta WhatsApp Business API	1,000 Conversations / Month FREE	~₹0.50 / msg	Official Admin Number WhatsApp Messages
+WhatsApp Direct Link	WhatsApp Web API (wa.me)	100% FREE Forever	₹0	Instant 1-click WhatsApp opening
+📝 Step-by-Step Implementation Plan
+Step 1: Customer Phone Number Collection (Frontend)
+Checkout Screen-la WhatsApp Number Field (Checkbox: "Send Order Updates & QR Code to WhatsApp") kettu store pannuvom.
+Step 2: Email Integration (Backend - 100% FREE)
+FastAPI Backend-la Gmail SMTP or Resend API configure pannuvom.
+Customer order place panna udane, Order Summary + UPI Payment QR Code Image email-ku automatic-a povum.
+Step 3: WhatsApp Integration (Admin Phone Number)
+Du-way setup options:
+
+Option A (Meta WhatsApp Business Cloud API - Recommended):
+Meta Developer Portal-la Admin Mobile Number register பண்ணுவோம்.
+Initial-a 1,000 FREE messages/month kidaikkum.
+Customer-ku Admin number-la irundhu automatic WhatsApp msg (Order ID, Amount, UPI QR Link) povum.
+Option B (Free Direct WhatsApp Click-to-Chat):
+Customer order confirm panna udane, automatic-a WhatsApp open aagi Admin Number-ku predefined Order Details pre-fill aagum.
+🛠️ Enna Pannalam?
+Naama Email (100% Free) + WhatsApp System rendu periyum implemet panna ready-a irukom.
+
+👉 Neenga solla vendiyadhu:
+
+Admin Official WhatsApp Mobile Number enna?
+Admin Store Email Address (Gmail ID) enna?
+Ivi rendu kuduthal, ngayuru order place pannum podhu automatic-a WhatsApp + Email-ku QR code & Invoice ponra coding-a start pannalam! 🚀
