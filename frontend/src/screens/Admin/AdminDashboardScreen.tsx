@@ -28,6 +28,8 @@ import { useNotificationStore } from '@/store';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { DailyBusinessReportModal } from '@/components/admin/DailyBusinessReportModal';
+import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
+import { useAttentionModalStore } from '@/store';
 
 type AdminDashboardScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -44,6 +46,14 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   const [isAnalyticsError, setIsAnalyticsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
+
+  // Global Needs Your Attention Modal State
+  const {
+    isVisible: isAttentionModalVisible,
+    openAttentionModal,
+    closeAttentionModal,
+    setAnalyticsData: setGlobalAnalyticsData,
+  } = useAttentionModalStore();
 
   // Today's Sales & Stock Report Modal State
   const [isTodayReportModalVisible, setIsTodayReportModalVisible] = useState(false);
@@ -139,6 +149,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
     try {
       const data = await adminService.getBusinessAnalyticsData(isRefreshing);
       setAnalyticsData(data);
+      setGlobalAnalyticsData(data);
     } catch (err) {
       console.warn('Failed to load business analytics data:', err);
       setIsAnalyticsError(true);
@@ -146,7 +157,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
       setIsLoadingAnalytics(false);
       setIsRefreshing(false);
     }
-  }, [isRefreshing]);
+  }, [isRefreshing, setGlobalAnalyticsData]);
 
   useEffect(() => {
     loadBusinessAnalytics();
@@ -156,13 +167,16 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
       adminService
         .getBusinessAnalyticsData(true)
         .then((data) => {
-          if (data) setAnalyticsData(data);
+          if (data) {
+            setAnalyticsData(data);
+            setGlobalAnalyticsData(data);
+          }
         })
         .catch(() => {});
     }, 60_000);
 
     return () => clearInterval(autoRefreshInterval);
-  }, [loadBusinessAnalytics]);
+  }, [loadBusinessAnalytics, setGlobalAnalyticsData]);
 
   const onRefresh = useCallback(() => {
     setIsRefreshing(true);
@@ -174,10 +188,10 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
       {/* Standard Home Header with Red Brand Accent */}
       <HomeHeader
         onBackPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
-        onNotificationPress={() => navigation.navigate('Notifications')}
+        onNotificationPress={openAttentionModal}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
-        notificationCount={unreadNotifs}
+        notificationCount={3}
       />
 
       <ScrollView
@@ -204,6 +218,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           isError={isAnalyticsError}
           onRetry={loadBusinessAnalytics}
           onOpenTodayReport={handleOpenTodayReportModal}
+          onOpenAttentionModal={openAttentionModal}
           onNavigateToInventory={() => navigation.navigate('InventoryManagement')}
           onNavigateToProducts={() => navigation.navigate('ProductManagement')}
           onNavigateToCategories={() => navigation.navigate('CategoryManagement')}
@@ -226,6 +241,15 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
         onEmailReport={handleEmailReportToAdmins}
         isDownloading={isDownloadingPdf}
         isEmailing={isSendingEmail}
+      />
+
+      <NeedsYourAttentionModal
+        visible={isAttentionModalVisible}
+        onClose={closeAttentionModal}
+        analyticsData={analyticsData}
+        onNavigateToOrders={() => navigation.navigate('OrderManagement')}
+        onNavigateToInventory={() => navigation.navigate('InventoryManagement')}
+        onNavigateToDelivery={() => navigation.navigate('OrderManagement')}
       />
 
       <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />

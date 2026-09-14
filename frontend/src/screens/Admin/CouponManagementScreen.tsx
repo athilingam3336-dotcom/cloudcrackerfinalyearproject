@@ -37,6 +37,8 @@ import { formatCurrency } from '@/utils/currency';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { CouponDistributionPieChart } from '@/components/admin/CouponDistributionPieChart';
+import { useAttentionModalStore } from '@/store';
+import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
 
 type CouponManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -47,6 +49,15 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
   navigation,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
+
+  // Global Needs Your Attention Modal State
+  const {
+    isVisible: isAttentionModalVisible,
+    openAttentionModal,
+    closeAttentionModal,
+    analyticsData: globalAnalyticsData,
+  } = useAttentionModalStore();
+
   const { isDesktopWeb, isTabletWeb } = useAppLayout();
   const showSidePieChart = isDesktopWeb || isTabletWeb;
 
@@ -530,10 +541,10 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
             navigation.navigate('AdminDashboard');
           }
         }}
-        onNotificationPress={() => navigation.navigate('Notifications')}
+        onNotificationPress={openAttentionModal}
         onProfilePress={() => navigation.navigate('UserProfile')}
         onCartPress={() => navigation.navigate('Cart')}
-        notificationCount={unreadNotifs}
+        notificationCount={3}
       />
 
       <View style={styles.container}>
@@ -571,282 +582,186 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Stretched Metric KPI Cards & Centered Analytics Chart */}
-        {!isListExpanded ? (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[styles.collapsedScrollContent, !isDesktopWeb && styles.mobileBottomPadding]}
-          >
-            <View style={styles.kpiGridRow}>
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setStatusFilter('All');
+        {/* Single Scroll Container via FlatList */}
+        <FlatList
+          data={isListExpanded ? coupons : []}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItemRow}
+          showsVerticalScrollIndicator={false}
+          onRefresh={fetchCoupons}
+          refreshing={isLoading}
+          contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
+          ListHeaderComponent={
+            <View style={{ gap: Spacing.md, paddingBottom: Spacing.sm }}>
+              {/* Metric KPI Cards */}
+              <View style={styles.kpiGridRow}>
+                <TouchableOpacity
+                  style={styles.kpiCardFlex}
+                  onPress={() => {
+                    setStatusFilter('All');
+                    setPage(1);
+                    setIsListExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
+                    <MaterialIcons name="discount" size={18} color="#1976D2" />
+                  </View>
+                  <Text style={styles.metricValue}>{metrics.totalCoupons}</Text>
+                  <Text style={styles.metricLabel}>TOTAL COUPONS</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.kpiCardFlex,
+                    statusFilter === 'Active' && styles.metricCardSelected,
+                  ]}
+                  onPress={() => {
+                    setStatusFilter(statusFilter === 'Active' ? 'All' : 'Active');
+                    setPage(1);
+                    setIsListExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
+                    <MaterialIcons name="check-circle" size={18} color="#2E7D32" />
+                  </View>
+                  <Text style={[styles.metricValue, { color: '#2E7D32' }]}>
+                    {metrics.activeCoupons}
+                  </Text>
+                  <Text style={styles.metricLabel}>ACTIVE</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.kpiCardFlex}
+                  onPress={() => {
+                    setStatusFilter('Expired');
+                    setPage(1);
+                    setIsListExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
+                    <MaterialIcons name="hourglass-bottom" size={18} color="#ED6C02" />
+                  </View>
+                  <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
+                    {metrics.expiringSoonCount}
+                  </Text>
+                  <Text style={styles.metricLabel}>EXPIRING SOON</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.kpiCardFlex}
+                  onPress={() => {
+                    setStatusFilter('All');
+                    setPage(1);
+                    setIsListExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.metricIconCircle, { backgroundColor: '#F3E5F5' }]}>
+                    <MaterialIcons name="shopping-bag" size={18} color="#7B1FA2" />
+                  </View>
+                  <Text style={[styles.metricValue, { color: '#7B1FA2' }]}>
+                    {metrics.totalRedemptions}
+                  </Text>
+                  <Text style={styles.metricLabel}>REDEMPTIONS</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Analytics Distribution Pie Chart */}
+              <CouponDistributionPieChart
+                metrics={metrics}
+                coupons={coupons}
+                activeFilter={statusFilter}
+                isListExpanded={isListExpanded}
+                onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+                onSelectFilter={(f) => {
+                  setStatusFilter(f);
                   setPage(1);
                   setIsListExpanded(true);
                 }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
-                  <MaterialIcons name="discount" size={18} color="#1976D2" />
-                </View>
-                <Text style={styles.metricValue}>{metrics.totalCoupons}</Text>
-                <Text style={styles.metricLabel}>TOTAL COUPONS</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.kpiCardFlex,
-                  statusFilter === 'Active' && styles.metricCardSelected,
-                ]}
-                onPress={() => {
-                  setStatusFilter(statusFilter === 'Active' ? 'All' : 'Active');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
-                  <MaterialIcons name="verified" size={18} color="#2E7D32" />
-                </View>
-                <Text style={[styles.metricValue, { color: '#2E7D32' }]}>
-                  {metrics.activeCoupons}
-                </Text>
-                <Text style={styles.metricLabel}>ACTIVE CODES</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setStatusFilter('Expired');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
-                  <MaterialIcons name="hourglass-bottom" size={18} color="#ED6C02" />
-                </View>
-                <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
-                  {metrics.expiringSoonCount}
-                </Text>
-                <Text style={styles.metricLabel}>EXPIRING SOON</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setStatusFilter('All');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.metricIconCircle, { backgroundColor: '#F3E5F5' }]}>
-                  <MaterialIcons name="shopping-bag" size={18} color="#7B1FA2" />
-                </View>
-                <Text style={[styles.metricValue, { color: '#7B1FA2' }]}>
-                  {metrics.totalRedemptions}
-                </Text>
-                <Text style={styles.metricLabel}>REDEMPTIONS</Text>
-              </TouchableOpacity>
-            </View>
-
-            <CouponDistributionPieChart
-              metrics={metrics}
-              coupons={coupons}
-              activeFilter={statusFilter}
-              isListExpanded={isListExpanded}
-              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
-              onSelectFilter={(f) => {
-                setStatusFilter(f);
-                setPage(1);
-                setIsListExpanded(true);
-              }}
-            />
-          </ScrollView>
-        ) : (
-          <>
-            <View style={styles.kpiGridRow}>
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setStatusFilter('All');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.metricIconCircle, { backgroundColor: '#E3F2FD' }]}>
-                  <MaterialIcons name="discount" size={18} color="#1976D2" />
-                </View>
-                <Text style={styles.metricValue}>{metrics.totalCoupons}</Text>
-                <Text style={styles.metricLabel}>TOTAL COUPONS</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.kpiCardFlex,
-                  statusFilter === 'Active' && styles.metricCardSelected,
-                ]}
-                onPress={() => {
-                  setStatusFilter(statusFilter === 'Active' ? 'All' : 'Active');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.metricIconCircle, { backgroundColor: '#E8F5E9' }]}>
-                  <MaterialIcons name="verified" size={18} color="#2E7D32" />
-                </View>
-                <Text style={[styles.metricValue, { color: '#2E7D32' }]}>
-                  {metrics.activeCoupons}
-                </Text>
-                <Text style={styles.metricLabel}>ACTIVE CODES</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setStatusFilter('Expired');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.metricIconCircle, { backgroundColor: '#FFF3E0' }]}>
-                  <MaterialIcons name="hourglass-bottom" size={18} color="#ED6C02" />
-                </View>
-                <Text style={[styles.metricValue, { color: '#ED6C02' }]}>
-                  {metrics.expiringSoonCount}
-                </Text>
-                <Text style={styles.metricLabel}>EXPIRING SOON</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setStatusFilter('All');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.metricIconCircle, { backgroundColor: '#F3E5F5' }]}>
-                  <MaterialIcons name="shopping-bag" size={18} color="#7B1FA2" />
-                </View>
-                <Text style={[styles.metricValue, { color: '#7B1FA2' }]}>
-                  {metrics.totalRedemptions}
-                </Text>
-                <Text style={styles.metricLabel}>REDEMPTIONS</Text>
-              </TouchableOpacity>
-            </View>
-
-            <CouponDistributionPieChart
-              metrics={metrics}
-              coupons={coupons}
-              activeFilter={statusFilter}
-              isListExpanded={isListExpanded}
-              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
-              onSelectFilter={(f) => {
-                setStatusFilter(f);
-                setPage(1);
-                setIsListExpanded(true);
-              }}
-            />
-          </>
-        )}
-
-        {/* Main Split View Layout - Collapsible */}
-        {isListExpanded && (
-          <View style={[styles.mainLayout, showSidePieChart && styles.mainLayoutDesktop]}>
-            {/* Left Column: Search, Chips, Coupons FlatList */}
-            <View style={[styles.leftColumn, showSidePieChart && styles.leftColumnDesktop]}>
-
-              {/* Search Bar */}
-              <SearchBar
-                value={searchQuery}
-                onChangeText={(q) => {
-                  setSearchQuery(q);
-                  setPage(1);
-                }}
-                onClear={() => {
-                  setSearchQuery('');
-                  setPage(1);
-                }}
-                placeholder="Search coupon code or description..."
               />
 
-              {/* Filter Chips */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterChipRow}
-              >
-                {(
-                  [
-                    'All',
-                    'Active',
-                    'Inactive',
-                    'Expired',
-                    'Upcoming',
-                    'Usage Limit Reached',
-                  ] as const
-                ).map((filter) => (
-                  <TouchableOpacity
-                    key={filter}
-                    style={[
-                      styles.filterChip,
-                      statusFilter === filter && styles.activeFilterChip,
-                    ]}
-                    onPress={() => {
-                      setStatusFilter(filter);
+              {/* Collapsible Search and Filter controls */}
+              {isListExpanded && (
+                <>
+                  <SearchBar
+                    value={searchQuery}
+                    onChangeText={(q) => {
+                      setSearchQuery(q);
                       setPage(1);
                     }}
-                    activeOpacity={0.8}
+                    onClear={() => {
+                      setSearchQuery('');
+                      setPage(1);
+                    }}
+                    placeholder="Search coupon code or description..."
+                  />
+
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterChipRow}
                   >
-                    <Text
-                      style={[
-                        styles.filterChipText,
-                        statusFilter === filter && styles.activeFilterChipText,
-                      ]}
-                    >
-                      {filter}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+                    {(
+                      [
+                        'All',
+                        'Active',
+                        'Inactive',
+                        'Expired',
+                        'Upcoming',
+                        'Usage Limit Reached',
+                      ] as const
+                    ).map((filter) => (
+                      <TouchableOpacity
+                        key={filter}
+                        style={[
+                          styles.filterChip,
+                          statusFilter === filter && styles.activeFilterChip,
+                        ]}
+                        onPress={() => {
+                          setStatusFilter(filter);
+                          setPage(1);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.filterChipText,
+                            statusFilter === filter && styles.activeFilterChipText,
+                          ]}
+                        >
+                          {filter}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
 
-              {/* Error Banner */}
-              {errorMessage && (
-                <View style={styles.errorBanner}>
-                  <MaterialIcons name="error-outline" size={18} color="#D32F2F" />
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                  <TouchableOpacity onPress={fetchCoupons}>
-                    <Text style={styles.retryText}>Retry</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* List of Coupon Cards */}
-              {isLoading && coupons.length === 0 ? (
-                <LoadingSpinner message="Fetching coupons from MongoDB..." />
-              ) : (
-                <FlatList
-                  data={coupons}
-                  keyExtractor={(item) => item.id}
-                  renderItem={renderItemRow}
-                  ListFooterComponent={renderFooter}
-                  ListEmptyComponent={renderEmpty}
-                  contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
-                  showsVerticalScrollIndicator={false}
-                  onRefresh={fetchCoupons}
-                  refreshing={isLoading}
-                />
+                  {errorMessage && (
+                    <View style={styles.errorBanner}>
+                      <MaterialIcons name="error-outline" size={18} color="#D32F2F" />
+                      <Text style={styles.errorText}>{errorMessage}</Text>
+                      <TouchableOpacity onPress={fetchCoupons}>
+                        <Text style={styles.retryText}>Retry</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
               )}
             </View>
-          </View>
-        )}
+          }
+          ListFooterComponent={isListExpanded ? renderFooter : null}
+          ListEmptyComponent={
+            isListExpanded ? (
+              isLoading && coupons.length === 0 ? (
+                <LoadingSpinner message="Fetching coupons from MongoDB..." />
+              ) : (
+                renderEmpty
+              )
+            ) : null
+          }
+        />
       </View>
 
       {/* Create Coupon Modal */}
@@ -1099,6 +1014,24 @@ export const CouponManagementScreen: React.FC<CouponManagementScreenProps> = ({
           </View>
         </View>
       </Modal>
+
+      <NeedsYourAttentionModal
+        visible={isAttentionModalVisible}
+        onClose={closeAttentionModal}
+        analyticsData={globalAnalyticsData}
+        onNavigateToOrders={() => {
+          closeAttentionModal();
+          navigation.navigate('OrderManagement');
+        }}
+        onNavigateToInventory={() => {
+          closeAttentionModal();
+          navigation.navigate('InventoryManagement');
+        }}
+        onNavigateToDelivery={() => {
+          closeAttentionModal();
+          navigation.navigate('OrderManagement');
+        }}
+      />
 
       <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />
     </SafeAreaView>

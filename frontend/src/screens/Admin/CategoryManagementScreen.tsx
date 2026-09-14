@@ -36,6 +36,8 @@ import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { useProductStore } from '@/store/productStore';
 import { CategoryDistributionPieChart } from '@/components/admin/CategoryDistributionPieChart';
+import { useAttentionModalStore } from '@/store';
+import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
 
 type CategoryManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -57,6 +59,14 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
   navigation,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
+
+  // Global Needs Your Attention Modal State
+  const {
+    isVisible: isAttentionModalVisible,
+    openAttentionModal,
+    closeAttentionModal,
+    analyticsData: globalAnalyticsData,
+  } = useAttentionModalStore();
   const { isDesktopWeb } = useAppLayout();
   const [categories, setCategories] = useState<AdminCategoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -336,10 +346,10 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
               navigation.navigate('AdminDashboard');
             }
           }}
-          onNotificationPress={() => navigation.navigate('Notifications')}
+          onNotificationPress={openAttentionModal}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
-          notificationCount={unreadNotifs}
+          notificationCount={3}
         />
 
         <View style={styles.topSection}>
@@ -585,6 +595,24 @@ export const CategoryManagementScreen: React.FC<CategoryManagementScreenProps> =
           </ScrollView>
         </View>
       </Modal>
+
+      <NeedsYourAttentionModal
+        visible={isAttentionModalVisible}
+        onClose={closeAttentionModal}
+        analyticsData={globalAnalyticsData}
+        onNavigateToOrders={() => {
+          closeAttentionModal();
+          navigation.navigate('OrderManagement');
+        }}
+        onNavigateToInventory={() => {
+          closeAttentionModal();
+          navigation.navigate('InventoryManagement');
+        }}
+        onNavigateToDelivery={() => {
+          closeAttentionModal();
+          navigation.navigate('OrderManagement');
+        }}
+      />
 
       <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />
     </SafeAreaView>

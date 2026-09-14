@@ -34,7 +34,8 @@ import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { productService } from '@/services/productService';
 import { paymentService } from '@/services/paymentService';
-import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore } from '@/store';
+import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore, useAttentionModalStore } from '@/store';
+import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
 import {
   MOCK_PRODUCTS,
   MOCK_FEATURED_PRODUCTS,
@@ -95,6 +96,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, [loadProducts]);
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // Global Needs Your Attention Modal State for Admin Users
+  const {
+    isVisible: isAttentionModalVisible,
+    openAttentionModal,
+    closeAttentionModal,
+    analyticsData: globalAnalyticsData,
+  } = useAttentionModalStore();
 
   // Wishlist handler
   const handleToggleWishlist = useCallback(
@@ -408,10 +417,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <View style={styles.headerWrapper}>
         {/* Top App Header */}
         <HomeHeader
-          onNotificationPress={() => navigation.navigate('Notifications')}
+          onNotificationPress={
+            user?.role === 'admin'
+              ? openAttentionModal
+              : () => navigation.navigate('Notifications')
+          }
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
-          notificationCount={unreadNotifs}
+          notificationCount={user?.role === 'admin' ? 3 : unreadNotifs}
           userName={user?.name ? user.name.split(' ')[0] : 'Explorer'}
         />
 
@@ -567,6 +580,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           initialNumToRender={6}
           maxToRenderPerBatch={10}
           windowSize={5}
+        />
+
+        <NeedsYourAttentionModal
+          visible={isAttentionModalVisible}
+          onClose={closeAttentionModal}
+          analyticsData={globalAnalyticsData}
+          onNavigateToOrders={() => {
+            closeAttentionModal();
+            navigation.navigate('OrderManagement');
+          }}
+          onNavigateToInventory={() => {
+            closeAttentionModal();
+            navigation.navigate('InventoryManagement');
+          }}
+          onNavigateToDelivery={() => {
+            closeAttentionModal();
+            navigation.navigate('OrderManagement');
+          }}
         />
 
         {/* Reusable Bottom Navigation Bar */}

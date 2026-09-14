@@ -25,6 +25,8 @@ import { MAX_ADMIN_WIDTH } from '@/constants/responsive';
 import { HomeHeader } from '@/components/common/HomeHeader';
 import { FooterSection } from '@/components/common/FooterSection';
 import { useAppLayout } from '@/hooks/useAppLayout';
+import { useAttentionModalStore } from '@/store';
+import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
 
 type AboutManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -35,6 +37,14 @@ export const AboutManagementScreen: React.FC<AboutManagementScreenProps> = ({
   navigation,
 }) => {
   const { isDesktopWeb: isDesktop } = useAppLayout();
+
+  // Global Needs Your Attention Modal State
+  const {
+    isVisible: isAttentionModalVisible,
+    openAttentionModal,
+    closeAttentionModal,
+    analyticsData: globalAnalyticsData,
+  } = useAttentionModalStore();
   const [version, setVersion] = useState('');
   const [description, setDescription] = useState('');
   const [sections, setSections] = useState<AboutSection[]>([]);
@@ -134,9 +144,10 @@ export const AboutManagementScreen: React.FC<AboutManagementScreenProps> = ({
         {/* Navigation Header */}
         <HomeHeader
           onBackPress={() => navigation.goBack()}
-          onNotificationPress={() => navigation.navigate('Notifications')}
+          onNotificationPress={openAttentionModal}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
+          notificationCount={3}
         />
 
         <KeyboardAvoidingView
@@ -277,6 +288,24 @@ export const AboutManagementScreen: React.FC<AboutManagementScreenProps> = ({
             <FooterSection />
           </ScrollView>
         </KeyboardAvoidingView>
+
+        <NeedsYourAttentionModal
+          visible={isAttentionModalVisible}
+          onClose={closeAttentionModal}
+          analyticsData={globalAnalyticsData}
+          onNavigateToOrders={() => {
+            closeAttentionModal();
+            navigation.navigate('OrderManagement');
+          }}
+          onNavigateToInventory={() => {
+            closeAttentionModal();
+            navigation.navigate('InventoryManagement');
+          }}
+          onNavigateToDelivery={() => {
+            closeAttentionModal();
+            navigation.navigate('OrderManagement');
+          }}
+        />
       </SafeAreaView>
     </ResponsiveContainer>
   );

@@ -22,6 +22,7 @@ Option A (Meta WhatsApp Business Cloud API - Recommended):
 Meta Developer Portal-la Admin Mobile Number register பண்ணுவோம்.
 Initial-a 1,000 FREE messages/month kidaikkum.
 Customer-ku Admin number-la irundhu automatic WhatsApp msg (Order ID, Amount, UPI QR Link) povum.
+
 Option B (Free Direct WhatsApp Click-to-Chat):
 Customer order confirm panna udane, automatic-a WhatsApp open aagi Admin Number-ku predefined Order Details pre-fill aagum.
 🛠️ Enna Pannalam?

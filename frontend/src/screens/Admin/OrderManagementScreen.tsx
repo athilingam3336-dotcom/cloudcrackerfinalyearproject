@@ -30,6 +30,8 @@ import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { useProductStore } from '@/store/productStore';
 import { OrderDistributionPieChart } from '@/components/admin/OrderDistributionPieChart';
+import { useAttentionModalStore } from '@/store';
+import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
 
 type OrderManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -119,6 +121,14 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
   // For UPI Verification
   const [pendingPaymentStatus, setPendingPaymentStatus] = useState<AdminOrderItem['paymentStatus'] | null>(null);
   const [transactionReference, setTransactionReference] = useState('');
+
+  // Global Needs Your Attention Modal State
+  const {
+    isVisible: isAttentionModalVisible,
+    openAttentionModal,
+    closeAttentionModal,
+    analyticsData: globalAnalyticsData,
+  } = useAttentionModalStore();
 
   const toggleExpand = useCallback((orderId: string) => {
     setExpandedOrderIds((prev) => ({
@@ -306,10 +316,10 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
               navigation.navigate('AdminDashboard');
             }
           }}
-          onNotificationPress={() => navigation.navigate('Notifications')}
+          onNotificationPress={openAttentionModal}
           onProfilePress={() => navigation.navigate('UserProfile')}
           onCartPress={() => navigation.navigate('Cart')}
-          notificationCount={unreadNotifs}
+          notificationCount={3}
         />
 
         <View style={styles.titleSection}>
@@ -886,6 +896,24 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
           </View>
         </View>
       </Modal>
+
+      <NeedsYourAttentionModal
+        visible={isAttentionModalVisible}
+        onClose={closeAttentionModal}
+        analyticsData={globalAnalyticsData}
+        onNavigateToOrders={() => {
+          closeAttentionModal();
+          setOrderStatusFilter('Pending');
+        }}
+        onNavigateToInventory={() => {
+          closeAttentionModal();
+          navigation.navigate('InventoryManagement');
+        }}
+        onNavigateToDelivery={() => {
+          closeAttentionModal();
+          setOrderStatusFilter('Shipped');
+        }}
+      />
 
       <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />
     </SafeAreaView>

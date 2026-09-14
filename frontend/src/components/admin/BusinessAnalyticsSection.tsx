@@ -41,6 +41,7 @@ export interface BusinessAnalyticsSectionProps {
   onNavigateToDelivery?: () => void;
   onNavigateToAbout?: () => void;
   onRefreshData?: () => void;
+  onOpenAttentionModal?: () => void;
 }
 
 export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> = ({
@@ -58,6 +59,7 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
   onNavigateToDelivery,
   onNavigateToAbout,
   onRefreshData,
+  onOpenAttentionModal,
 }) => {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -674,10 +676,10 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
         </View>
       </View>
 
-      {/* ── ROW 2: DATE-WISE FINANCIAL REPORT & NEEDS YOUR ATTENTION ── */}
-      <View style={[styles.gridRow, isDesktop && styles.gridRow2Col]}>
+      {/* ── ROW 2: DATE-WISE FINANCIAL REPORT ── */}
+      <View style={styles.gridRow}>
         {/* Date-wise Financial Report Card */}
-        <View style={[styles.card, { flex: 1.2 }]}>
+        <View style={[styles.card, { flex: 1 }]}>
           <View style={styles.cardHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
               <MaterialIcons name="event" size={18} color={SUCCESS_GREEN} />
@@ -798,63 +800,6 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
                 Pending: {formatCurrency(dateReportMetrics.pendingRev)} ({dateReportMetrics.pendingPct}%)
               </Text>
             </View>
-          </View>
-        </View>
-
-        {/* Needs Your Attention Alert Card */}
-        <View style={[styles.card, { flex: 0.8 }]}>
-          <View style={styles.cardHeaderRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <MaterialIcons name="notifications-active" size={20} color={BRAND_RED} />
-              <Text style={styles.cardTitle}>Needs Your Attention</Text>
-            </View>
-          </View>
-
-          <View style={styles.alertStack}>
-            <TouchableOpacity
-              style={[styles.alertRow, { backgroundColor: '#FFF1F2' }]}
-              onPress={onNavigateToOrders}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.alertIconCircle, { backgroundColor: BRAND_RED }]}>
-                <MaterialIcons name="receipt-long" size={16} color="#FFFFFF" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.alertRowTitle}>{pendingOrdersAlertCount} Pending Orders</Text>
-                <Text style={styles.alertRowSub}>Customers are waiting for confirmation</Text>
-              </View>
-              <Text style={styles.alertLinkText}>View Orders →</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.alertRow, { backgroundColor: '#FFF7ED' }]}
-              onPress={onNavigateToInventory}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.alertIconCircle, { backgroundColor: WARNING_AMBER }]}>
-                <MaterialIcons name="inventory" size={16} color="#FFFFFF" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.alertRowTitle}>{lowStockAlertCount} Products Low Stock</Text>
-                <Text style={styles.alertRowSub}>Restock soon to avoid missing sales</Text>
-              </View>
-              <Text style={[styles.alertLinkText, { color: WARNING_AMBER }]}>Check Inventory →</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.alertRow, { backgroundColor: '#EFF6FF' }]}
-              onPress={onNavigateToDelivery}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.alertIconCircle, { backgroundColor: INFO_BLUE }]}>
-                <MaterialIcons name="local-shipping" size={16} color="#FFFFFF" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.alertRowTitle}>{readyDeliveryAlertCount} Orders Ready for Delivery</Text>
-                <Text style={styles.alertRowSub}>Dispatch and update customers</Text>
-              </View>
-              <Text style={[styles.alertLinkText, { color: INFO_BLUE }]}>View Delivery →</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>

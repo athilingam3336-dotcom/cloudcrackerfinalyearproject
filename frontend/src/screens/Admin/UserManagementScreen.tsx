@@ -41,6 +41,8 @@ import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { useProductStore } from '@/store/productStore';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { UserDistributionPieChart } from '@/components/admin/UserDistributionPieChart';
+import { useAttentionModalStore } from '@/store';
+import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
 
 type UserManagementScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -53,6 +55,14 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
   const { isDesktopWeb, isTabletWeb } = useAppLayout();
   const showSidePieChart = isDesktopWeb || isTabletWeb;
   const { handleTabPress } = useSmartTabNavigation();
+
+  // Global Needs Your Attention Modal State
+  const {
+    isVisible: isAttentionModalVisible,
+    openAttentionModal,
+    closeAttentionModal,
+    analyticsData: globalAnalyticsData,
+  } = useAttentionModalStore();
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [metrics, setMetrics] = useState<UserSummaryMetrics>({
     totalUsers: 0,
@@ -444,16 +454,19 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
       {/* Header */}
       <HomeHeader
         onBackPress={() => {
-          useProductStore.getState().setLastProfileScreen(null);
-          navigation.navigate('UserProfile');
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          } else {
+            navigation.navigate('AdminDashboard');
+          }
         }}
-        onNotificationPress={() => navigation.navigate('Notifications')}
+        onNotificationPress={openAttentionModal}
         onProfilePress={() => {
           useProductStore.getState().setLastProfileScreen(null);
           navigation.navigate('UserProfile');
         }}
         onCartPress={() => navigation.navigate('Cart')}
-        notificationCount={unreadNotifs}
+        notificationCount={3}
       />
 
       <View style={styles.container}>
@@ -462,8 +475,11 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
           <TouchableOpacity
             style={styles.backBtn}
             onPress={() => {
-              useProductStore.getState().setLastProfileScreen(null);
-              navigation.navigate('UserProfile');
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate('AdminDashboard');
+              }
             }}
             activeOpacity={0.8}
           >
@@ -485,331 +501,229 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* KPI Metrics Cards & Centered Analytics Chart */}
-        {!isListExpanded ? (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[styles.collapsedScrollContent, !isDesktopWeb && styles.mobileBottomPadding]}
-          >
-            <View style={styles.kpiGridRow}>
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('All');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: Colors.primaryContainer }]}>
-                  <MaterialIcons name="people" size={20} color={Colors.primary} />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.totalUsers}</Text>
-                <Text style={styles.kpiTitle}>Total Users</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('Customers');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: '#E0F2FE' }]}>
-                  <MaterialIcons name="person" size={20} color="#0284C7" />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.customerCount}</Text>
-                <Text style={styles.kpiTitle}>Customers</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('Active');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: '#DCFCE7' }]}>
-                  <MaterialIcons name="check-circle" size={20} color="#16A34A" />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.activeUsers}</Text>
-                <Text style={styles.kpiTitle}>Active</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('Blocked');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEE2E2' }]}>
-                  <MaterialIcons name="block" size={20} color="#DC2626" />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.blockedUsers}</Text>
-                <Text style={styles.kpiTitle}>Blocked</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('Admins');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEF3C7' }]}>
-                  <MaterialIcons name="admin-panel-settings" size={20} color="#D97706" />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.adminCount}</Text>
-                <Text style={styles.kpiTitle}>Admins</Text>
-              </TouchableOpacity>
-            </View>
-
-            <UserDistributionPieChart
-              metrics={metrics}
-              activeFilter={activeFilter}
-              isListExpanded={isListExpanded}
-              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
-              onSelectFilter={(f) => {
-                setActiveFilter(f);
-                setPage(1);
-                setIsListExpanded(true);
-              }}
-            />
-          </ScrollView>
-        ) : (
-          <>
-            <View style={styles.kpiGridRow}>
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('All');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: Colors.primaryContainer }]}>
-                  <MaterialIcons name="people" size={20} color={Colors.primary} />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.totalUsers}</Text>
-                <Text style={styles.kpiTitle}>Total Users</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('Customers');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: '#E0F2FE' }]}>
-                  <MaterialIcons name="person" size={20} color="#0284C7" />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.customerCount}</Text>
-                <Text style={styles.kpiTitle}>Customers</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('Active');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: '#DCFCE7' }]}>
-                  <MaterialIcons name="check-circle" size={20} color="#16A34A" />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.activeUsers}</Text>
-                <Text style={styles.kpiTitle}>Active</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('Blocked');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEE2E2' }]}>
-                  <MaterialIcons name="block" size={20} color="#DC2626" />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.blockedUsers}</Text>
-                <Text style={styles.kpiTitle}>Blocked</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.kpiCardFlex}
-                onPress={() => {
-                  setActiveFilter('Admins');
-                  setPage(1);
-                  setIsListExpanded(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEF3C7' }]}>
-                  <MaterialIcons name="admin-panel-settings" size={20} color="#D97706" />
-                </View>
-                <Text style={styles.kpiValue}>{metrics.adminCount}</Text>
-                <Text style={styles.kpiTitle}>Admins</Text>
-              </TouchableOpacity>
-            </View>
-
-            <UserDistributionPieChart
-              metrics={metrics}
-              activeFilter={activeFilter}
-              isListExpanded={isListExpanded}
-              onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
-              onSelectFilter={(f) => {
-                setActiveFilter(f);
-                setPage(1);
-                setIsListExpanded(true);
-              }}
-            />
-          </>
-        )}
-
-        {/* Main Content Area - Collapsible */}
-        {isListExpanded && (
-          <View style={[styles.mainLayout, showSidePieChart && styles.mainLayoutDesktop]}>
-            <View style={[styles.leftColumn, showSidePieChart && styles.leftColumnDesktop]}>
-
-              {/* Search Bar */}
-              <View style={styles.searchSection}>
-                <SearchBar
-                  value={searchQuery}
-                  onChangeText={(txt) => {
-                    setSearchQuery(txt);
+        {/* Single Scroll Container via FlatList */}
+        <FlatList
+          data={isListExpanded ? displayUsers : []}
+          keyExtractor={(item) => item.id}
+          renderItem={renderUserItem}
+          showsVerticalScrollIndicator={false}
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
+          ListHeaderComponent={
+            <View style={{ gap: Spacing.md, paddingBottom: Spacing.sm }}>
+              {/* KPI Metrics Cards */}
+              <View style={styles.kpiGridRow}>
+                <TouchableOpacity
+                  style={styles.kpiCardFlex}
+                  onPress={() => {
+                    setActiveFilter('All');
                     setPage(1);
+                    setIsListExpanded(true);
                   }}
-                  placeholder="Search by name, email, or phone..."
-                />
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.kpiIconWrapper, { backgroundColor: Colors.primaryContainer }]}>
+                    <MaterialIcons name="people" size={20} color={Colors.primary} />
+                  </View>
+                  <Text style={styles.kpiValue}>{metrics.totalUsers}</Text>
+                  <Text style={styles.kpiTitle}>Total Users</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.kpiCardFlex}
+                  onPress={() => {
+                    setActiveFilter('Customers');
+                    setPage(1);
+                    setIsListExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.kpiIconWrapper, { backgroundColor: '#E0F2FE' }]}>
+                    <MaterialIcons name="person" size={20} color="#0284C7" />
+                  </View>
+                  <Text style={styles.kpiValue}>{metrics.customerCount}</Text>
+                  <Text style={styles.kpiTitle}>Customers</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.kpiCardFlex}
+                  onPress={() => {
+                    setActiveFilter('Active');
+                    setPage(1);
+                    setIsListExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.kpiIconWrapper, { backgroundColor: '#DCFCE7' }]}>
+                    <MaterialIcons name="check-circle" size={20} color="#16A34A" />
+                  </View>
+                  <Text style={styles.kpiValue}>{metrics.activeUsers}</Text>
+                  <Text style={styles.kpiTitle}>Active</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.kpiCardFlex}
+                  onPress={() => {
+                    setActiveFilter('Blocked');
+                    setPage(1);
+                    setIsListExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEE2E2' }]}>
+                    <MaterialIcons name="block" size={20} color="#DC2626" />
+                  </View>
+                  <Text style={styles.kpiValue}>{metrics.blockedUsers}</Text>
+                  <Text style={styles.kpiTitle}>Blocked</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.kpiCardFlex}
+                  onPress={() => {
+                    setActiveFilter('Admins');
+                    setPage(1);
+                    setIsListExpanded(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.kpiIconWrapper, { backgroundColor: '#FEF3C7' }]}>
+                    <MaterialIcons name="admin-panel-settings" size={20} color="#D97706" />
+                  </View>
+                  <Text style={styles.kpiValue}>{metrics.adminCount}</Text>
+                  <Text style={styles.kpiTitle}>Admins</Text>
+                </TouchableOpacity>
               </View>
 
-              {/* Filter Chips */}
-              <View style={styles.filterSection}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-                  {(['All', 'Customers', 'Admins', 'Active', 'Inactive', 'Blocked'] as const).map((filterName) => {
-                    const isSelected = activeFilter === filterName;
-                    return (
-                      <TouchableOpacity
-                        key={filterName}
-                        style={[styles.filterChip, isSelected && styles.filterChipActive]}
-                        onPress={() => {
-                          setActiveFilter(filterName);
-                          setPage(1);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
-                          {filterName}
-                        </Text>
+              {/* Analytics Pie Chart */}
+              <UserDistributionPieChart
+                metrics={metrics}
+                activeFilter={activeFilter}
+                isListExpanded={isListExpanded}
+                onToggleExpandList={() => setIsListExpanded((prev) => !prev)}
+                onSelectFilter={(f) => {
+                  setActiveFilter(f);
+                  setPage(1);
+                  setIsListExpanded(true);
+                }}
+              />
+
+              {/* Collapsible Search and Filter controls */}
+              {isListExpanded && (
+                <>
+                  <View style={styles.searchSection}>
+                    <SearchBar
+                      value={searchQuery}
+                      onChangeText={(txt) => {
+                        setSearchQuery(txt);
+                        setPage(1);
+                      }}
+                      placeholder="Search by name, email, or phone..."
+                    />
+                  </View>
+
+                  <View style={styles.filterSection}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+                      {(['All', 'Customers', 'Admins', 'Active', 'Inactive', 'Blocked'] as const).map((filterName) => {
+                        const isSelected = activeFilter === filterName;
+                        return (
+                          <TouchableOpacity
+                            key={filterName}
+                            style={[styles.filterChip, isSelected && styles.filterChipActive]}
+                            onPress={() => {
+                              setActiveFilter(filterName);
+                              setPage(1);
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                              {filterName}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+
+                  {errorMessage && (
+                    <View style={styles.errorBanner}>
+                      <MaterialIcons name="error-outline" size={20} color={Colors.error} />
+                      <Text style={styles.errorBannerText}>{errorMessage}</Text>
+                      <TouchableOpacity style={styles.retryBtn} onPress={fetchUsers} activeOpacity={0.8}>
+                        <Text style={styles.retryBtnText}>Retry</Text>
                       </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-
-              {/* Error Banner */}
-              {errorMessage && (
-                <View style={styles.errorBanner}>
-                  <MaterialIcons name="error-outline" size={20} color={Colors.error} />
-                  <Text style={styles.errorBannerText}>{errorMessage}</Text>
-                  <TouchableOpacity style={styles.retryBtn} onPress={fetchUsers} activeOpacity={0.8}>
-                    <Text style={styles.retryBtnText}>Retry</Text>
-                  </TouchableOpacity>
-                </View>
+                    </View>
+                  )}
+                </>
               )}
-
-              {/* User FlatList */}
-              {isLoading ? (
+            </View>
+          }
+          ListEmptyComponent={
+            isListExpanded ? (
+              isLoading ? (
                 <View style={styles.loaderContainer}>
                   <LoadingSpinner message="Fetching user accounts from MongoDB..." />
                 </View>
               ) : (
-                <FlatList
-                  data={displayUsers}
-                  keyExtractor={(item) => item.id}
-                  renderItem={renderUserItem}
-                  contentContainerStyle={[styles.listContent, !isDesktopWeb && styles.mobileBottomPadding]}
-                  refreshing={isRefreshing}
-                  onRefresh={handleRefresh}
-                  ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                      <MaterialIcons name="person-search" size={48} color={Colors.outline} />
-                      <Text style={styles.emptyTitle}>No Users Found</Text>
-                      <Text style={styles.emptySubtitle}>
-                        {searchQuery
-                          ? `No account matched "${searchQuery}". Try clearing search.`
-                          : 'No user accounts match the current filter selection.'}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.resetFilterBtn}
-                        onPress={() => {
-                          setSearchQuery('');
-                          setActiveFilter('All');
-                          setPage(1);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.resetFilterBtnText}>Reset Filters</Text>
-                      </TouchableOpacity>
-                    </View>
-                  }
-                  ListFooterComponent={
-                    totalPages > 1 ? (
-                      <View style={styles.paginationRow}>
-                        <TouchableOpacity
-                          style={[styles.pageBtn, page <= 1 && styles.pageBtnDisabled]}
-                          onPress={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page <= 1}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialIcons
-                            name="chevron-left"
-                            size={20}
-                            color={page <= 1 ? Colors.outline : Colors.primary}
-                          />
-                        </TouchableOpacity>
+                <View style={styles.emptyState}>
+                  <MaterialIcons name="person-search" size={48} color={Colors.outline} />
+                  <Text style={styles.emptyTitle}>No Users Found</Text>
+                  <Text style={styles.emptySubtitle}>
+                    {searchQuery
+                      ? `No account matched "${searchQuery}". Try clearing search.`
+                      : 'No user accounts match the current filter selection.'}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.resetFilterBtn}
+                    onPress={() => {
+                      setSearchQuery('');
+                      setActiveFilter('All');
+                      setPage(1);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.resetFilterBtnText}>Reset Filters</Text>
+                  </TouchableOpacity>
+                </View>
+              )
+            ) : null
+          }
+          ListFooterComponent={
+            isListExpanded && totalPages > 1 ? (
+              <View style={styles.paginationRow}>
+                <TouchableOpacity
+                  style={[styles.pageBtn, page <= 1 && styles.pageBtnDisabled]}
+                  onPress={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons
+                    name="chevron-left"
+                    size={20}
+                    color={page <= 1 ? Colors.outline : Colors.primary}
+                  />
+                </TouchableOpacity>
 
-                        <Text style={styles.pageInfoText}>
-                          Page {page} of {totalPages}
-                        </Text>
+                <Text style={styles.pageInfoText}>
+                  Page {page} of {totalPages}
+                </Text>
 
-                        <TouchableOpacity
-                          style={[styles.pageBtn, page >= totalPages && styles.pageBtnDisabled]}
-                          onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={page >= totalPages}
-                          activeOpacity={0.8}
-                        >
-                          <MaterialIcons
-                            name="chevron-right"
-                            size={20}
-                            color={page >= totalPages ? Colors.outline : Colors.primary}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    ) : null
-                  }
-                />
-              )}
-            </View>
-          </View>
-        )}
+                <TouchableOpacity
+                  style={[styles.pageBtn, page >= totalPages && styles.pageBtnDisabled]}
+                  onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color={page >= totalPages ? Colors.outline : Colors.primary}
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : null
+          }
+        />
       </View>
 
       {/* User Details & Orders Modal */}
@@ -1319,6 +1233,24 @@ export const UserManagementScreen: React.FC<UserManagementScreenProps> = ({
           </View>
         </View>
       </Modal>
+
+      <NeedsYourAttentionModal
+        visible={isAttentionModalVisible}
+        onClose={closeAttentionModal}
+        analyticsData={globalAnalyticsData}
+        onNavigateToOrders={() => {
+          closeAttentionModal();
+          navigation.navigate('OrderManagement');
+        }}
+        onNavigateToInventory={() => {
+          closeAttentionModal();
+          navigation.navigate('InventoryManagement');
+        }}
+        onNavigateToDelivery={() => {
+          closeAttentionModal();
+          navigation.navigate('OrderManagement');
+        }}
+      />
 
       {/* Bottom Navigation */}
       <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />

@@ -5,3 +5,4 @@ export * from './cartStore';
 export * from './wishlistStore';
 export * from './notificationStore';
 export * from './uiStore';
+export * from './attentionModalStore';
