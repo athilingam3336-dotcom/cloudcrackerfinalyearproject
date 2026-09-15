@@ -126,7 +126,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       const amt = parseFloat(amtStr);
       const baseP = parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0;
       if (!isNaN(amt) && baseP > 0) {
-        setFormGstRate(((amt / baseP) * 100).toFixed(2));
+        const calculatedRate = (amt / baseP) * 100;
+        setFormGstRate(calculatedRate.toFixed(2));
       } else if (!amtStr) {
         setFormGstRate('0');
       }
@@ -137,10 +138,10 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const handlePriceChange = useCallback(
     (priceStr: string) => {
       setFormPrice(priceStr);
-      const p = parseFloat(formDiscountPrice) || parseFloat(priceStr) || 0;
-      const rate = parseFloat(formGstRate);
-      if (!isNaN(rate) && rate >= 0 && p > 0) {
-        setFormGstAmount(((p * rate) / 100).toFixed(2));
+      const baseP = parseFloat(formDiscountPrice) || parseFloat(priceStr) || 0;
+      const rate = parseFloat(formGstRate) || 18;
+      if (!isNaN(rate) && rate >= 0 && baseP > 0) {
+        setFormGstAmount(((baseP * rate) / 100).toFixed(2));
       }
     },
     [formDiscountPrice, formGstRate]
@@ -149,10 +150,10 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const handleDiscountPriceChange = useCallback(
     (discStr: string) => {
       setFormDiscountPrice(discStr);
-      const p = parseFloat(discStr) || parseFloat(formPrice) || 0;
-      const rate = parseFloat(formGstRate);
-      if (!isNaN(rate) && rate >= 0 && p > 0) {
-        setFormGstAmount(((p * rate) / 100).toFixed(2));
+      const baseP = parseFloat(discStr) || parseFloat(formPrice) || 0;
+      const rate = parseFloat(formGstRate) || 18;
+      if (!isNaN(rate) && rate >= 0 && baseP > 0) {
+        setFormGstAmount(((baseP * rate) / 100).toFixed(2));
       }
     },
     [formPrice, formGstRate]
@@ -351,9 +352,10 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       setFormCategoryId(product.categoryId || (categories.length > 0 ? categories[0].id : ''));
       setFormPrice(product.price.toString());
       setFormDiscountPrice(product.discountPrice ? product.discountPrice.toString() : '');
-      const rate = product.gstRate !== undefined ? product.gstRate : 18;
+      let rate = product.gstRate !== undefined && product.gstRate > 0 ? product.gstRate : 18;
+      if (rate > 100) rate = 18;
       const baseP = product.discountPrice || product.price || 0;
-      const amt = product.gstAmount !== undefined ? product.gstAmount : (baseP * rate) / 100;
+      const amt = (baseP * rate) / 100;
       setFormGstRate(rate.toString());
       setFormGstAmount(amt.toFixed(2));
       setFormStock(product.stock.toString());
