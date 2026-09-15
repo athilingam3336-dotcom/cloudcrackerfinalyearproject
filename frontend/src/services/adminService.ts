@@ -279,6 +279,8 @@ export interface AdminProductCreateInput {
   flash_sale_hours?: number;
   is_recommended?: boolean;
   time_of_day?: 'morning' | 'night' | 'both' | string;
+  gst_rate?: number;
+  gst_amount?: number;
 }
 
 export interface AdminProductUpdateInput {
@@ -298,6 +300,8 @@ export interface AdminProductUpdateInput {
   is_recommended?: boolean;
   is_active?: boolean;
   time_of_day?: 'morning' | 'night' | 'both' | string;
+  gst_rate?: number;
+  gst_amount?: number;
 }
 
 export interface AdminProductItemUI {
@@ -320,6 +324,8 @@ export interface AdminProductItemUI {
   isRecommended: boolean;
   isActive: boolean;
   timeOfDay?: 'morning' | 'night' | 'both';
+  gstRate?: number;
+  gstAmount?: number;
   rating: number;
   reviewsCount: number;
   createdAt: string;
@@ -1228,6 +1234,8 @@ export class AdminService {
       formData.append('flash_sale_hours', String(product.flash_sale_hours || 4));
       formData.append('is_recommended', String(Boolean(product.is_recommended)));
       formData.append('time_of_day', product.time_of_day || 'both');
+      if (product.gst_rate !== undefined) formData.append('gst_rate', String(product.gst_rate));
+      if (product.gst_amount !== undefined) formData.append('gst_amount', String(product.gst_amount));
 
       if (product.image.file) {
         formData.append('image', product.image.file);
@@ -1290,6 +1298,12 @@ export class AdminService {
       }
       if (updates.time_of_day !== undefined) {
         formData.append('time_of_day', updates.time_of_day);
+      }
+      if (updates.gst_rate !== undefined) {
+        formData.append('gst_rate', String(updates.gst_rate));
+      }
+      if (updates.gst_amount !== undefined) {
+        formData.append('gst_amount', String(updates.gst_amount));
       }
 
       if (updates.image.file) {
@@ -1829,6 +1843,8 @@ export class AdminService {
       isRecommended: Boolean(p.is_recommended || p.isRecommended),
       isActive: p.is_active !== undefined ? Boolean(p.is_active) : (p.status !== 'deleted'),
       timeOfDay: (p.time_of_day || p.timeOfDay || 'both') as any,
+      gstRate: typeof p.gst_rate === 'number' ? p.gst_rate : (typeof p.gstRate === 'number' ? p.gstRate : 0),
+      gstAmount: typeof p.gst_amount === 'number' ? p.gst_amount : (typeof p.gstAmount === 'number' ? p.gstAmount : 0),
       rating: p.rating || p.average_rating || 5.0,
       reviewsCount: p.reviews_count || p.total_reviews || 0,
       createdAt: p.created_at || new Date().toISOString(),

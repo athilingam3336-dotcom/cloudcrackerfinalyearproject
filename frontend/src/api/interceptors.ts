@@ -160,9 +160,15 @@ export const setupInterceptors = (axiosInstance: AxiosInstance): void => {
         error.code === 'ECONNABORTED' ||
         (typeof error.message === 'string' && error.message.toLowerCase().includes('timeout'));
 
-      // If it's a timeout or network error, format the message clearly
+      // Format messages based on status codes and error type
       if (isTimeout) {
         finalMessage = 'Connection timed out. The server was sleeping and is waking up. Please try again now.';
+      } else if (status === 429) {
+        finalMessage = serverData?.message || 'Too many requests. Please slow down and try again in a moment.';
+      } else if (status === 503 || status === 502) {
+        finalMessage = serverData?.message || 'Server is temporarily unavailable. Please try again later.';
+      } else if (status === 500 && (!serverData?.message || serverData.message.includes('unexpected system error'))) {
+        finalMessage = 'An unexpected server error occurred. Please try again later.';
       } else if (finalMessage.includes('Network Error') || !status) {
         finalMessage = `Network Error (Attempted: ${originalRequest?.baseURL}${originalRequest?.url})`;
       }

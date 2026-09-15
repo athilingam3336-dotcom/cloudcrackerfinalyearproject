@@ -80,6 +80,49 @@ async def http_exception_handler(
 
 
 
+try:
+    from bson.errors import InvalidId
+except ImportError:
+    InvalidId = None
+
+try:
+    from pymongo.errors import DuplicateKeyError, ConnectionFailure, ServerSelectionTimeoutError
+except ImportError:
+    DuplicateKeyError = None
+    ConnectionFailure = None
+    ServerSelectionTimeoutError = None
+
+
+async def invalid_id_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.warning(f"Invalid ObjectId on path {request.url.path}: {str(exc)}")
+    response_body = ApiResponse(
+        success=False,
+        message="Invalid resource ID format.",
+        data={},
+    )
+    return JSONResponse(status_code=400, content=response_body.model_dump())
+
+
+async def duplicate_key_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.warning(f"Duplicate key error on path {request.url.path}: {str(exc)}")
+    response_body = ApiResponse(
+        success=False,
+        message="A resource with this unique identifier already exists.",
+        data={},
+    )
+    return JSONResponse(status_code=409, content=response_body.model_dump())
+
+
+async def db_unavailable_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(f"Database unavailable error on path {request.url.path}: {str(exc)}")
+    response_body = ApiResponse(
+        success=False,
+        message="Database service is temporarily unavailable. Please try again later.",
+        data={},
+    )
+    return JSONResponse(status_code=503, content=response_body.model_dump())
+
+
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception(f"Unhandled error on path {request.url.path} - {str(exc)}")
     response_body = ApiResponse(
@@ -94,4 +137,13 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(BaseAppException, app_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    if InvalidId:
+        app.add_exception_handler(InvalidId, invalid_id_exception_handler)
+    if DuplicateKeyError:
+        app.add_exception_handler(DuplicateKeyError, duplicate_key_exception_handler)
+    if ConnectionFailure:
+        app.add_exception_handler(ConnectionFailure, db_unavailable_exception_handler)
+    if ServerSelectionTimeoutError:
+        app.add_exception_handler(ServerSelectionTimeoutError, db_unavailable_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)
+

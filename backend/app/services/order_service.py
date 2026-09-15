@@ -133,8 +133,11 @@ class OrderService:
 
             # Update product stock in DB (Bypass for UPI as it's deducted at Admin Verification)
             if data.payment_method != "upi":
-                new_stock = product.stock - quantity
-                await self.product_repo.update(product, {"stock": new_stock})
+                success = await self.product_repo.atomic_decrement_stock(str(product.id), quantity)
+                if not success:
+                    raise ValidationException(
+                        message=f"Insufficient stock for '{product.name}'. Stock has changed."
+                    )
 
             # Format item response
             item_resp = OrderItemResponse.convert_id(order_item)
@@ -214,8 +217,7 @@ class OrderService:
         for item in items:
             product = await self.product_repo.get_by_id(str(item.product_id))
             if product:
-                new_stock = product.stock + item.quantity
-                await self.product_repo.update(product, {"stock": new_stock})
+                await self.product_repo.atomic_increment_stock(str(product.id), item.quantity)
 
             item_resp = OrderItemResponse.convert_id(item)
             if product:

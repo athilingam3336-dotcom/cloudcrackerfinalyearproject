@@ -1,58 +1,243 @@
-முடியாது, Render தரும் Free .onrender.com Domain-ஐ வைத்து Email Verification செய்ய முடியாது.
+FILE WALKTHROUGH: backend/app/main.py
+Purpose of main.py
+main.py is the heart and launcher (App Entry Point) of your entire Python FastAPI backend. When Uvicorn runs uvicorn app.main:app, this file is executed. It performs:
 
-❌ ஏன் .onrender.com Domain பயன்படுத்த முடியாது?
-Resend, SendGrid போன்ற Email சேவைகளில் Domain Verify செய்ய DNS Records (DKIM, SPF TXT Records) சேர்க்க வேண்டும்.
-.onrender.com என்பது Render நிறுவனத்தின் சொந்த Domain என்பதால், அதன் DNS Settings-ல் நம்மால் எந்த மாற்றமும் செய்ய முடியாது.
-💡 உங்களுக்கு இருக்கக்கூடிய சிறந்த இலவச (Free) வழி:
-Gmail App Password (100% இலவசம் - Domain தேவையில்லை!):
+System logging initialization (setup_logging()).
+MongoDB database connection initialization during server startup (lifespan).
+Automated background cron scheduler initialization (schedule_midnight_admin_email_task()).
+Global HTTP middleware registration (Request Logger & CORS origin rules).
+Global exception handlers registration (register_exception_handlers).
+Routing configuration (Mounting all API routes under /api/v1).
+Server health monitoring endpoints (/health).
+1. Imports Analysis (Lines 1 – 18)
+python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from app.api.v1.router import api_v1_router
+from app.core.config import settings
+from app.core.database import db_manager
+from app.core.logging_config import logger, setup_logging
+from app.exceptions.handlers import register_exception_handlers
+from app.middleware.request_logger import RequestLoggerMiddleware
+import asyncio
+from datetime import datetime, timedelta
+Breakdown of every import:
+Imported Symbol	What is it?	Why is it needed?	Where is it used in main.py?
+asynccontextmanager	Python contextlib decorator for asynchronous context managers.	Used to define server startup and shutdown hooks using yield. (Tanglish: Server start aagumbodhu enna nadakanum, stop aagumbodhu enna clean-up pannanum-nu define panna thaan idhu.)	Used at Line 46 to decorate lifespan(app: FastAPI).
+FastAPI	Core ASGI Web Application class from FastAPI framework.	To create our main web backend server instance app = FastAPI(...).	Line 59 (app = FastAPI(...)).
+status	FastAPI module containing standard HTTP status code constants (HTTP_200_OK, HTTP_503_SERVICE_UNAVAILABLE).	Prevents hardcoding status numbers like 200 or 503 in code.	Used at Lines 141 and 149 in health_check().
+CORSMiddleware	Built-in FastAPI middleware handling Cross-Origin Resource Sharing (CORS).	Allows your React Native app (browser/Expo running on port 8081, 3000, 5173, or Render) to make HTTP requests to this backend without browser blocking.	Used at Line 72 (app.add_middleware(CORSMiddleware, ...)).
+JSONResponse	FastAPI response class for returning structured JSON data directly.	Allows returning custom status codes and raw JSON dicts in /health.	Used at Lines 128, 140, 148 in health_check().
+api_v1_router	Master APIRouter instance from app/api/v1/router.py.	Contains all mounted endpoints (Auth, Products, Orders, Cart, Payments, Inventory).	Used at Line 84 (app.include_router(api_v1_router, ...)).
+settings	Global Pydantic Settings singleton object from app/core/config.py.	Reads .env variables (APP_NAME, DEBUG, ALLOWED_ORIGINS).	Used at Lines 60, 63, 73, 92.
+db_manager	Database Manager singleton object from app/core/database.py.	Manages Async Motor client connection and Beanie ODM startup/shutdown.	Used at Lines 50, 56 in lifespan and Line 132 in health_check().
+logger, setup_logging	Logging instance and setup function from app/core/logging_config.py.	Sets up formatted terminal and file logs so you can debug server events.	Line 14 calls setup_logging(); logger is used throughout main.py.
+register_exception_handlers	Function from app/exceptions/handlers.py.	Catches unhandled errors globally and converts them into neat { "success": false, "message": "..." } responses.	Used at Line 81 (register_exception_handlers(app)).
+RequestLoggerMiddleware	Custom ASGI middleware class from app/middleware/request_logger.py.	Logs incoming request path, HTTP method, and response execution time in milliseconds.	Used at Line 68 (app.add_middleware(RequestLoggerMiddleware)).
+asyncio	Standard Python Asynchronous I/O library.	Needed to create background tasks (asyncio.create_task) and non-blocking delays (asyncio.sleep).	Used at Lines 31, 37, 38, 43, 51, 54.
+datetime, timedelta	Standard Python modules for manipulating dates and times.	Used to calculate seconds remaining until 12:00 AM midnight.	Used at Lines 25, 26, 27 in schedule_midnight_admin_email_task().
+2. System Logging Initialization (Line 14)
+python
+# Initialize system logger
+setup_logging()
+Explanation:
+Line 14: Executes setup_logging(). This configures Python's root logger before any other module starts sending log messages. If we removed this line, logs would either fall back to raw unformatted Python output or be missing entirely.
+3. The Midnight Cron Task Function (Lines 20 – 44)
+Actual Code:
+python
+async def schedule_midnight_admin_email_task():
+    """Background task running continuously: triggers daily sales & stock report email to all admins at 12:00 AM midnight."""
+    logger.info("Initializing Midnight 12:00 AM Automated Admin Report Scheduler...")
+    while True:
+        try:
+            now = datetime.now()
+            tomorrow = now + timedelta(days=1)
+            midnight = datetime(year=tomorrow.year, month=tomorrow.month, day=tomorrow.day, hour=0, minute=0, second=0)
+            seconds_until_midnight = (midnight - now).total_seconds()
+            
+            logger.info(f"Next automated 12:00 AM Admin Email Report scheduled in {seconds_until_midnight:.0f} seconds.")
+            await asyncio.sleep(seconds_until_midnight)
+            from app.api.v1.admin.reports import dispatch_daily_report_to_all_admins
+            result = await dispatch_daily_report_to_all_admins(requested_by_email="Automated 12:00 AM Midnight Cron")
+            logger.info(f"[12:00 AM MIDNIGHT CRON] Automated Daily Report emailed to {len(result.get('admin_emails_notified', []))} admins!")
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            logger.info("Midnight Admin Report Scheduler task cancelled.")
+            break
+        except Exception as e:
+            logger.error(f"Error in midnight admin report scheduler: {e}")
+            await asyncio.sleep(300)
+Explanation:
+Why it exists: To automatically calculate sales, revenue, low-stock items, and pending orders every night at 12:00 AM midnight and email a PDF/HTML report to all store admins without human intervention.
+Parameters: None.
+Return Value: None (coroutine).
+Who calls it: Called inside lifespan() (Line 51) using asyncio.create_task().
+What it calls:
+dispatch_daily_report_to_all_admins() inside app.api.v1.admin.reports. (Notice it is imported dynamically inside the function at Line 33 to prevent circular import crashes during backend startup!).
+Step-by-Step Logic:
+while True: -> Starts an infinite loop running in the background for the entire lifetime of the server.
+now = datetime.now() -> Reads current system date and time.
+tomorrow = now + timedelta(days=1) -> Calculates tomorrow's date.
+midnight = datetime(year=..., hour=0, minute=0, second=0) -> Constructs exact target timestamp for 12:00 AM midnight tonight/tomorrow.
+seconds_until_midnight = (midnight - now).total_seconds() -> Calculates how many seconds the server needs to wait. (e.g., if it is 8:00 PM now, seconds_until_midnight = 14,400 seconds).
+await asyncio.sleep(seconds_until_midnight) -> Crucial non-blocking pause. Pauses this specific background coroutine while leaving the rest of FastAPI completely free to handle customer requests.
+await dispatch_daily_report_to_all_admins(...) -> Fetches admin emails from MongoDB, generates sales/stock metrics, and emails them out via Resend.
+await asyncio.sleep(60) -> Waits 60 seconds so it doesn't trigger twice within the same midnight minute.
+except asyncio.CancelledError: -> Handles clean task termination when the server shuts down (cron_task.cancel()).
+except Exception as e: -> Catches unexpected errors (e.g., database network drop), logs the error, and sleeps for 300 seconds (5 mins) before trying again.
+4. The Lifespan Context Manager (Lines 46 – 56)
+Actual Code:
+python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup tasks
+    logger.info("FastAPI lifecycle startup: Connecting database client.")
+    await db_manager.connect()
+    cron_task = asyncio.create_task(schedule_midnight_admin_email_task())
+    yield
+    # Shutdown tasks
+    cron_task.cancel()
+    logger.info("FastAPI lifecycle shutdown: Disconnecting database client.")
+    await db_manager.disconnect()
+Explanation:
+Decorator @asynccontextmanager: Converts an async generator function into an ASGI context manager that FastAPI uses to manage application lifecycle events.
+Why it exists: Replaces old deprecated @app.on_event("startup") and @app.on_event("shutdown") decorators in modern FastAPI.
+Parameters: app: FastAPI (The main FastAPI application instance).
+Return Value: Generator yielding execution to FastAPI during server runtime.
+Step-by-Step Logic:
+Before yield (Startup Phase):
+await db_manager.connect() -> Connects Motor client to MongoDB Atlas and initializes Beanie ODM models (User, Product, Order, etc.).
+cron_task = asyncio.create_task(...) -> Schedules the 12:00 AM midnight report scheduler running in the background without blocking server boot.
+yield: Server starts listening for HTTP traffic! FastAPI executes incoming requests while paused at yield.
+After yield (Shutdown Phase):
+Triggered when you press Ctrl+C or Render stops the server container.
+cron_task.cancel() -> Stops the 12:00 AM midnight scheduler loop gracefully.
+await db_manager.disconnect() -> Closes MongoDB connection pool safely without leaking connection handles.
+5. FastAPI App Instantiation & Middleware Setup (Lines 59 – 84)
+Actual Code:
+python
+app = FastAPI(
+    title=settings.APP_NAME,
+    description="AI Powered E-Commerce Platform Backend API",
+    version="1.0.0",
+    debug=settings.DEBUG,
+    lifespan=lifespan,
+)
+# Order of middleware: Request logger executes around all incoming logic.
+app.add_middleware(RequestLoggerMiddleware)
+# CORS setup
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https?://([\w-]+\.vercel\.app|[\w-]+\.netlify\.app|[\w-]+\.pages\.dev|[\w-]+\.onrender\.com|localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# Register custom exception handlers
+register_exception_handlers(app)
+# Register router
+app.include_router(api_v1_router, prefix="/api/v1")
+Explanation:
+app = FastAPI(...): Creates the central FastAPI application object.
+title=settings.APP_NAME: Displays "Meera Crackers API" on Swagger /docs.
+debug=settings.DEBUG: Controls debug stack trace outputs.
+lifespan=lifespan: Registers our context manager for database connection management.
+app.add_middleware(RequestLoggerMiddleware): Registers custom logging middleware. Every incoming request passes through this class first.
+app.add_middleware(CORSMiddleware, ...): Registers CORS middleware.
+allow_origins: List of explicit domains allowed to make requests (http://localhost:8081, http://localhost:3000, Render URLs).
+allow_origin_regex: Regex matching preview deployments on Vercel, Netlify, Render, and local IP addresses (192.168.x.x).
+allow_credentials=True: Allows client browsers/apps to send HTTP Bearer tokens and cookies.
+register_exception_handlers(app): Connects custom error handlers so exceptions like UnauthorizedException return clean HTTP responses instead of crashing the server.
+app.include_router(api_v1_router, prefix="/api/v1"): Mounts all version 1 endpoints under the URL prefix /api/v1.
+6. Root & Production Health Endpoints (Lines 87 – 154)
+Actual Code:
+python
+@app.api_route("/", methods=["GET", "HEAD"], tags=["Root"])
+async def root_endpoint() -> dict:
+    """Standard root endpoint greeting message."""
+    return {
+        "success": True,
+        "message": f"Welcome to the {settings.APP_NAME}. Head over to /docs or /redoc for interactive API documentation.",
+        "data": {},
+    }
+@app.get("/health", tags=["Health"], ...)
+async def health_check() -> JSONResponse:
+    """Production-ready health check verifying service status and MongoDB connectivity."""
+    db_connected = False
+    try:
+        if db_manager.client is not None and db_manager.db is not None:
+            await db_manager.db.command("ping")
+            db_connected = True
+    except Exception as exc:
+        logger.warning(f"Health check MongoDB ping failed: {exc}")
+        db_connected = False
+    if db_connected:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"status": "ok", "db_connected": True},
+        )
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"status": "unhealthy", "db_connected": False},
+    )
+Explanation:
+root_endpoint() (GET /): Serves a basic welcome message confirming that the web server is online.
+health_check() (GET /health):
+Used by Render, Docker, and uptime monitoring services to check if your backend is healthy.
+Internal Logic: Runs await db_manager.db.command("ping") to verify live MongoDB Atlas responsiveness.
+If MongoDB responds -> Returns HTTP 200 OK ("db_connected": True).
+If MongoDB ping fails or throws an exception -> Catches the error, logs a warning, and returns HTTP 503 Service Unavailable ("db_connected": False).
+REAL PROJECT REQUEST FLOW MAP
+When a customer clicks "Login" or "Place Order" in your React Native app, here is how main.py routes the request through your entire architecture:
 
-உங்களிடம் சொந்த Domain இல்லை என்றாலும், உங்கள் சொந்த Gmail ID மூலமாகவே எந்த வாடிக்கையாளருக்கும் (Gmail, Yahoo, Outlook) 100% ரியல் OTP & QR Code Emails அனுப்பலாம்!
+1. Customer App (React Native Axios Request)
+       ↓  (HTTP POST https://cloudcrackerfinalyearproject-1.onrender.com/api/v1/auth/login)
+2. main.py
+       ├── Step A: Passes through RequestLoggerMiddleware (Starts timer, logs method/path)
+       ├── Step B: Passes through CORSMiddleware (Validates Origin header)
+       └── Step C: Matches prefix "/api/v1" -> Routes to api_v1_router (app/api/v1/router.py)
+3. router.py
+       └── Routes to auth_router (app/api/v1/auth/auth.py)
+4. auth.py (@router.post("/login"))
+       └── Calls AuthService.login(data) (app/services/auth_service.py)
+5. auth_service.py
+       └── Calls UserRepository.get_by_email() (app/repositories/user_repository.py)
+6. user_repository.py
+       └── Queries MongoDB Atlas "users" collection via Beanie ODM
+7. MongoDB Atlas
+       └── Returns User document -> Verified via bcrypt -> Returns JWT tokens back up the chain!
+RECAP & LEARNING EVALUATION
+A. What I Learned from main.py
+How FastAPI uses lifespan context manager to manage database connections during startup and shutdown.
+How background tasks like schedule_midnight_admin_email_task() run continuously using asyncio.create_task without blocking API users.
+Why middleware order matters (Request Logger -> CORS -> Exception Handlers -> Router).
+How /health checks actual database connection status using db.command("ping") instead of returning a hardcoded dummy status.
+B. Important Concepts
+ASGI Lifespan: Clean management of startup and shutdown hooks.
+Non-blocking asyncio.sleep: Pauses background execution without freezing the main server thread.
+Dynamic Import inside Function: Importing dispatch_daily_report_to_all_admins inside the function body to prevent startup circular import errors.
+CORS Regex Matching: Dynamic origin matching for mobile and web deployments.
+C. Interview Questions from main.py
+Q1: How do you handle database connections during application startup and shutdown in FastAPI?
+Answer: In modern FastAPI, we use the @asynccontextmanager lifespan handler passed to the FastAPI(lifespan=lifespan) application instance. Before yield, we initialize our MongoDB client (await db_manager.connect()), and after yield, we close connections (await db_manager.disconnect()) during server shutdown.
 
-இதை எப்படி செய்வது? (2 Min Setup):
-உங்கள் Gmail Account -> Security -> 2-Step Verification-ஐ Turn ON செய்யவும்.
-Google App Passwords பக்கத்திற்குச் செல்லவும்.
-App Name-ல் CloudCrackers என்று கொடுத்து Create கிளிக் செய்தால், 16 எழுத்து கொண்ட App Password கிடைக்கும்.
-Render Backend Environment Variables-ல் இவற்றைச் சேர்க்கவும்:
-SMTP_HOST: smtp.gmail.com
-SMTP_PORT: 587
-SMTP_USER: your_email@gmail.com (உங்கள் Gmail ID)
-SMTP_PASSWORD: xxxx xxxx xxxx xxxx (16-digit App Password)
-SMTP_FROM: your_email@gmail.com
-இதைச் செய்து Render Redeploy செய்துவிட்டால், எந்த ஒரு கட்டணமும் இன்றி அனைத்து வாடிக்கையாளர்களுக்கும் உடனடியாக OTP & QR Code Email சென்றுவிடும்!
+Q2: How do you run background scheduled tasks in FastAPI without blocking incoming HTTP requests?
+Answer: We spawn an asynchronous coroutine using asyncio.create_task(coroutine_function()) inside the startup phase of the lifespan context manager. Inside the coroutine, we use an infinite while True loop with await asyncio.sleep(seconds). Because asyncio.sleep yields control back to the event loop, FastAPI handles incoming user traffic concurrently.
 
-7:43 PM
-APA REAL AA AMOUNNTT KUTUTHU PANANUM NA
-7:45 PM
-ரியல் பிசினஸாக (Real Production) பணம் செலவழித்து மிக பிராண்டிங்காக, ப்ரொபஷனலாக செய்ய விரும்புமானால், அதற்குரிய படிநிலைகள் & செலவு விவரங்கள் (Budget & Steps) கீழே கொடுக்கப்பட்டுள்ளன:
+D. Possible Interviewer Traps
+Trap 1: "Why didn't you use @app.on_event("startup")?"
+Correct Answer: @app.on_event("startup") and @app.on_event("shutdown") are deprecated in newer versions of FastAPI. The official recommended pattern is using the lifespan async context manager.
+Trap 2: "If your 12:00 AM cron task crashes, will it crash your whole FastAPI web server?"
+Correct Answer: No. The task is wrapped in a try...except Exception block inside the while True loop. If an error occurs, it logs the exception, waits 300 seconds, and continues the loop without crashing the main application thread.
+E. 5 Quiz Questions For You (To Test Your Understanding)
+Please answer these 5 questions based on what you just learned:
 
-💵 செலவு விவரங்கள் (Estimated Budget)
-சேவை (Service)	எது சிறந்தது?	ஆரம்ப செலவு (Cost)
-1. Domain Name	Hostinger / Namecheap / Cloudflare	₹199 - ₹799 / ஆண்டு (.in / .com)
-2. Email Provider	Resend.com (Verified Domain)	₹0 Free (3,000 Emails/Month) / $20/மாதம் (50,000 Emails)
-3. Server Hosting	Render Starter Plan (Always Active)	$7/மாதம் (~₹580/மாதம்) (Cold start இருக்காது)
-4. Database	MongoDB Atlas Cloud	₹0 Free (512MB) / $9/மாதம்
-💡 குறைந்தபட்ச செலவு: வெறும் ₹200 - ₹800 (Domain மட்டும்) செலவழித்தால் போதும்! Resend மற்றும் Render-ன் இலவச சேவைகளையே பயன்படுத்தி ரியல் பிசினஸ் நடத்தலாம்.
-
-🛠️ Step-by-Step ரியல் Setup செய்யும் முறைகள்
-Step 1: சொந்த Domain வாங்குதல்
-Hostinger.in அல்லது Namecheap.com செல்லவும்.
-உங்கள் கடை பெயர் (எ.கா. meeracrackers.com அல்லது cloudcrackers.in) வாங்கி கொள்ளவும்.
-Step 2: Resend-ல் Domain சேர்ப்பது
-Resend.com Dashboard-ல் Add Domain கொடுத்து உங்கள் Domain Name உள்ளிடவும்.
-Resend 3 DNS Records (DKIM, SPF, DMARC) வழங்கும்:
-MX record
-TXT records (2 Nos)
-நீங்கள் Domain வாங்கிய இடத்தின் (Hostinger DNS Management) சென்று இந்த 3 Records-ஐ Add செய்யவும்.
-2 நிமிடங்களில் Resend-ல் Verified ஆகிவிடும்.
-Step 3: Render Environment Variables மாற்றுவது
-Render Backend -> Environment சென்று:
-
-env
-RESEND_API_KEY=re_your_real_api_key
-RESEND_FROM=noreply@meeracrackers.com
-🔥 இதன் மூலம் கிடைக்கும் நன்மைகள் (Benefits of Paid Setup):
-100% Instant Delivery (< 1 Second): Customer OTP பட்டனை தொட்ட 1 வினாடியில் Email சென்றுவிடும்.
-No Spam Folder: noreply@yourdomain.com மூலம் செல்வதால் Spam-ல் விழாமல் Primary Inbox-க்கு நேராக செல்லும்.
-Professional Look: Customer-க்கு onboarding@resend.dev அல்லது gmail.com என்று போகாமல் உங்கள் சொந்த பிராண்ட் பெயரில் (Meera Crackers <noreply@meeracrackers.com>) Email செல்லும்.
-
-
+Why is dispatch_daily_report_to_all_admins imported inside schedule_midnight_admin_email_task() instead of at the top of main.py?
+What would happen to incoming customer API requests if we used standard time.sleep(10) instead of await asyncio.sleep(10) inside main.py?
+What is the purpose of app.add_middleware(CORSMiddleware) and what would happen on the React Native frontend if we removed it?
+When a health check is requested at GET /health, how does main.py actually verify if MongoDB is connected?
+What happens inside lifespan when the server receives a shutdown signal (e.g. Ctrl+C)?
+✋ STOPPING HERE. Please reply with your answers to the 5 questions above! Once you reply, we will evaluate your answers and move directly to the next file: backend/app/core/config.py.

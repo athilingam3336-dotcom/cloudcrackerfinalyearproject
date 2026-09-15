@@ -42,6 +42,32 @@ class ProductRepository:
         await product.save()
         return product
 
+    async def atomic_decrement_stock(self, product_id: str, quantity: int) -> bool:
+        """Atomically decrement stock using MongoDB $inc operator with stock >= quantity query filter."""
+        try:
+            pid = PydanticObjectId(product_id)
+        except Exception:
+            return False
+        result = await Product.find_one(
+            Product.id == pid,
+            Product.stock >= quantity,
+            Product.status != "deleted"
+        ).update({"$inc": {"stock": -quantity}, "$set": {"updated_at": datetime.utcnow()}})
+        return result is not None and getattr(result, "modified_count", 0) > 0
+
+    async def atomic_increment_stock(self, product_id: str, quantity: int) -> bool:
+        """Atomically increment stock using MongoDB $inc operator for stock restoration."""
+        try:
+            pid = PydanticObjectId(product_id)
+        except Exception:
+            return False
+        result = await Product.find_one(
+            Product.id == pid,
+            Product.status != "deleted"
+        ).update({"$inc": {"stock": quantity}, "$set": {"updated_at": datetime.utcnow()}})
+        return result is not None and getattr(result, "modified_count", 0) > 0
+
+
     async def list_active_paginated(
         self,
         search: Optional[str] = None,

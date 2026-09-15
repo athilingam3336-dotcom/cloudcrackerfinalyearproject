@@ -81,6 +81,8 @@ class ProductService:
             "description": data.description,
             "price": data.price,
             "discount_price": data.discount_price,
+            "gst_rate": getattr(data, "gst_rate", 0.0) or 0.0,
+            "gst_amount": getattr(data, "gst_amount", 0.0) or 0.0,
             "category_id": category.id,
             "stock": data.stock,
             "image_url": image_url,

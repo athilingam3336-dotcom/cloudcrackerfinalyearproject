@@ -86,6 +86,8 @@ export class ProductService {
       isFeatured,
       isBestseller,
       isFlashSale,
+      gstRate: typeof p.gst_rate === 'number' ? p.gst_rate : (typeof p.gstRate === 'number' ? p.gstRate : 0),
+      gstAmount: typeof p.gst_amount === 'number' ? p.gst_amount : (typeof p.gstAmount === 'number' ? p.gstAmount : 0),
       flashSaleHours: p.flash_sale_hours !== undefined ? p.flash_sale_hours : p.flashSaleHours,
       endsInSeconds: p.ends_in_seconds !== undefined ? p.ends_in_seconds : p.endsInSeconds,
     };

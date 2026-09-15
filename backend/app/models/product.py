@@ -28,6 +28,8 @@ class Product(Document):
     is_recommended: bool = False
     is_active: bool = True
     time_of_day: str = "both"  # "morning", "night", "both"
+    gst_rate: Optional[float] = 0.0
+    gst_amount: Optional[float] = 0.0
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: Optional[str] = None

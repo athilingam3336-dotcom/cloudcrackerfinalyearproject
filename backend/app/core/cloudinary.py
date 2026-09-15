@@ -1,9 +1,13 @@
+import logging
 import cloudinary
 import cloudinary.uploader
 from starlette.concurrency import run_in_threadpool
 from typing import Any, Dict
 
 from app.core.config import settings
+from app.exceptions.custom_exceptions import BaseAppException
+
+logger = logging.getLogger("app.core.cloudinary")
 
 # Configure Cloudinary if properties are supplied
 if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET:
@@ -33,11 +37,18 @@ async def upload_image(file_data: Any, folder: str = "cloudcrackers") -> Dict[st
             "folder": folder,
         }
 
-    return await run_in_threadpool(
-        cloudinary.uploader.upload,
-        file_data,
-        folder=folder,
-    )
+    try:
+        return await run_in_threadpool(
+            cloudinary.uploader.upload,
+            file_data,
+            folder=folder,
+        )
+    except Exception as exc:
+        logger.error(f"Cloudinary upload failed for folder '{folder}': {exc}")
+        raise BaseAppException(
+            status_code=502,
+            message="Image storage service is temporarily unavailable. Please try again.",
+        )
 
 
 async def delete_image(public_id: str) -> Dict[str, Any]:
@@ -45,13 +56,21 @@ async def delete_image(public_id: str) -> Dict[str, Any]:
     if not (settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET):
         return {"result": "ok"}
 
-    return await run_in_threadpool(
-        cloudinary.uploader.destroy,
-        public_id,
-    )
+    try:
+        return await run_in_threadpool(
+            cloudinary.uploader.destroy,
+            public_id,
+        )
+    except Exception as exc:
+        logger.error(f"Cloudinary delete failed for public_id '{public_id}': {exc}")
+        raise BaseAppException(
+            status_code=502,
+            message="Image storage service is temporarily unavailable. Please try again.",
+        )
 
 
 async def replace_image(public_id: str, file_data: Any, folder: str = "cloudcrackers") -> Dict[str, Any]:
     """Replaces an existing image by deleting the old public_id and uploading the new one."""
     await delete_image(public_id)
     return await upload_image(file_data, folder=folder)
+

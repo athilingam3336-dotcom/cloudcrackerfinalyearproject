@@ -381,10 +381,9 @@ class PaymentService:
         for item in order_items:
             product = await self.product_repo.get_by_id(str(item.product_id))
             if product:
-                if product.stock < item.quantity:
+                success = await self.product_repo.atomic_decrement_stock(str(product.id), item.quantity)
+                if not success:
                     raise ValidationException(message=f"Insufficient stock for '{product.name}' to confirm order.")
-                new_stock = max(0, product.stock - item.quantity)
-                await self.product_repo.update(product, {"stock": new_stock})
 
         # Update Coupon Usage
         if order.coupon_code:

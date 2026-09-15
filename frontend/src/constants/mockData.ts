@@ -38,6 +38,8 @@ export interface ProductItem {
   isFeatured?: boolean;
   isBestseller?: boolean;
   isFlashSale?: boolean;
+  gstRate?: number;
+  gstAmount?: number;
   flashSaleHours?: number;
   endsInSeconds?: number;
 }

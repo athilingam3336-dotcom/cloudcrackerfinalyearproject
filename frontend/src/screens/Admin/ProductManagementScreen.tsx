@@ -95,6 +95,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [formCategoryId, setFormCategoryId] = useState('');
   const [formPrice, setFormPrice] = useState('');
   const [formDiscountPrice, setFormDiscountPrice] = useState('');
+  const [formGstRate, setFormGstRate] = useState('18');
+  const [formGstAmount, setFormGstAmount] = useState('');
   const [formStock, setFormStock] = useState('50');
   const [formIsFeatured, setFormIsFeatured] = useState(false);
   const [formIsBestseller, setFormIsBestseller] = useState(false);
@@ -102,6 +104,59 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [formFlashSaleHours, setFormFlashSaleHours] = useState('4');
   const [formIsRecommended, setFormIsRecommended] = useState(false);
   const [formTimeOfDay, setFormTimeOfDay] = useState<'morning' | 'night' | 'both'>('both');
+
+  // GST & Price Auto-calculation Handlers
+  const handleGstRateChange = useCallback(
+    (rateStr: string) => {
+      setFormGstRate(rateStr);
+      const rate = parseFloat(rateStr);
+      const baseP = parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0;
+      if (!isNaN(rate) && baseP > 0) {
+        setFormGstAmount(((baseP * rate) / 100).toFixed(2));
+      } else if (!rateStr) {
+        setFormGstAmount('0.00');
+      }
+    },
+    [formPrice, formDiscountPrice]
+  );
+
+  const handleGstAmountChange = useCallback(
+    (amtStr: string) => {
+      setFormGstAmount(amtStr);
+      const amt = parseFloat(amtStr);
+      const baseP = parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0;
+      if (!isNaN(amt) && baseP > 0) {
+        setFormGstRate(((amt / baseP) * 100).toFixed(2));
+      } else if (!amtStr) {
+        setFormGstRate('0');
+      }
+    },
+    [formPrice, formDiscountPrice]
+  );
+
+  const handlePriceChange = useCallback(
+    (priceStr: string) => {
+      setFormPrice(priceStr);
+      const p = parseFloat(formDiscountPrice) || parseFloat(priceStr) || 0;
+      const rate = parseFloat(formGstRate);
+      if (!isNaN(rate) && rate >= 0 && p > 0) {
+        setFormGstAmount(((p * rate) / 100).toFixed(2));
+      }
+    },
+    [formDiscountPrice, formGstRate]
+  );
+
+  const handleDiscountPriceChange = useCallback(
+    (discStr: string) => {
+      setFormDiscountPrice(discStr);
+      const p = parseFloat(discStr) || parseFloat(formPrice) || 0;
+      const rate = parseFloat(formGstRate);
+      if (!isNaN(rate) && rate >= 0 && p > 0) {
+        setFormGstAmount(((p * rate) / 100).toFixed(2));
+      }
+    },
+    [formPrice, formGstRate]
+  );
 
   // Product Image State
   const [selectedImage, setSelectedImage] = useState<SelectedProductImage | null>(null);
@@ -272,6 +327,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     setFormCategoryId(categories.length > 0 ? categories[0].id : '');
     setFormPrice('499.00');
     setFormDiscountPrice('');
+    setFormGstRate('18');
+    setFormGstAmount(((499.00 * 18) / 100).toFixed(2));
     setFormStock('50');
     setFormIsFeatured(false);
     setFormIsBestseller(false);
@@ -294,6 +351,11 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       setFormCategoryId(product.categoryId || (categories.length > 0 ? categories[0].id : ''));
       setFormPrice(product.price.toString());
       setFormDiscountPrice(product.discountPrice ? product.discountPrice.toString() : '');
+      const rate = product.gstRate !== undefined ? product.gstRate : 18;
+      const baseP = product.discountPrice || product.price || 0;
+      const amt = product.gstAmount !== undefined ? product.gstAmount : (baseP * rate) / 100;
+      setFormGstRate(rate.toString());
+      setFormGstAmount(amt.toFixed(2));
       setFormStock(product.stock.toString());
       setFormIsFeatured(Boolean(product.isFeatured));
       setFormIsBestseller(Boolean(product.isBestseller));
@@ -359,6 +421,9 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       return;
     }
 
+    const gstRateNum = parseFloat(formGstRate) || 0;
+    const gstAmtNum = parseFloat(formGstAmount) || 0;
+
     setIsSaving(true);
     try {
       if (editingProduct) {
@@ -367,6 +432,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           description: formDescription.trim(),
           price: priceNum,
           discount_price: discountNum,
+          gst_rate: gstRateNum,
+          gst_amount: gstAmtNum,
           category_id: formCategoryId,
           stock: stockNum,
           image: selectedImage || undefined,
@@ -385,6 +452,8 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           description: formDescription.trim(),
           price: priceNum,
           discount_price: discountNum,
+          gst_rate: gstRateNum,
+          gst_amount: gstAmtNum,
           category_id: formCategoryId,
           stock: stockNum,
           image: selectedImage,
@@ -412,15 +481,18 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     formDescription,
     formPrice,
     formDiscountPrice,
+    formGstRate,
+    formGstAmount,
     formStock,
     formCategoryId,
+    selectedImage,
+    formExistingImageUrl,
     formIsFeatured,
     formIsBestseller,
     formIsFlashSale,
     formFlashSaleHours,
     formIsRecommended,
-    selectedImage,
-    formExistingImageUrl,
+    formTimeOfDay,
     fetchProducts,
   ]);
 
@@ -534,10 +606,13 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
 
             <View style={styles.priceRow}>
               <Text style={styles.productPrice}>{formatCurrency(item.price)}</Text>
-              {item.discountPrice && (
+              {item.discountPrice ? (
                 <Text style={styles.discountPriceBadge}>
                   Sale: {formatCurrency(item.discountPrice)}
                 </Text>
+              ) : null}
+              {Boolean(item.gstAmount) && (
+                <Text style={styles.gstTag}>+ GST ₹{item.gstAmount?.toFixed(2)} ({item.gstRate || 0}%)</Text>
               )}
             </View>
 
@@ -1142,7 +1217,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               <CustomInput
                 label="Original Price (₹) *"
                 value={formPrice}
-                onChangeText={setFormPrice}
+                onChangeText={handlePriceChange}
                 keyboardType="numeric"
                 containerStyle={styles.halfFormInput}
                 placeholder="499.00"
@@ -1150,11 +1225,39 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               <CustomInput
                 label="Discount Price (₹)"
                 value={formDiscountPrice}
-                onChangeText={setFormDiscountPrice}
+                onChangeText={handleDiscountPriceChange}
                 keyboardType="numeric"
                 containerStyle={styles.halfFormInput}
                 placeholder="Optional (449)"
               />
+            </View>
+
+            {/* GST Details Row (Placed right under Original Price - 2 Columns Responsive) */}
+            <View style={styles.formRow}>
+              <CustomInput
+                label="GST Rate (%)"
+                value={formGstRate}
+                onChangeText={handleGstRateChange}
+                keyboardType="numeric"
+                containerStyle={styles.halfFormInput}
+                placeholder="e.g. 18"
+              />
+              <CustomInput
+                label="GST Amount per Product (₹)"
+                value={formGstAmount}
+                onChangeText={handleGstAmountChange}
+                keyboardType="numeric"
+                containerStyle={styles.halfFormInput}
+                placeholder="e.g. 89.82"
+              />
+            </View>
+
+            {/* Responsive Calculated GST & Total Price Badge */}
+            <View style={styles.gstSummaryCard}>
+              <MaterialIcons name="receipt-long" size={16} color={Colors.primary} />
+              <Text style={styles.gstSummaryText}>
+                Base: <Text style={{ fontFamily: 'Inter-Bold' }}>₹{(parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0).toFixed(2)}</Text> + GST ({formGstRate || '0'}%): <Text style={{ fontFamily: 'Inter-Bold', color: Colors.primary }}>₹{(parseFloat(formGstAmount) || 0).toFixed(2)}</Text> = Total: <Text style={{ fontFamily: 'Inter-Bold', color: '#2E7D32' }}>₹{((parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0) + (parseFloat(formGstAmount) || 0)).toFixed(2)}</Text> / unit
+              </Text>
             </View>
 
             {/* Stock Count Row (Full Width for clear number entry) */}
@@ -2116,6 +2219,35 @@ const styles = StyleSheet.create({
     ...Typography.labelLg,
     fontSize: 11,
     color: Colors.error,
+  },
+  gstSummaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.surfaceContainerHigh,
+    gap: 6,
+  },
+  gstSummaryText: {
+    ...Typography.bodyMd,
+    fontSize: 12,
+    color: Colors.onSurfaceVariant,
+    flex: 1,
+  },
+  gstTag: {
+    ...Typography.labelLg,
+    fontSize: 11,
+    color: Colors.primary,
+    fontFamily: 'Inter-Bold',
+    backgroundColor: Colors.primaryContainer,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 4,
   },
 });
 

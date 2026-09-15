@@ -19,6 +19,8 @@ class ProductCreate(BaseModel):
     flash_sale_hours: Optional[float] = 4.0
     is_recommended: bool = False
     time_of_day: Optional[str] = "both"
+    gst_rate: Optional[float] = Field(0.0, ge=0)
+    gst_amount: Optional[float] = Field(0.0, ge=0)
 
     @field_validator("category_id")
     @classmethod
@@ -50,6 +52,8 @@ class ProductUpdate(BaseModel):
     is_recommended: Optional[bool] = None
     is_active: Optional[bool] = None
     time_of_day: Optional[str] = None
+    gst_rate: Optional[float] = Field(None, ge=0)
+    gst_amount: Optional[float] = Field(None, ge=0)
 
     @field_validator("category_id")
     @classmethod
@@ -92,6 +96,9 @@ class ProductResponse(BaseModel):
     is_recommended: bool = False
     is_active: bool = True
     time_of_day: Optional[str] = "both"
+    gst_rate: Optional[float] = 0.0
+    gst_amount: Optional[float] = 0.0
+    price_with_gst: Optional[float] = None
     created_at: datetime
     updated_at: datetime
 
