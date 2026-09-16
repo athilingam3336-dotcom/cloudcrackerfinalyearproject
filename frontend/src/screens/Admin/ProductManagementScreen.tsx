@@ -105,58 +105,94 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [formIsRecommended, setFormIsRecommended] = useState(false);
   const [formTimeOfDay, setFormTimeOfDay] = useState<'morning' | 'night' | 'both'>('both');
 
+  // Helper to compute effective Base Price, GST Amount, and Total Unit Price
+  const getCalculatedPricing = useCallback((
+    priceStr: string,
+    discStr: string,
+    gstRateStr: string,
+    gstAmtStr?: string
+  ) => {
+    const origP = parseFloat(priceStr) || 0;
+    const discInput = parseFloat(discStr) || 0;
+    const rate = parseFloat(gstRateStr) || 0;
+
+    let baseP = origP;
+    if (discInput > 0 && origP > 0) {
+      if (discInput <= origP / 2) {
+        // e.g. Original=50, Discount=10 => Discount Amount 10 off => Base Price = 40
+        baseP = Math.max(0, origP - discInput);
+      } else if (discInput < origP) {
+        // e.g. Original=50, Discount=40 => Discounted Selling Price 40 => Base Price = 40
+        baseP = discInput;
+      }
+    } else if (discInput > 0) {
+      baseP = discInput;
+    }
+
+    let gstAmt = 0;
+    if (gstAmtStr !== undefined && gstAmtStr !== '') {
+      gstAmt = parseFloat(gstAmtStr) || 0;
+    } else {
+      gstAmt = origP > 0 ? (origP * rate) / 100 : (baseP * rate) / 100;
+    }
+
+    const totalPrice = baseP + gstAmt;
+
+    return { origP, discInput, baseP, rate, gstAmt, totalPrice };
+  }, []);
+
   // GST & Price Auto-calculation Handlers
-  const handleGstRateChange = useCallback(
-    (rateStr: string) => {
-      setFormGstRate(rateStr);
-      const rate = parseFloat(rateStr);
-      const baseP = parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0;
-      if (!isNaN(rate) && baseP > 0) {
-        setFormGstAmount(((baseP * rate) / 100).toFixed(2));
-      } else if (!rateStr) {
-        setFormGstAmount('0.00');
-      }
-    },
-    [formPrice, formDiscountPrice]
-  );
-
-  const handleGstAmountChange = useCallback(
-    (amtStr: string) => {
-      setFormGstAmount(amtStr);
-      const amt = parseFloat(amtStr);
-      const baseP = parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0;
-      if (!isNaN(amt) && baseP > 0) {
-        const calculatedRate = (amt / baseP) * 100;
-        setFormGstRate(calculatedRate.toFixed(2));
-      } else if (!amtStr) {
-        setFormGstRate('0');
-      }
-    },
-    [formPrice, formDiscountPrice]
-  );
-
   const handlePriceChange = useCallback(
     (priceStr: string) => {
       setFormPrice(priceStr);
-      const baseP = parseFloat(formDiscountPrice) || parseFloat(priceStr) || 0;
-      const rate = parseFloat(formGstRate) || 18;
-      if (!isNaN(rate) && rate >= 0 && baseP > 0) {
-        setFormGstAmount(((baseP * rate) / 100).toFixed(2));
+      const { origP, rate } = getCalculatedPricing(priceStr, formDiscountPrice, formGstRate);
+      if (origP > 0) {
+        setFormGstAmount(((origP * rate) / 100).toFixed(2));
       }
     },
-    [formDiscountPrice, formGstRate]
+    [formDiscountPrice, formGstRate, getCalculatedPricing]
   );
 
   const handleDiscountPriceChange = useCallback(
     (discStr: string) => {
       setFormDiscountPrice(discStr);
-      const baseP = parseFloat(discStr) || parseFloat(formPrice) || 0;
-      const rate = parseFloat(formGstRate) || 18;
-      if (!isNaN(rate) && rate >= 0 && baseP > 0) {
-        setFormGstAmount(((baseP * rate) / 100).toFixed(2));
+      const { origP, baseP, rate } = getCalculatedPricing(formPrice, discStr, formGstRate);
+      const targetP = origP > 0 ? origP : baseP;
+      if (targetP > 0) {
+        setFormGstAmount(((targetP * rate) / 100).toFixed(2));
       }
     },
-    [formPrice, formGstRate]
+    [formPrice, formGstRate, getCalculatedPricing]
+  );
+
+  const handleGstRateChange = useCallback(
+    (rateStr: string) => {
+      setFormGstRate(rateStr);
+      const { origP, baseP, rate } = getCalculatedPricing(formPrice, formDiscountPrice, rateStr);
+      const targetP = origP > 0 ? origP : baseP;
+      if (targetP > 0) {
+        setFormGstAmount(((targetP * rate) / 100).toFixed(2));
+      } else if (!rateStr) {
+        setFormGstAmount('0.00');
+      }
+    },
+    [formPrice, formDiscountPrice, getCalculatedPricing]
+  );
+
+  const handleGstAmountChange = useCallback(
+    (amtStr: string) => {
+      setFormGstAmount(amtStr);
+      const amt = parseFloat(amtStr) || 0;
+      const { origP, baseP } = getCalculatedPricing(formPrice, formDiscountPrice, formGstRate);
+      const targetP = origP > 0 ? origP : baseP;
+      if (amt >= 0 && targetP > 0) {
+        const calculatedRate = (amt / targetP) * 100;
+        setFormGstRate(calculatedRate.toFixed(2));
+      } else if (!amtStr) {
+        setFormGstRate('0');
+      }
+    },
+    [formPrice, formDiscountPrice, formGstRate, getCalculatedPricing]
   );
 
   // Product Image State
@@ -351,11 +387,21 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       setFormDescription(product.description || '');
       setFormCategoryId(product.categoryId || (categories.length > 0 ? categories[0].id : ''));
       setFormPrice(product.price.toString());
-      setFormDiscountPrice(product.discountPrice ? product.discountPrice.toString() : '');
+      // For editing, if discountPrice was set, we want to show it in a way the user expects (as a discount amount if it's <= 50%).
+      let initialDiscStr = '';
+      if (product.discountPrice) {
+        const diff = product.price - product.discountPrice;
+        if (diff > 0 && diff <= product.price / 2) {
+          initialDiscStr = diff.toString(); // Show as discount amount
+        } else {
+          initialDiscStr = product.discountPrice.toString(); // Show as discounted price
+        }
+      }
+      setFormDiscountPrice(initialDiscStr);
       let rate = product.gstRate !== undefined && product.gstRate > 0 ? product.gstRate : 18;
       if (rate > 100) rate = 18;
-      const baseP = product.discountPrice || product.price || 0;
-      const amt = (baseP * rate) / 100;
+      const targetP = product.price > 0 ? product.price : (product.discountPrice || 0);
+      const amt = (targetP * rate) / 100;
       setFormGstRate(rate.toString());
       setFormGstAmount(amt.toFixed(2));
       setFormStock(product.stock.toString());
@@ -394,14 +440,21 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
 
     let discountNum: number | null = null;
     if (formDiscountPrice.trim()) {
-      discountNum = parseFloat(formDiscountPrice);
-      if (isNaN(discountNum) || discountNum <= 0) {
+      const rawDisc = parseFloat(formDiscountPrice);
+      if (isNaN(rawDisc) || rawDisc <= 0) {
         Alert.alert('Validation Error', 'Discount price must be a valid positive number.');
         return;
       }
-      if (discountNum >= priceNum) {
+      if (rawDisc >= priceNum) {
         Alert.alert('Validation Error', 'Discount price must be strictly less than original price.');
         return;
+      }
+      
+      // Compute the actual base selling price to store in backend (discount_price)
+      if (rawDisc <= priceNum / 2) {
+        discountNum = priceNum - rawDisc;
+      } else {
+        discountNum = rawDisc;
       }
     }
 
@@ -1255,12 +1308,30 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
             </View>
 
             {/* Responsive Calculated GST & Total Price Badge */}
-            <View style={styles.gstSummaryCard}>
-              <MaterialIcons name="receipt-long" size={16} color={Colors.primary} />
-              <Text style={styles.gstSummaryText}>
-                Base: <Text style={{ fontFamily: 'Inter-Bold' }}>₹{(parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0).toFixed(2)}</Text> + GST ({formGstRate || '0'}%): <Text style={{ fontFamily: 'Inter-Bold', color: Colors.primary }}>₹{(parseFloat(formGstAmount) || 0).toFixed(2)}</Text> = Total: <Text style={{ fontFamily: 'Inter-Bold', color: '#2E7D32' }}>₹{((parseFloat(formDiscountPrice) || parseFloat(formPrice) || 0) + (parseFloat(formGstAmount) || 0)).toFixed(2)}</Text> / unit
-              </Text>
-            </View>
+            {(() => {
+              const { baseP, rate, gstAmt, totalPrice } = getCalculatedPricing(
+                formPrice,
+                formDiscountPrice,
+                formGstRate,
+                formGstAmount
+              );
+              return (
+                <View style={styles.gstSummaryCard}>
+                  <MaterialIcons name="receipt-long" size={16} color={Colors.primary} />
+                  <Text style={styles.gstSummaryText}>
+                    Base: <Text style={{ fontFamily: 'Inter-Bold' }}>₹{baseP.toFixed(2)}</Text> + GST ({rate}%):{' '}
+                    <Text style={{ fontFamily: 'Inter-Bold', color: Colors.primary }}>
+                      ₹{gstAmt.toFixed(2)}
+                    </Text>{' '}
+                    = Total:{' '}
+                    <Text style={{ fontFamily: 'Inter-Bold', color: '#2E7D32' }}>
+                      ₹{totalPrice.toFixed(2)}
+                    </Text>{' '}
+                    / unit
+                  </Text>
+                </View>
+              );
+            })()}
 
             {/* Stock Count Row (Full Width for clear number entry) */}
             <CustomInput
