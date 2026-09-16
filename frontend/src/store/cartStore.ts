@@ -214,7 +214,10 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   getTax: () => {
-    return get().getSubtotal() * 0.07;
+    return get().items.reduce(
+      (acc, item) => acc + (item.product.gstAmount || 0) * item.quantity,
+      0
+    );
   },
 
   getGrandTotal: () => {

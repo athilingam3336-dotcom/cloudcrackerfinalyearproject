@@ -230,7 +230,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                   </Text>
                 </View>
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryRowLabel}>Estimated Tax / GST (7%)</Text>
+                  <Text style={styles.summaryRowLabel}>Estimated Tax / GST</Text>
                   <Text style={styles.summaryRowValue}>{formatCurrency(taxAmount)}</Text>
                 </View>
                 {discount > 0 && (

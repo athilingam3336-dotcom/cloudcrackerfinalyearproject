@@ -89,7 +89,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const shippingFee = deliveryMethod === 'express' ? 250 : subtotal > 1000 ? 0 : 99;
-  const tax = (subtotal - couponDiscount) > 0 ? (subtotal - couponDiscount) * 0.05 : 0; // 5% GST
+  const tax = items.reduce((sum, item) => sum + (item.product.gstAmount || 0) * item.quantity, 0);
   const total = Math.max(0, subtotal - couponDiscount + shippingFee + tax);
 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -651,7 +651,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                     </View>
 
                     <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>GST / Hazmat Tax (5%)</Text>
+                      <Text style={styles.summaryLabel}>GST / Hazmat Tax</Text>
                       <Text style={styles.summaryValue}>{formatCurrency(tax)}</Text>
                     </View>
                   </View>
@@ -722,7 +722,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   </Text>
                 </View>
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Tax (5% GST)</Text>
+                  <Text style={styles.summaryLabel}>Tax</Text>
                   <Text style={styles.summaryValue}>{formatCurrency(tax)}</Text>
                 </View>
               </View>

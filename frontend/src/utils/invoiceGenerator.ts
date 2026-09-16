@@ -96,7 +96,7 @@ export const downloadCustomerOrderInvoicePdf = (orderData: InvoiceOrderData) => 
       <div class="total-box">
         <div class="total-row"><span>Subtotal:</span><span>₹${(orderData.subtotal || orderData.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
         ${orderData.shipping ? `<div class="total-row"><span>Hazmat Shipping:</span><span>₹${orderData.shipping}</span></div>` : '<div class="total-row"><span>Shipping:</span><span>FREE</span></div>'}
-        ${orderData.tax ? `<div class="total-row"><span>GST Tax (5%):</span><span>₹${orderData.tax}</span></div>` : ''}
+        ${orderData.tax ? `<div class="total-row"><span>GST Tax:</span><span>₹${orderData.tax}</span></div>` : ''}
         <div class="total-row grand-total"><span>Total Paid:</span><span>₹${orderData.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
       </div>
 
