@@ -49,6 +49,7 @@ const ORDER_STATUS_OPTIONS: AdminOrderItem['orderStatus'][] = [
 
 const PAYMENT_STATUS_OPTIONS: AdminOrderItem['paymentStatus'][] = [
   'Pending',
+  'Under Review',
   'Paid',
   'Refunded',
   'Failed',
@@ -83,6 +84,7 @@ const getPaymentStatusIcon = (status?: string): string => {
   if (s === 'pending') return 'hourglass-bottom';
   if (s === 'refunded') return 'replay';
   if (s === 'failed') return 'error-outline';
+  if (s === 'under review') return 'hourglass-top';
   if (s === 'all') return 'payments';
   return 'payment';
 };
@@ -91,6 +93,7 @@ const getPaymentStatusColor = (status?: string): string => {
   const s = (status || '').toLowerCase();
   if (s === 'paid') return '#16A34A';
   if (s === 'pending') return '#EA580C';
+  if (s === 'under review') return '#1565C0';
   if (s === 'refunded') return '#D97706';
   if (s === 'failed') return '#DC2626';
   return '#64748B';
@@ -420,7 +423,7 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
           {/* Payment Status Filters */}
           <Text style={styles.filterSectionLabel}>PAYMENT STATUS</Text>
           <View style={styles.filterGridContainer}>
-            {['All', 'Paid', 'Pending', 'Refunded', 'Failed'].map((pst) => {
+            {['All', 'Paid', 'Pending', 'Under Review', 'Refunded', 'Failed'].map((pst) => {
               const isActive = paymentStatusFilter === pst;
               const iconName = getPaymentStatusIcon(pst);
               const iconColor = isActive ? '#FFFFFF' : getPaymentStatusColor(pst);
@@ -516,6 +519,21 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
             </Text>
           </View>
 
+          {/* UTR Submitted Alert for Admin */}
+          {item.paymentStatus === 'Under Review' && item.transactionReference && (
+            <View style={{ backgroundColor: '#E3F2FD', padding: 10, borderRadius: 10, marginTop: 6, borderWidth: 1, borderColor: '#90CAF9', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <MaterialIcons name="notifications-active" size={20} color="#1565C0" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: '#1565C0' }}>
+                  💰 Customer Submitted UTR: {item.transactionReference}
+                </Text>
+                <Text style={{ fontSize: 11, color: '#0D47A1', marginTop: 2 }}>
+                  Verify this payment and mark as "Paid" to confirm the order.
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Status Badges & Quick Dropdown Modals */}
           <View style={styles.statusRow}>
             {/* Order Status Badge */}
@@ -549,6 +567,8 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
                 styles.statusBadge,
                 item.paymentStatus === 'Paid'
                   ? styles.paidBadge
+                  : item.paymentStatus === 'Under Review'
+                  ? { backgroundColor: '#E3F2FD', borderColor: '#90CAF9' }
                   : item.paymentStatus === 'Refunded'
                   ? styles.refundedBadge
                   : styles.unpaidBadge,
@@ -556,6 +576,14 @@ export const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({
               onPress={() => {
                 setSelectedOrder(item);
                 setEditType('payment');
+                // Pre-fill UTR if customer already submitted it (Under Review)
+                if (item.paymentStatus === 'Under Review' && item.transactionReference) {
+                  setTransactionReference(item.transactionReference);
+                  setPendingPaymentStatus('Paid');
+                } else {
+                  setTransactionReference('');
+                  setPendingPaymentStatus(null);
+                }
                 setModalVisible(true);
               }}
               activeOpacity={0.8}

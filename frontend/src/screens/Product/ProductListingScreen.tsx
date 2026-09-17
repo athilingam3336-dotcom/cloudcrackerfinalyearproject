@@ -28,6 +28,7 @@ import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { ProductItem, CategoryItem, MOCK_CATEGORIES, MOCK_PRODUCTS } from '@/constants/mockData';
+import { isProductInCategory } from '@/utils/categoryMatcher';
 import { RootStackParamList } from '@/navigation/types';
 
 type ProductListingScreenProps = NativeStackScreenProps<
@@ -190,19 +191,6 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
   const filteredAndSortedProducts = useMemo(() => {
     const allItems = products.length > 0 ? products : MOCK_PRODUCTS;
 
-    // Determine category constraint from URL route param if set
-    let categoryConstraintName = '';
-    if (categoryIdParam && categoryIdParam !== 'all') {
-      const foundCat = categories.find(
-        (c) => c.id === categoryIdParam || c.name.toLowerCase() === categoryIdParam.toLowerCase()
-      );
-      if (foundCat) {
-        categoryConstraintName = foundCat.name.toLowerCase();
-      } else {
-        categoryConstraintName = String(categoryIdParam).toLowerCase();
-      }
-    }
-
     const result = allItems.filter((product) => {
       const titleLower = (product.title || '').toLowerCase();
       const subLower = (product.subtitle || '').toLowerCase();
@@ -210,59 +198,7 @@ export const ProductListingScreen: React.FC<ProductListingScreenProps> = ({
 
       // 1. Primary Category Filter (from URL / navigation route param)
       if (categoryIdParam && categoryIdParam !== 'all') {
-        const catId = String(categoryIdParam).toLowerCase();
-        let matchesCat = false;
-
-        if (catLower === catId || product.id === catId) {
-          matchesCat = true;
-        } else if (categoryConstraintName.includes('gift')) {
-          matchesCat =
-            titleLower.includes('gift') ||
-            subLower.includes('gift') ||
-            catLower.includes('gift');
-        } else if (categoryConstraintName.includes('pot') || categoryConstraintName.includes('fountain')) {
-          matchesCat =
-            titleLower.includes('pot') ||
-            titleLower.includes('fountain') ||
-            subLower.includes('pot') ||
-            catLower.includes('pot');
-        } else if (categoryConstraintName.includes('sparkler')) {
-          matchesCat = titleLower.includes('sparkler') || catLower.includes('sparkler');
-        } else if (categoryConstraintName.includes('rocket')) {
-          matchesCat = titleLower.includes('rocket') || catLower.includes('rocket');
-        } else if (
-          categoryConstraintName.includes('bomb') ||
-          categoryConstraintName.includes('sound') ||
-          categoryConstraintName.includes('bijili')
-        ) {
-          matchesCat =
-            titleLower.includes('bomb') ||
-            titleLower.includes('sound') ||
-            titleLower.includes('bijili') ||
-            catLower.includes('bomb');
-        } else if (categoryConstraintName.includes('shot') || categoryConstraintName.includes('aerial')) {
-          matchesCat =
-            titleLower.includes('shot') ||
-            titleLower.includes('cake') ||
-            catLower.includes('shot') ||
-            catLower.includes('aerial');
-        } else if (categoryConstraintName.includes('chakkar') || categoryConstraintName.includes('wheel')) {
-          matchesCat =
-            titleLower.includes('chakkar') ||
-            titleLower.includes('wheel') ||
-            catLower.includes('chakkar');
-        } else if (categoryConstraintName.includes('kid')) {
-          matchesCat =
-            titleLower.includes('kid') ||
-            titleLower.includes('pencil') ||
-            subLower.includes('kid') ||
-            catLower.includes('kid');
-        } else {
-          matchesCat =
-            catLower.includes(categoryConstraintName) ||
-            titleLower.includes(categoryConstraintName);
-        }
-
+        const matchesCat = isProductInCategory(product, categoryIdParam, categories);
         if (!matchesCat) return false;
       }
 

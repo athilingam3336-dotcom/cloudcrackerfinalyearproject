@@ -450,7 +450,9 @@ class PaymentService:
     ) -> Dict[str, Any]:
         """
         Customer submits their UTR after scanning the QR code.
-        Updates payment status to Under Review.
+        Sets status to 'Under Review' — Admin must manually verify
+        by checking their bank/UPI app before marking as Paid.
+        This prevents fake UTR fraud.
         """
         payment = await self.payment_repo.get_by_order(order_id)
         if not payment:
@@ -464,6 +466,8 @@ class PaymentService:
                 message=f"Cannot submit reference. Payment is already in {payment.payment_status} state."
             )
 
+        # Only mark as Under Review — NOT auto-verified
+        # Admin must check bank account and manually verify
         await self.payment_repo.update_status(
             payment,
             {
@@ -471,6 +475,11 @@ class PaymentService:
                 "transaction_reference": transaction_reference.strip(),
             },
         )
+        
+        order = await self.order_repo.get_by_id(order_id)
+        if order:
+            await self.order_repo.update(order, {"payment_status": "Under Review"})
+
         logger.info(f"Customer {user_id} submitted UTR {transaction_reference} for order {order_id}")
         return {"success": True, "payment_status": "Under Review"}
 

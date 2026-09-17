@@ -12,6 +12,7 @@ import {
   Switch,
   ListRenderItem,
   Platform,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -104,6 +105,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
   const [formFlashSaleHours, setFormFlashSaleHours] = useState('4');
   const [formIsRecommended, setFormIsRecommended] = useState(false);
   const [formTimeOfDay, setFormTimeOfDay] = useState<'morning' | 'night' | 'both'>('both');
+  const [formBadge, setFormBadge] = useState('');
 
   // Helper to compute effective Base Price, GST Amount, and Total Unit Price
   const getCalculatedPricing = useCallback((
@@ -373,6 +375,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
     setFormFlashSaleHours('4');
     setFormIsRecommended(false);
     setFormTimeOfDay('both');
+    setFormBadge('');
     setSelectedImage(null);
     setFormExistingImageUrl(null);
     setImageError(null);
@@ -415,6 +418,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
       );
       setFormIsRecommended(Boolean(product.isRecommended));
       setFormTimeOfDay(product.timeOfDay || 'both');
+      setFormBadge(product.badge || '');
       setSelectedImage(null);
       setFormExistingImageUrl(
         product.imageUrl || (product.images && product.images.length > 0 ? product.images[0] : null)
@@ -499,6 +503,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           flash_sale_hours: formIsFlashSale ? (parseFloat(formFlashSaleHours) || 4) : undefined,
           is_recommended: formIsRecommended,
           time_of_day: formTimeOfDay,
+          badge: formBadge.trim() || undefined,
         });
         Alert.alert('Success', `Product "${formName}" updated successfully.`);
       } else {
@@ -519,6 +524,7 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
           flash_sale_hours: formIsFlashSale ? (parseFloat(formFlashSaleHours) || 4) : 4,
           is_recommended: formIsRecommended,
           time_of_day: formTimeOfDay,
+          badge: formBadge.trim() || undefined,
         });
         Alert.alert('Success', `Product "${formName}" created successfully.`);
       }
@@ -1389,8 +1395,37 @@ export const ProductManagementScreen: React.FC<ProductManagementScreenProps> = (
               })}
             </View>
 
-            {/* Feature Flags */}
-            <Text style={styles.formSectionLabel}>Product Badges & Visibility</Text>
+            {/* Custom Badge Selector */}
+            <Text style={[styles.formSectionLabel, { marginTop: 8 }]}>Custom Badge (Optional)</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.modalCategoryRow}
+            >
+              {[
+                'POPULAR', 'TOP RATED', 'SKY SHOW', 'BEST VALUE',
+                'KIDS SAFE', 'HEAVY SOUND', 'NEW ARRIVAL', 'VIP GIFT',
+                'MEGA PACK', 'EXCLUSIVE', 'GRAND FINALE', 'LIMITED'
+              ].map((badgeOption) => (
+                <TouchableOpacity
+                  key={badgeOption}
+                  style={[
+                    styles.modalCategoryChip,
+                    formBadge === badgeOption && styles.modalCategoryChipSelected,
+                  ]}
+                  onPress={() => setFormBadge(formBadge === badgeOption ? '' : badgeOption)}
+                >
+                  <Text
+                    style={[
+                      styles.modalCategoryChipText,
+                      formBadge === badgeOption && styles.modalCategoryChipTextSelected,
+                    ]}
+                  >
+                    {badgeOption}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             <View style={styles.switchesContainer}>
               <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>Featured</Text>

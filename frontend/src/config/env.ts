@@ -5,8 +5,14 @@ const PROD_API_URL = 'https://cloudcrackerfinalyearproject.onrender.com/api/v1';
 const getApiBaseUrl = (): string => {
   let envUrl = process.env.EXPO_PUBLIC_API_URL || PROD_API_URL;
 
-  // On Native Mobile App (Expo Go on physical phone via QR code)
-  if (Platform.OS !== 'web') {
+  // On Web Platform in Browser
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const host = window.location.hostname || 'localhost';
+    if (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
+      envUrl = envUrl.replace(/localhost|127\.0\.0\.1/g, host);
+    }
+  } else if (Platform.OS !== 'web') {
+    // On Native Mobile App
     if (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
       envUrl = envUrl.replace(/localhost|127\.0\.0\.1/g, '10.82.144.11');
       console.log(`[API Config] Mobile auto-rewrote localhost to LAN IP: ${envUrl}`);

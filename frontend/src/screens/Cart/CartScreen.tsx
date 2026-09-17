@@ -333,6 +333,12 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                   <Text style={styles.summaryRowLabel}>Subtotal</Text>
                   <Text style={styles.summaryRowValue}>{formatCurrency(subtotal)}</Text>
                 </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryRowLabel}>Shipping Fee</Text>
+                  <Text style={[styles.summaryRowValue, shippingFee === 0 && { color: Colors.secondary, fontFamily: 'Inter-Bold' }]}>
+                    {shippingFee === 0 ? 'FREE' : formatCurrency(shippingFee)}
+                  </Text>
+                </View>
                 {discount > 0 && (
                   <View style={styles.summaryRow}>
                     <Text style={[styles.summaryRowLabel, { color: Colors.secondary }]}>

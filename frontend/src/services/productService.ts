@@ -5,6 +5,7 @@
  */
 
 import { MOCK_PRODUCTS, MOCK_CATEGORIES, ProductItem, CategoryItem } from '@/constants/mockData';
+import { isProductInCategory } from '@/utils/categoryMatcher';
 import { apiClient } from '@/api/axios';
 import { ENV } from '@/config/env';
 
@@ -73,6 +74,8 @@ export class ProductService {
       stock: stockVal,
       badge: isOutOfStock
         ? 'Out of Stock'
+        : p.badge
+        ? p.badge
         : isBestseller
         ? 'Bestseller'
         : isFeatured
@@ -117,8 +120,7 @@ export class ProductService {
   ): Promise<ProductItem[]> {
     if (ENV.ENABLE_MOCK_API) {
       return MOCK_PRODUCTS.filter((p) => {
-        const matchesCat =
-          !category || category === 'all' || p.category.toLowerCase() === category.toLowerCase();
+        const matchesCat = isProductInCategory(p, category || 'all');
         const matchesQuery =
           !query || p.title.toLowerCase().includes(query.toLowerCase());
         return matchesCat && matchesQuery;
@@ -180,7 +182,17 @@ export class ProductService {
           ? payload
           : [];
         const mapped = items.map((p: any) => this.mapProductToUi(p));
-        const finalResult = mapped.length > 0 ? mapped : MOCK_PRODUCTS;
+        
+        // Filter strictly by category if specified
+        const matchingItems = (category && category !== 'all')
+          ? mapped.filter((p: any) => isProductInCategory(p, category))
+          : mapped;
+        
+        const fallbackMock = (category && category !== 'all')
+          ? MOCK_PRODUCTS.filter((p) => isProductInCategory(p, category))
+          : MOCK_PRODUCTS;
+
+        const finalResult = matchingItems.length > 0 ? matchingItems : fallbackMock;
 
         // Cache successful response in memory & local storage
         const cacheEntry = { data: finalResult, timestamp: Date.now() };
@@ -188,7 +200,10 @@ export class ProductService {
         this.setLocalStorageItem(cacheKey, cacheEntry);
         return finalResult;
       } catch {
-        const fallback = this.getLocalStorageItem(cacheKey)?.data || MOCK_PRODUCTS;
+        const fallbackMock = (category && category !== 'all')
+          ? MOCK_PRODUCTS.filter((p) => isProductInCategory(p, category))
+          : MOCK_PRODUCTS;
+        const fallback = this.getLocalStorageItem(cacheKey)?.data || fallbackMock;
         return fallback;
       } finally {
         this.pendingProductsRequests.delete(cacheKey);

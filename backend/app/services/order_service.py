@@ -325,6 +325,18 @@ class OrderService:
                     item_resp["product"] = ProductResponse.convert_id(product)
                 items_out.append(OrderItemResponse(**item_resp))
 
+            # Lookup payment record to get transaction_reference (customer UTR)
+            from app.models.payment import Payment
+            payment_ref = None
+            upi_uri = None
+            try:
+                payment = await Payment.find_one(Payment.order_id == order.id)
+                if payment:
+                    payment_ref = payment.transaction_reference
+                    upi_uri = getattr(payment, "upi_uri", None)
+            except Exception:
+                pass
+
             formatted_orders.append(
                 AdminOrderListItem(
                     id=str(order.id),
@@ -341,8 +353,8 @@ class OrderService:
                     payment_status=order.payment_status,
                     order_status=order.order_status,
                     shipping_address=order.shipping_address,
-                    razorpay_order_id=getattr(order, "razorpay_order_id", None),
-                    razorpay_payment_id=getattr(order, "razorpay_payment_id", None),
+                    transaction_reference=payment_ref,
+                    upi_uri=upi_uri,
                     item_count=len(items_out),
                     created_at=order.created_at,
                     updated_at=order.updated_at,

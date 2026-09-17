@@ -205,6 +205,9 @@ export const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     const s = (status || '').toLowerCase();
     const ps = (paymentStatus || '').toLowerCase();
 
+    if (s === 'failed' || ps === 'failed' || s === 'rejected' || ps === 'rejected') {
+      return { badge: styles.failedBadge, text: styles.failedBadgeText, label: 'Failed' };
+    }
     if (s === 'cancelled') {
       return { badge: styles.cancelledBadge, text: styles.cancelledBadgeText, label: 'Cancelled' };
     }
@@ -711,6 +714,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFEBEE',
   },
   cancelledBadgeText: {
+    color: '#D32F2F',
+  },
+  failedBadge: {
+    backgroundColor: '#FFEBEE',
+  },
+  failedBadgeText: {
     color: '#D32F2F',
   },
   refundedBadge: {

@@ -214,7 +214,7 @@ export interface AdminOrderItem {
   tax?: number;
   itemCount: number;
   orderStatus: 'Pending' | 'Confirmed' | 'Packed' | 'Shipped' | 'Delivered' | 'Cancelled';
-  paymentStatus: 'Pending' | 'Paid' | 'Refunded' | 'Failed';
+  paymentStatus: 'Pending' | 'Paid' | 'Refunded' | 'Failed' | 'Under Review';
   paymentMethod: string;
   shippingAddress?: string;
   transactionReference?: string | null;
@@ -281,6 +281,7 @@ export interface AdminProductCreateInput {
   time_of_day?: 'morning' | 'night' | 'both' | string;
   gst_rate?: number;
   gst_amount?: number;
+  badge?: string;
 }
 
 export interface AdminProductUpdateInput {
@@ -302,6 +303,7 @@ export interface AdminProductUpdateInput {
   time_of_day?: 'morning' | 'night' | 'both' | string;
   gst_rate?: number;
   gst_amount?: number;
+  badge?: string;
 }
 
 export interface AdminProductItemUI {
@@ -318,6 +320,7 @@ export interface AdminProductItemUI {
   images: string[];
   imageUrl?: string;
   isFeatured: boolean;
+  badge?: string;
   isBestseller: boolean;
   isFlashSale: boolean;
   flashSaleHours?: number;
@@ -1836,6 +1839,7 @@ export class AdminService {
       stock: typeof p.stock === 'number' ? p.stock : 0,
       images: Array.isArray(p.images) ? p.images : mainImage ? [mainImage] : [],
       imageUrl: mainImage,
+      badge: p.badge,
       isFeatured: Boolean(p.is_featured || p.isFeatured),
       isBestseller: Boolean(p.is_bestseller || p.isBestseller),
       isFlashSale: Boolean(p.is_flash_sale || p.isFlashSale),

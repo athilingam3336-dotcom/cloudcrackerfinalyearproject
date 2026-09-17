@@ -235,9 +235,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   getShippingFee: () => {
-    const subtotal = get().getSubtotal();
-    if (subtotal === 0 || subtotal > 200) return 0;
-    return 15.0;
+    return 0;
   },
 
   getTax: () => {

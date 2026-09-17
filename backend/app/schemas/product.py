@@ -21,6 +21,7 @@ class ProductCreate(BaseModel):
     time_of_day: Optional[str] = "both"
     gst_rate: Optional[float] = Field(0.0, ge=0)
     gst_amount: Optional[float] = Field(0.0, ge=0)
+    badge: Optional[str] = None
 
     @field_validator("category_id")
     @classmethod
@@ -54,6 +55,7 @@ class ProductUpdate(BaseModel):
     time_of_day: Optional[str] = None
     gst_rate: Optional[float] = Field(None, ge=0)
     gst_amount: Optional[float] = Field(None, ge=0)
+    badge: Optional[str] = None
 
     @field_validator("category_id")
     @classmethod
@@ -99,6 +101,7 @@ class ProductResponse(BaseModel):
     gst_rate: Optional[float] = 0.0
     gst_amount: Optional[float] = 0.0
     price_with_gst: Optional[float] = None
+    badge: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -157,6 +160,9 @@ class ProductResponse(BaseModel):
             data_dict["image_url"] = img_url
             if img_url and not data_dict.get("images"):
                 data_dict["images"] = [img_url]
+            
+            if hasattr(data, "badge"):
+                data_dict["badge"] = data.badge
 
             hours = float(data_dict.get("flash_sale_hours") or 4.0)
             data_dict["flash_sale_hours"] = hours

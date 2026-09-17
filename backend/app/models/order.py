@@ -17,7 +17,7 @@ class Order(Document):
     tax: float
     total: float
     payment_method: str
-    payment_status: Indexed(str) = "Pending"  # "Pending", "Paid", "Failed", "Refunded"
+    payment_status: Indexed(str) = "Pending"  # "Pending", "Under Review", "Paid", "Failed", "Refunded"
     order_status: Indexed(str) = "Pending"  # "Pending", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"
     shipping_address: str
     delivery_method: Optional[str] = "ONLINE_DELIVERY"
