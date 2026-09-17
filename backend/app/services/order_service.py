@@ -80,12 +80,33 @@ class OrderService:
             coupon_discount_val = coupon_res.discount_amount
             grand_total = max(0.0, grand_total - coupon_discount_val)
 
-        # Calculate shipping and tax
-        shipping = 10.0 if grand_total > 0 else 0.0
-        # If order total exceeds 100, free shipping
-        if grand_total > 100.0:
-            shipping = 0.0
+        # Validate delivery method & subtotal threshold (discounted total before tax/shipping)
+        from app.services.store_settings_service import StoreSettingsService
+        try:
+            settings_res = await StoreSettingsService().get_settings()
+            min_thresh = settings_res.min_online_delivery_amount
+        except Exception as e:
+            logger.warning(f"Failed to fetch store settings in order_service: {e}")
+            min_thresh = 5000.0
 
+        raw_delivery = (data.delivery_method or "ONLINE_DELIVERY").strip().lower()
+        if raw_delivery in ["online", "online_delivery"]:
+            if grand_total < min_thresh:
+                formatted_amt = f"₹{min_thresh:,.0f}"
+                raise ValidationException(
+                    message=f"Online Delivery is available for orders of {formatted_amt} and above."
+                )
+            selected_delivery_method = "ONLINE_DELIVERY"
+        elif raw_delivery in ["pickup", "store_pickup", "storepickup"]:
+            selected_delivery_method = "STORE_PICKUP"
+        else:
+            if grand_total >= min_thresh:
+                selected_delivery_method = "ONLINE_DELIVERY"
+            else:
+                selected_delivery_method = "STORE_PICKUP"
+
+        # Calculate shipping and tax (Shipping is always ₹0)
+        shipping = 0.0
         tax = round(0.05 * grand_total, 2)
         total = round(grand_total + shipping + tax, 2)
 
@@ -110,6 +131,7 @@ class OrderService:
             "payment_status": "Pending",
             "order_status": "Pending",
             "shipping_address": data.shipping_address,
+            "delivery_method": selected_delivery_method,
             "status": "active",
         }
         order = await self.order_repo.create_order(order_data)

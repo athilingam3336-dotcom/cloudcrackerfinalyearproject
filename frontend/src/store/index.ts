@@ -6,3 +6,4 @@ export * from './wishlistStore';
 export * from './notificationStore';
 export * from './uiStore';
 export * from './attentionModalStore';
+export * from './settingsStore';

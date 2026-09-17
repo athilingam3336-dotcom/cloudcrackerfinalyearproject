@@ -9,7 +9,7 @@ import { apiClient } from '@/api/axios';
 export interface UpiOrderPayload {
   shipping_address?: string;
   coupon_code?: string;
-  delivery_method?: 'standard' | 'express';
+  delivery_method?: 'ONLINE_DELIVERY' | 'STORE_PICKUP' | string;
 }
 
 export interface UpiOrderData {

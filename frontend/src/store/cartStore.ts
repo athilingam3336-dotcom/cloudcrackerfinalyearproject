@@ -28,6 +28,7 @@ export interface CartState {
   addToCart: (product: ProductItem, quantity?: number, selectedVariant?: ProductVariantOption) => Promise<boolean>;
   removeFromCart: (productId: string) => Promise<boolean>;
   updateQuantity: (productId: string, delta: number) => Promise<boolean>;
+  setQuantity: (productId: string, quantity: number) => Promise<boolean>;
   applyCoupon: (code: string) => boolean;
   setAppliedCoupon: (code: string, discount: number) => void;
   clearCart: () => Promise<boolean>;
@@ -162,6 +163,32 @@ export const useCartStore = create<CartState>((set, get) => ({
       return true;
     } catch (error) {
       console.warn('updateQuantity API sync warning:', error);
+      return true;
+    }
+  },
+
+  setQuantity: async (productId, targetQty) => {
+    const previousItems = get().items;
+    const currentItem = previousItems.find((i) => i.product.id === productId);
+    if (!currentItem) return false;
+
+    if (targetQty <= 0) {
+      return get().removeFromCart(productId);
+    }
+
+    const availableStock = typeof currentItem.product.stock === 'number' ? currentItem.product.stock : 999;
+    const validQty = Math.min(targetQty, availableStock);
+
+    const updatedItems = previousItems.map((i) =>
+      i.product.id === productId ? { ...i, quantity: validQty } : i
+    );
+    set({ items: updatedItems });
+
+    try {
+      await cartService.updateQuantityApi(productId, validQty);
+      return true;
+    } catch (error) {
+      console.warn('setQuantity API sync warning:', error);
       return true;
     }
   },

@@ -9,6 +9,7 @@ class CheckoutRequest(BaseModel):
     payment_method: str = Field(..., min_length=2, max_length=50)
     shipping_address: str = Field(..., min_length=5, max_length=500)
     coupon_code: Optional[str] = None
+    delivery_method: str = "STORE_PICKUP"
 
 
 class OrderItemResponse(BaseModel):
@@ -58,6 +59,7 @@ class OrderResponse(BaseModel):
     payment_status: str
     order_status: str
     shipping_address: str
+    delivery_method: str = "STORE_PICKUP"
     payment_completed_at: Optional[datetime] = None
     transaction_reference: Optional[str] = None
     upi_uri: Optional[str] = None
@@ -114,6 +116,7 @@ class AdminOrderListItem(BaseModel):
     payment_status: str
     order_status: str
     shipping_address: str
+    delivery_method: str = "STORE_PICKUP"
     payment_completed_at: Optional[str] = None
     transaction_reference: Optional[str] = None
     upi_uri: Optional[str] = None

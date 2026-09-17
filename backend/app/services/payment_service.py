@@ -203,11 +203,24 @@ class PaymentService:
             coupon_discount_val = coupon_res.discount_amount
             grand_total = max(0.0, grand_total - coupon_discount_val)
 
-        # 4. Calculate shipping and tax
-        shipping = 250.0 if data.delivery_method == "express" else (0.0 if grand_total > 1000.0 else 99.0)
-        if grand_total == 0:
-            shipping = 0.0
+        # 4. Validate delivery method & subtotal threshold
+        raw_delivery = (data.delivery_method or "ONLINE_DELIVERY").strip().lower()
+        if raw_delivery in ["online", "online_delivery"]:
+            if subtotal < 5000.0:
+                raise ValidationException(
+                    message="Online Delivery is available for orders of ₹5,000 and above."
+                )
+            selected_delivery_method = "ONLINE_DELIVERY"
+        elif raw_delivery in ["pickup", "store_pickup", "storepickup"]:
+            selected_delivery_method = "STORE_PICKUP"
+        else:
+            if subtotal >= 5000.0:
+                selected_delivery_method = "ONLINE_DELIVERY"
+            else:
+                selected_delivery_method = "STORE_PICKUP"
 
+        # Shipping is always ₹0
+        shipping = 0.0
         tax = round(0.05 * grand_total, 2)
         total = round(grand_total + shipping + tax, 2)
 
@@ -232,6 +245,7 @@ class PaymentService:
             "payment_status": "Pending",
             "order_status": "Pending",
             "shipping_address": shipping_addr,
+            "delivery_method": selected_delivery_method,
             "status": "active",
         }
         order = await self.order_repo.create_order(order_data)

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Pressable,
+  TextInput,
 } from 'react-native';
 import { ImageZoomViewer } from '@/components/common/ImageZoomViewer';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -111,6 +112,7 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
   const [selectedSize, setSelectedSize] = useState<VariantSize>(SIZE_VARIANTS[0]);
   const [selectedEffect, setSelectedEffect] = useState<VariantEffect>(EFFECT_VARIANTS[0]);
   const [quantity, setQuantity] = useState(1);
+  const [qtyInputText, setQtyInputText] = useState('1');
   const [isZoomViewerOpen, setIsZoomViewerOpen] = useState(false);
 
   const { wishlistItems, toggleWishlist } = useWishlistStore();
@@ -371,12 +373,69 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
               <View style={styles.quantityControl}>
                 <TouchableOpacity
                   style={styles.qtyBtn}
-                  onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                  onPress={() => {
+                    const next = Math.max(1, quantity - 1);
+                    setQuantity(next);
+                    setQtyInputText(String(next));
+                  }}
                   activeOpacity={0.7}
                 >
                   <MaterialIcons name="remove" size={20} color={Colors.onSurface} />
                 </TouchableOpacity>
-                <Text style={styles.qtyText}>{quantity}</Text>
+
+                <TextInput
+                  style={styles.qtyInput}
+                  value={qtyInputText}
+                  onChangeText={(text) => {
+                    const cleaned = text.replace(/[^0-9]/g, '');
+                    if (!cleaned) {
+                      setQtyInputText('');
+                      return;
+                    }
+                    const val = parseInt(cleaned, 10);
+                    const maxStock = typeof product?.stock === 'number' ? product.stock : (selectedEffect.stock ?? 999);
+                    if (val > maxStock) {
+                      Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                      setQuantity(maxStock);
+                      setQtyInputText(String(maxStock));
+                      return;
+                    }
+                    setQuantity(val);
+                    setQtyInputText(cleaned);
+                  }}
+                  onBlur={() => {
+                    const parsed = parseInt(qtyInputText, 10);
+                    const maxStock = typeof product?.stock === 'number' ? product.stock : (selectedEffect.stock ?? 999);
+                    if (isNaN(parsed) || parsed < 1) {
+                      setQuantity(1);
+                      setQtyInputText('1');
+                    } else if (parsed > maxStock) {
+                      Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                      setQuantity(maxStock);
+                      setQtyInputText(String(maxStock));
+                    } else {
+                      setQuantity(parsed);
+                    }
+                  }}
+                  onSubmitEditing={() => {
+                    const parsed = parseInt(qtyInputText, 10);
+                    const maxStock = typeof product?.stock === 'number' ? product.stock : (selectedEffect.stock ?? 999);
+                    if (isNaN(parsed) || parsed < 1) {
+                      setQuantity(1);
+                      setQtyInputText('1');
+                    } else if (parsed > maxStock) {
+                      Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+                      setQuantity(maxStock);
+                      setQtyInputText(String(maxStock));
+                    } else {
+                      setQuantity(parsed);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  maxLength={Math.max(3, String(typeof product?.stock === 'number' ? product.stock : (selectedEffect.stock ?? 999)).length)}
+                  selectTextOnFocus
+                />
+
                 <TouchableOpacity
                   style={[
                     styles.qtyBtn,
@@ -388,7 +447,9 @@ export const ProductDetailsVariantScreen: React.FC<ProductDetailsVariantScreenPr
                       Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
                       return;
                     }
-                    setQuantity((q) => Math.min(maxStock, q + 1));
+                    const nextQ = Math.min(maxStock, quantity + 1);
+                    setQuantity(nextQ);
+                    setQtyInputText(String(nextQ));
                   }}
                   disabled={selectedEffect.stock <= 0 || (selectedEffect.stock !== undefined && quantity >= selectedEffect.stock)}
                   activeOpacity={0.7}
@@ -597,24 +658,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.surfaceContainerHigh,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
     width: 140,
     height: 44,
   },
   qtyBtn: {
-    flex: 1,
+    width: 40,
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
   },
-  qtyText: {
-    ...Typography.titleLg,
+  qtyInput: {
+    flex: 1,
+    height: '100%',
+    textAlign: 'center',
     fontSize: 16,
     fontFamily: 'Inter-Bold',
+    fontWeight: '700',
     color: Colors.onSurface,
-  },
+    paddingHorizontal: 2,
+    paddingVertical: 0,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    outlineStyle: 'none',
+  } as any,
   ctaWrapper: {
     marginTop: Spacing.lg,
   },

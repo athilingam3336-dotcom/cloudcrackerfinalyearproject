@@ -26,8 +26,9 @@ import { paymentService } from '@/services/paymentService';
 import { profileService } from '@/services/profileService';
 import { cartService } from '@/services/cartService';
 import { tokenStorage } from '@/storage/tokenStorage';
-import { useAuthStore, useCartStore, useNotificationStore } from '@/store';
+import { useAuthStore, useCartStore, useNotificationStore, useSettingsStore } from '@/store';
 import { formatCurrency } from '@/utils/currency';
+import { OnlineDeliveryBanner } from '@/components/cart/OnlineDeliveryBanner';
 
 import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 import { useAppLayout } from '@/hooks/useAppLayout';
@@ -77,18 +78,66 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
   }, [user, updateProfile]);
 
   // Delivery & Payment
-  const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>('standard');
+  type DeliveryMethodType = 'online' | 'pickup';
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethodType>('pickup');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
 
   const { items, clearCart, couponCode, discount: couponDiscount, fetchCart } = useCartStore();
+  const { minOnlineDeliveryAmount, fetchSettings } = useSettingsStore();
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
 
   useEffect(() => {
     fetchCart();
-  }, [fetchCart]);
+    fetchSettings();
+  }, [fetchCart, fetchSettings]);
 
   const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const shippingFee = deliveryMethod === 'express' ? 250 : subtotal > 1000 ? 0 : 99;
+
+  // Reset to pickup when subtotal drops below minOnlineDeliveryAmount
+  useEffect(() => {
+    if (subtotal < minOnlineDeliveryAmount && deliveryMethod === 'online') {
+      setDeliveryMethod('pickup');
+    }
+  }, [subtotal, deliveryMethod, minOnlineDeliveryAmount]);
+
+  // City → Pincode auto-mapping for known service areas
+  const CITY_PINCODE_MAP: Record<string, string> = {
+    'sivakasi': '626189',
+    'virudhunagar': '626001',
+    'madurai': '625001',
+    'tirunelveli': '627001',
+    'coimbatore': '641001',
+    'chennai': '600001',
+    'trichy': '620001',
+    'tiruchirappalli': '620001',
+    'salem': '636001',
+    'erode': '638001',
+    'vellore': '632001',
+    'thoothukudi': '628001',
+    'tuticorin': '628001',
+    'dindigul': '624001',
+    'thanjavur': '613001',
+    'tiruppur': '641601',
+    'rajapalayam': '626117',
+    'srivilliputtur': '626125',
+    'aruppukkottai': '626101',
+    'sattur': '626203',
+    'kovilpatti': '628501',
+  };
+
+  // Auto-fill pincode when city changes
+  useEffect(() => {
+    if (deliveryMethod !== 'online') return;
+    const key = city.trim().toLowerCase();
+    if (key && CITY_PINCODE_MAP[key]) {
+      setPincode(CITY_PINCODE_MAP[key]);
+    } else if (key && !CITY_PINCODE_MAP[key]) {
+      // Don't invent a pincode — let user enter manually
+      setPincode('');
+    }
+  }, [city, deliveryMethod]);
+
+  const shippingFee = 0; // Always ₹0 — no delivery charges
   const tax = items.reduce((sum, item) => sum + (item.product.gstAmount || 0) * item.quantity, 0);
   const total = Math.max(0, subtotal - couponDiscount + shippingFee + tax);
 
@@ -97,37 +146,39 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
 
   const handleProceedToPayment = useCallback(() => {
     setPaymentError(null);
-    if (!fullName.trim() || !address.trim() || !city.trim() || !pincode.trim()) {
-      const missingFields: string[] = [];
-      if (!fullName.trim()) missingFields.push('Full Name');
+    const isPickup = deliveryMethod === 'pickup';
+    const missingFields: string[] = [];
+    if (!fullName.trim()) missingFields.push('Full Name');
+    if (!isPickup) {
       if (!address.trim()) missingFields.push('Street Address');
       if (!city.trim()) missingFields.push('City');
       if (!pincode.trim()) missingFields.push('Pincode');
-
-      const errorMsg = `⚠️ Please fill in: ${missingFields.join(', ')} before proceeding to payment.`;
-      setPaymentError(errorMsg);
+    }
+    if (missingFields.length > 0) {
+      setPaymentError(`⚠️ Please fill in: ${missingFields.join(', ')} before proceeding to payment.`);
       return;
     }
     setCurrentStep(2);
-  }, [fullName, address, city, pincode]);
+  }, [fullName, address, city, pincode, deliveryMethod]);
 
   const handlePlaceOrder = useCallback(async () => {
     setPaymentError(null);
-    if (!fullName.trim() || !address.trim() || !city.trim() || !pincode.trim()) {
-      const missingFields: string[] = [];
-      if (!fullName.trim()) missingFields.push('Full Name');
+    const isPickup = deliveryMethod === 'pickup';
+    const missingFields: string[] = [];
+    if (!fullName.trim()) missingFields.push('Full Name');
+    if (!isPickup) {
       if (!address.trim()) missingFields.push('Street Address');
       if (!city.trim()) missingFields.push('City');
       if (!pincode.trim()) missingFields.push('Pincode');
-
+    }
+    if (missingFields.length > 0) {
       const errorMsg = `⚠️ Please fill in: ${missingFields.join(', ')} before placing your order.`;
       setPaymentError(errorMsg);
       setCurrentStep(1);
-
       if (Platform.OS === 'web') {
-        window.alert(`Incomplete Address!\nPlease fill in your shipping details (${missingFields.join(', ')}) before proceeding.`);
+        window.alert(`Incomplete Details!\nPlease fill in: ${missingFields.join(', ')}`);
       } else {
-        Alert.alert('Incomplete Address', `Please fill in: ${missingFields.join(', ')}`);
+        Alert.alert('Incomplete Details', `Please fill in: ${missingFields.join(', ')}`);
       }
       return;
     }
@@ -143,7 +194,9 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
     }
 
     setIsPlacingOrder(true);
-    const shippingAddressStr = `${fullName.trim()}${email ? ` (${email.trim()})` : ''}, ${address.trim()}, ${city.trim()} - ${pincode.trim()}${phone ? ` (Phone: ${phone.trim()})` : ''}`;
+    const shippingAddressStr = isPickup
+      ? `${fullName.trim()}${email ? ` (${email.trim()})` : ''} — Store Pickup${phone ? ` (Phone: ${phone.trim()})` : ''}`
+      : `${fullName.trim()}${email ? ` (${email.trim()})` : ''}, ${address.trim()}, ${city.trim()} - ${pincode.trim()}${phone ? ` (Phone: ${phone.trim()})` : ''}`;
 
     try {
       // 1. Verify user authentication
@@ -173,7 +226,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
         const upiOrderData = await paymentService.createUpiOrder({
           shipping_address: shippingAddressStr,
           coupon_code: couponCode || undefined,
-          delivery_method: deliveryMethod,
+          delivery_method: deliveryMethod === 'online' ? 'ONLINE_DELIVERY' : 'STORE_PICKUP',
         });
 
         const purchasedItems = items.map((ci) => ({
@@ -210,10 +263,10 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
         const response = await orderService.placeOrder({
           firstName: fName,
           lastName: lName,
-          streetAddress: address.trim(),
-          city: city.trim(),
-          zipCode: pincode.trim(),
-          deliveryMethod,
+          streetAddress: deliveryMethod === 'pickup' ? 'Store Pickup' : address.trim(),
+          city: deliveryMethod === 'pickup' ? '' : city.trim(),
+          zipCode: deliveryMethod === 'pickup' ? '' : pincode.trim(),
+          deliveryMethod: deliveryMethod === 'online' ? 'ONLINE_DELIVERY' : 'STORE_PICKUP',
           paymentMethod: 'cod',
           couponCode: couponCode || undefined,
         });
@@ -235,7 +288,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
           orderId: response.orderId,
           orderNumber: response.orderId,
           amountPaid: total,
-          paymentStatus: 'Pending (COD)',
+          paymentStatus: deliveryMethod === 'pickup' ? 'Pay at Store' : 'Pending (COD)',
           shippingAddress: shippingAddressStr,
           items: purchasedItems,
         });
@@ -255,7 +308,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
     } finally {
       setIsPlacingOrder(false);
     }
-  }, [fullName, email, phone, address, city, pincode, items, deliveryMethod, paymentMethod, couponCode, user, clearCart, navigation, total]);
+  }, [fullName, email, phone, address, city, pincode, items, deliveryMethod, paymentMethod, couponCode, user, clearCart, navigation, total, subtotal]);
 
   const handleCheckoutBack = useCallback(() => {
     if (currentStep === 2) {
@@ -408,74 +461,95 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   />
                 </View>
 
-                {/* City & Pincode */}
-                <View style={[styles.nameRow, !isDesktop && styles.nameRowMobile]}>
-                  <CustomInput
-                    label="City"
-                    value={city}
-                    onChangeText={setCity}
-                    placeholder="Enter city"
-                    containerStyle={styles.halfInput}
-                  />
-                  <CustomInput
-                    label="Pincode"
-                    value={pincode}
-                    onChangeText={setPincode}
-                    placeholder="6-digit pincode"
-                    keyboardType="numeric"
-                    containerStyle={styles.halfInput}
-                  />
-                </View>
-
-                {/* Delivery Method Header */}
-                <View style={[styles.sectionHeaderRow, { marginTop: 6, marginBottom: 4 }]}>
-                  <MaterialIcons name="speed" size={18} color={Colors.primary} />
-                  <Text style={[styles.sectionTitle, { fontSize: 15 }]}>Delivery Speed</Text>
-                </View>
-
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity
-                    style={[
-                      styles.radioOption,
-                      { flex: 1, marginBottom: 0, paddingVertical: 8, paddingHorizontal: 8 },
-                      deliveryMethod === 'standard' && styles.selectedRadioOption,
-                    ]}
-                    onPress={() => setDeliveryMethod('standard')}
-                    activeOpacity={0.8}
-                  >
-                    <MaterialIcons
-                      name={deliveryMethod === 'standard' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                      size={18}
-                      color={Colors.primary}
+                {/* City & Pincode — only shown for Online Delivery */}
+                {deliveryMethod === 'online' && (
+                  <View style={[styles.nameRow, !isDesktop && styles.nameRowMobile]}>
+                    <CustomInput
+                      label="City"
+                      value={city}
+                      onChangeText={(v) => setCity(v)}
+                      placeholder="Enter city"
+                      containerStyle={styles.halfInput}
                     />
-                    <View style={{ flex: 1, marginLeft: 4 }}>
-                      <Text style={[styles.radioTitle, { fontSize: 12 }]}>Standard (3-5 Days)</Text>
-                      <Text style={[styles.radioSubtitle, { fontSize: 11 }]}>
-                        {subtotal > 1000 ? 'FREE' : formatCurrency(99)}
+                    <CustomInput
+                      label="Pincode"
+                      value={pincode}
+                      onChangeText={setPincode}
+                      placeholder="Enter 6-digit pincode"
+                      keyboardType="numeric"
+                      maxLength={6}
+                      containerStyle={styles.halfInput}
+                    />
+                  </View>
+                )}
+
+
+                {/* Delivery Method Section */}
+                <View style={[styles.sectionHeaderRow, { marginTop: 10, marginBottom: 6 }]}>
+                  <MaterialIcons name="local-shipping" size={18} color={Colors.primary} />
+                  <Text style={[styles.sectionTitle, { fontSize: 15 }]}>Delivery Method</Text>
+                </View>
+
+                {/* Online Delivery Option */}
+                <TouchableOpacity
+                  style={[
+                    styles.radioOption,
+                    { marginBottom: 8 },
+                    deliveryMethod === 'online' && styles.selectedRadioOption,
+                    subtotal < minOnlineDeliveryAmount && styles.disabledRadioOption,
+                  ]}
+                  onPress={() => {
+                    if (subtotal >= minOnlineDeliveryAmount) setDeliveryMethod('online');
+                  }}
+                  activeOpacity={subtotal >= minOnlineDeliveryAmount ? 0.8 : 1}
+                >
+                  <MaterialIcons
+                    name={deliveryMethod === 'online' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                    size={18}
+                    color={subtotal >= minOnlineDeliveryAmount ? Colors.primary : Colors.tertiary}
+                  />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={[
+                      styles.radioTitle,
+                      subtotal < minOnlineDeliveryAmount && { color: Colors.tertiary },
+                    ]}>Online Delivery</Text>
+                    <Text style={styles.radioSubtitle}>Delivered to your selected address • FREE</Text>
+                    {subtotal < minOnlineDeliveryAmount && (
+                      <Text style={styles.deliveryInfoMsg}>
+                        Available for orders of {formatCurrency(minOnlineDeliveryAmount)} and above
                       </Text>
+                    )}
+                  </View>
+                  {subtotal >= minOnlineDeliveryAmount && (
+                    <View style={styles.freeBadge}>
+                      <Text style={styles.freeBadgeText}>FREE</Text>
                     </View>
-                  </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[
-                      styles.radioOption,
-                      { flex: 1, marginBottom: 0, paddingVertical: 8, paddingHorizontal: 8 },
-                      deliveryMethod === 'express' && styles.selectedRadioOption,
-                    ]}
-                    onPress={() => setDeliveryMethod('express')}
-                    activeOpacity={0.8}
-                  >
-                    <MaterialIcons
-                      name={deliveryMethod === 'express' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                      size={18}
-                      color={Colors.primary}
-                    />
-                    <View style={{ flex: 1, marginLeft: 4 }}>
-                      <Text style={[styles.radioTitle, { fontSize: 12 }]}>Express (1-2 Days)</Text>
-                      <Text style={[styles.radioSubtitle, { fontSize: 11 }]}>{formatCurrency(250)}</Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
+                {/* Store Pickup Option */}
+                <TouchableOpacity
+                  style={[
+                    styles.radioOption,
+                    { marginBottom: 0 },
+                    deliveryMethod === 'pickup' && styles.selectedRadioOption,
+                  ]}
+                  onPress={() => setDeliveryMethod('pickup')}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons
+                    name={deliveryMethod === 'pickup' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                    size={18}
+                    color={Colors.primary}
+                  />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={styles.radioTitle}>Store Pickup</Text>
+                    <Text style={styles.radioSubtitle}>Pick up your order directly from our store • FREE</Text>
+                  </View>
+                  <View style={styles.freeBadge}>
+                    <Text style={styles.freeBadgeText}>FREE</Text>
+                  </View>
+                </TouchableOpacity>
 
                 {!isDesktop && (
                   <PrimaryButton
@@ -495,7 +569,9 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.summaryPillTitle}>Deliver to: {fullName || 'Customer'}</Text>
                     <Text style={styles.summaryPillText} numberOfLines={1}>
-                      {address ? `${address}, ${city} - ${pincode}` : 'Address not specified'}
+                      {deliveryMethod === 'pickup'
+                        ? '🏪 Store Pickup'
+                        : address ? `${address}, ${city} - ${pincode}` : 'Address not specified'}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -564,8 +640,14 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                       color={Colors.primary}
                     />
                     <View style={styles.paymentOptionTextWrap}>
-                      <Text style={styles.paymentOptionTitle}>Cash on Delivery (COD)</Text>
-                      <Text style={styles.paymentOptionDesc}>Pay in cash when order arrives</Text>
+                      <Text style={styles.paymentOptionTitle}>
+                        {deliveryMethod === 'pickup' ? 'Pay at Store (Cash / UPI at Store)' : 'Cash on Delivery (COD)'}
+                      </Text>
+                      <Text style={styles.paymentOptionDesc}>
+                        {deliveryMethod === 'pickup'
+                          ? 'Pay via cash or UPI scanner when collecting your crackers at our store'
+                          : 'Pay in cash when order arrives at your address'}
+                      </Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -596,7 +678,9 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.summaryPillTitle}>Deliver To: {fullName}</Text>
                     <Text style={styles.summaryPillText} numberOfLines={1}>
-                      {address}, {city} - {pincode}
+                      {deliveryMethod === 'pickup'
+                        ? '🏪 Store Pickup — Collect from our store'
+                        : `${address}, ${city} - ${pincode}`}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -612,7 +696,11 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.summaryPillTitle}>Payment Method</Text>
                     <Text style={styles.summaryPillText}>
-                      {paymentMethod === 'upi' ? 'UPI QR Payment' : 'Cash on Delivery (COD)'}
+                      {paymentMethod === 'upi'
+                        ? 'Online UPI QR Payment'
+                        : deliveryMethod === 'pickup'
+                        ? 'Pay at Store (Cash / UPI at Store)'
+                        : 'Cash on Delivery (COD)'}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -644,16 +732,6 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                         </Text>
                       </View>
                     )}
-
-                    <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Shipping ({deliveryMethod === 'express' ? 'Express' : 'Standard'})</Text>
-                      <Text style={styles.summaryValue}>{shippingFee === 0 ? 'FREE' : formatCurrency(shippingFee)}</Text>
-                    </View>
-
-                    <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>GST / Hazmat Tax</Text>
-                      <Text style={styles.summaryValue}>{formatCurrency(tax)}</Text>
-                    </View>
                   </View>
 
                   <View style={styles.totalRow}>
@@ -697,8 +775,9 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
 
           {/* Right Side Summary Panel (Desktop Only) */}
           {isDesktop && (
-            <View style={styles.sideSummaryCard}>
-              <Text style={styles.sideSummaryTitle}>Order Summary ({items.length} items)</Text>
+            <View style={{ width: '100%', maxWidth: 360 }}>
+              <View style={styles.sideSummaryCard}>
+                <Text style={styles.sideSummaryTitle}>Order Summary ({items.length} items)</Text>
 
               <View style={styles.summaryRows}>
                 <View style={styles.summaryRow}>
@@ -715,16 +794,6 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                     </Text>
                   </View>
                 )}
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Shipping</Text>
-                  <Text style={styles.summaryValue}>
-                    {shippingFee === 0 ? 'FREE' : formatCurrency(shippingFee)}
-                  </Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Tax</Text>
-                  <Text style={styles.summaryValue}>{formatCurrency(tax)}</Text>
-                </View>
               </View>
 
               <View style={styles.totalRow}>
@@ -753,6 +822,8 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                       ? 'Processing Payment...'
                       : paymentMethod === 'upi'
                       ? `Pay Now • ${formatCurrency(total)}`
+                      : deliveryMethod === 'pickup'
+                      ? `Confirm Store Pickup Order • ${formatCurrency(total)}`
                       : `Confirm COD Order • ${formatCurrency(total)}`
                   }
                   onPress={handlePlaceOrder}
@@ -766,6 +837,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
                 <Text style={styles.securityText}>SECURE SSL 256-BIT ENCRYPTION</Text>
               </View>
             </View>
+          </View>
           )}
         </View>
       </ScrollView>
@@ -966,6 +1038,31 @@ const styles = StyleSheet.create({
   selectedRadioOption: {
     borderColor: Colors.primary,
     backgroundColor: Colors.primaryFixed,
+  },
+  disabledRadioOption: {
+    opacity: 0.5,
+    backgroundColor: Colors.surfaceContainerHigh,
+    borderColor: Colors.surfaceContainerHigh,
+  },
+  deliveryInfoMsg: {
+    fontSize: 11,
+    fontFamily: 'Inter-Medium',
+    color: '#E65100',
+    marginTop: 3,
+  },
+  freeBadge: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    marginLeft: 6,
+  },
+  freeBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: '#2E7D32',
   },
   radioTextWrapper: {
     flex: 1,

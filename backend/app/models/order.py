@@ -20,6 +20,7 @@ class Order(Document):
     payment_status: Indexed(str) = "Pending"  # "Pending", "Paid", "Failed", "Refunded"
     order_status: Indexed(str) = "Pending"  # "Pending", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"
     shipping_address: str
+    delivery_method: Optional[str] = "ONLINE_DELIVERY"
     created_at: Indexed(datetime) = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     status: str = "active"

@@ -78,7 +78,7 @@ class PaymentResponse(BaseModel):
 class UpiOrderCreateRequest(BaseModel):
     shipping_address: Optional[str] = None
     coupon_code: Optional[str] = None
-    delivery_method: Optional[str] = "standard"
+    delivery_method: Optional[str] = "STORE_PICKUP"
 
 
 class UpiOrderCreateResponse(BaseModel):

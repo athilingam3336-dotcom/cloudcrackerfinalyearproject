@@ -40,6 +40,7 @@ export interface BusinessAnalyticsSectionProps {
   onNavigateToCoupons?: () => void;
   onNavigateToDelivery?: () => void;
   onNavigateToAbout?: () => void;
+  onOpenDeliverySettings?: () => void;
   onRefreshData?: () => void;
   onOpenAttentionModal?: () => void;
 }
@@ -58,6 +59,7 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
   onNavigateToCoupons,
   onNavigateToDelivery,
   onNavigateToAbout,
+  onOpenDeliverySettings,
   onRefreshData,
   onOpenAttentionModal,
 }) => {
@@ -1378,6 +1380,13 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
               <MaterialIcons name="info" size={22} color="#37474F" />
             </View>
             <Text style={styles.quickActionLabel}>About Page</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.quickActionBtn} onPress={onOpenDeliverySettings} activeOpacity={0.8}>
+            <View style={[styles.quickActionIcon, { backgroundColor: '#FFEBEE' }]}>
+              <MaterialIcons name="local-shipping" size={22} color={BRAND_RED} />
+            </View>
+            <Text style={styles.quickActionLabel}>Delivery Min Threshold</Text>
           </TouchableOpacity>
         </View>
       </View>

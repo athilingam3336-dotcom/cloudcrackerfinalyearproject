@@ -685,3 +685,250 @@ async def test_delete_all_cancelled_orders(
     assert del_admin_res.status_code == 200
     assert del_admin_res.json()["data"]["deleted_count"] >= 1
 
+
+# ─────────────────────────────────────────────
+# Delivery Method Tests
+# ─────────────────────────────────────────────
+
+@pytest.fixture
+async def expensive_product(client: AsyncClient, admin_headers: dict) -> dict:
+    """Creates a high-priced product (₹2,600) so 2 units = ₹5,200 subtotal (>= ₹5,000 threshold)."""
+    cat_payload = {
+        "name": "Premium Fireworks",
+        "description": "High-end category",
+        "image_url": "http://example.com/fw.jpg",
+    }
+    cat_res = await client.post("/api/v1/categories", json=cat_payload, headers=admin_headers)
+    cat_id = cat_res.json()["data"]["id"]
+
+    prod_payload = {
+        "name": "Grand Finale Box",
+        "description": "Professional display",
+        "price": 2601.0,
+        "discount_price": 2600.0,
+        "category_id": cat_id,
+        "stock": 20,
+        "images": ["http://example.com/gf.png"],
+    }
+    prod_res = await client.post("/api/v1/products", json=prod_payload, headers=admin_headers)
+    return prod_res.json()["data"]
+
+
+@pytest.mark.asyncio
+async def test_online_delivery_blocked_below_5000(
+    client: AsyncClient, customer_headers: dict, sample_product: dict
+):
+    """Online Delivery must be rejected when subtotal < ₹5,000 (1 × ₹750 = ₹750)."""
+    await client.post(
+        "/api/v1/cart/add",
+        json={"product_id": sample_product["id"], "quantity": 1},
+        headers=customer_headers,
+    )
+    response = await client.post(
+        "/api/v1/orders/checkout",
+        json={
+            "payment_method": "COD",
+            "shipping_address": "Test St, Chennai",
+            "delivery_method": "ONLINE_DELIVERY",
+        },
+        headers=customer_headers,
+    )
+    assert response.status_code == 422
+    assert "5,000" in response.json()["message"] or "5000" in response.json()["message"]
+
+
+@pytest.mark.asyncio
+async def test_online_delivery_blocked_at_4999(
+    client: AsyncClient, customer_headers: dict, admin_headers: dict
+):
+    """Online Delivery must be rejected when subtotal is exactly ₹4,999 (edge case)."""
+    cat_res = await client.post(
+        "/api/v1/categories",
+        json={"name": "EdgeCat", "description": "Edge", "image_url": "http://e.com/e.jpg"},
+        headers=admin_headers,
+    )
+    cat_id = cat_res.json()["data"]["id"]
+    prod_res = await client.post(
+        "/api/v1/products",
+        json={
+            "name": "Edge Product",
+            "description": "Edge case item",
+            "price": 4999.0,
+            "discount_price": 4998.0,
+            "category_id": cat_id,
+            "stock": 5,
+            "images": ["http://e.com/e.png"],
+        },
+        headers=admin_headers,
+    )
+    prod = prod_res.json()["data"]
+
+    await client.post(
+        "/api/v1/cart/add",
+        json={"product_id": prod["id"], "quantity": 1},
+        headers=customer_headers,
+    )
+    response = await client.post(
+        "/api/v1/orders/checkout",
+        json={
+            "payment_method": "COD",
+            "shipping_address": "Edge St, Sivakasi",
+            "delivery_method": "ONLINE_DELIVERY",
+        },
+        headers=customer_headers,
+    )
+    assert response.status_code == 422
+    assert "5,000" in response.json()["message"] or "5000" in response.json()["message"]
+
+
+@pytest.mark.asyncio
+async def test_online_delivery_allowed_at_5000(
+    client: AsyncClient, customer_headers: dict, admin_headers: dict
+):
+    """Online Delivery must succeed when subtotal is exactly ₹5,000."""
+    cat_res = await client.post(
+        "/api/v1/categories",
+        json={"name": "Exact5kCat", "description": "5k test", "image_url": "http://e.com/5k.jpg"},
+        headers=admin_headers,
+    )
+    cat_id = cat_res.json()["data"]["id"]
+    prod_res = await client.post(
+        "/api/v1/products",
+        json={
+            "name": "Exact 5k Product",
+            "description": "5000 rupee product",
+            "price": 5001.0,
+            "discount_price": 5000.0,
+            "category_id": cat_id,
+            "stock": 5,
+            "images": ["http://e.com/5k.png"],
+        },
+        headers=admin_headers,
+    )
+    prod = prod_res.json()["data"]
+
+    await client.post(
+        "/api/v1/cart/add",
+        json={"product_id": prod["id"], "quantity": 1},
+        headers=customer_headers,
+    )
+    response = await client.post(
+        "/api/v1/orders/checkout",
+        json={
+            "payment_method": "COD",
+            "shipping_address": "5000 Main St, Madurai",
+            "delivery_method": "ONLINE_DELIVERY",
+        },
+        headers=customer_headers,
+    )
+    assert response.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_online_delivery_shipping_is_zero(
+    client: AsyncClient, customer_headers: dict, expensive_product: dict
+):
+    """Online Delivery shipping must always be ₹0 (2 × ₹2,600 = ₹5,200 subtotal)."""
+    await client.post(
+        "/api/v1/cart/add",
+        json={"product_id": expensive_product["id"], "quantity": 2},
+        headers=customer_headers,
+    )
+    response = await client.post(
+        "/api/v1/orders/checkout",
+        json={
+            "payment_method": "COD",
+            "shipping_address": "10 Grand St, Coimbatore",
+            "delivery_method": "ONLINE_DELIVERY",
+        },
+        headers=customer_headers,
+    )
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["shipping"] == 0.0
+    assert data["delivery_method"] == "ONLINE_DELIVERY"
+    # subtotal=5202 (2 × price 2601), discount=2, grand_total=5200 (2 × discount_price 2600), tax=5%×5200=260, total=5460
+    assert data["subtotal"] == 5202.0
+    assert data["tax"] == 260.0
+    assert data["total"] == 5460.0
+
+
+@pytest.mark.asyncio
+async def test_store_pickup_shipping_is_zero(
+    client: AsyncClient, customer_headers: dict, sample_product: dict
+):
+    """Store Pickup shipping must always be ₹0 regardless of subtotal."""
+    await client.post(
+        "/api/v1/cart/add",
+        json={"product_id": sample_product["id"], "quantity": 1},
+        headers=customer_headers,
+    )
+    response = await client.post(
+        "/api/v1/orders/checkout",
+        json={
+            "payment_method": "COD",
+            "shipping_address": "Store Pickup — Meera Crackers",
+            "delivery_method": "STORE_PICKUP",
+        },
+        headers=customer_headers,
+    )
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["shipping"] == 0.0
+    assert data["delivery_method"] == "STORE_PICKUP"
+
+
+@pytest.mark.asyncio
+async def test_store_pickup_available_below_5000(
+    client: AsyncClient, customer_headers: dict, sample_product: dict
+):
+    """Store Pickup must be allowed even when subtotal < ₹5,000 (1 × ₹750)."""
+    await client.post(
+        "/api/v1/cart/add",
+        json={"product_id": sample_product["id"], "quantity": 1},
+        headers=customer_headers,
+    )
+    response = await client.post(
+        "/api/v1/orders/checkout",
+        json={
+            "payment_method": "COD",
+            "shipping_address": "Store Pickup",
+            "delivery_method": "STORE_PICKUP",
+        },
+        headers=customer_headers,
+    )
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["delivery_method"] == "STORE_PICKUP"
+    assert data["shipping"] == 0.0
+
+
+@pytest.mark.asyncio
+async def test_delivery_method_stored_on_order(
+    client: AsyncClient, customer_headers: dict, expensive_product: dict
+):
+    """Verify the delivery_method field is persisted on the created order and retrievable."""
+    await client.post(
+        "/api/v1/cart/add",
+        json={"product_id": expensive_product["id"], "quantity": 2},
+        headers=customer_headers,
+    )
+    response = await client.post(
+        "/api/v1/orders/checkout",
+        json={
+            "payment_method": "COD",
+            "shipping_address": "10 Royal St, Sivakasi",
+            "delivery_method": "ONLINE_DELIVERY",
+        },
+        headers=customer_headers,
+    )
+    assert response.status_code == 201
+    order_id = response.json()["data"]["id"]
+
+    # Fetch the order and verify delivery_method is persisted
+    detail_res = await client.get(f"/api/v1/orders/{order_id}", headers=customer_headers)
+    assert detail_res.status_code == 200
+    order_data = detail_res.json()["data"]
+    # delivery_method may or may not be in the response schema; verify at model level
+    order_doc = await Order.get(order_id)
+    assert order_doc.delivery_method == "ONLINE_DELIVERY"

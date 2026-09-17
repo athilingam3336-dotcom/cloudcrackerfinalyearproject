@@ -8,7 +8,7 @@ const getApiBaseUrl = (): string => {
   // On Native Mobile App (Expo Go on physical phone via QR code)
   if (Platform.OS !== 'web') {
     if (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
-      envUrl = envUrl.replace(/localhost|127\.0\.0\.1/g, '10.45.220.11');
+      envUrl = envUrl.replace(/localhost|127\.0\.0\.1/g, '10.82.144.11');
       console.log(`[API Config] Mobile auto-rewrote localhost to LAN IP: ${envUrl}`);
     }
   }

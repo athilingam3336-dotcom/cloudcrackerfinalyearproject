@@ -155,6 +155,7 @@ class DatabaseManager:
                     from app.models.audit_log import AuditLog
                     from app.models.refresh_token import RefreshToken
                     from app.models.about import About
+                    from app.models.store_settings import StoreSettings
 
                     await init_beanie(
                         database=self.db,
@@ -177,6 +178,7 @@ class DatabaseManager:
                             AuditLog,
                             RefreshToken,
                             About,
+                            StoreSettings,
                         ],
                     )
                     logger.info(f"Connected to MongoDB ({safe_mongodb_host(target_url)}) & Beanie initialized successfully.")

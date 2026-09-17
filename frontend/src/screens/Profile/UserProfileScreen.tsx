@@ -116,8 +116,8 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   const userMenuItems = [
     {
       id: 'orders',
-      title: 'Order History',
-      subtitle: 'View and track your previous purchases',
+      title: 'My Orders (Order History)',
+      subtitle: 'View and track your previous purchases & submit UTR',
       icon: 'receipt-long',
       badge: null,
       onPress: () => navigation.navigate('OrderHistory'),

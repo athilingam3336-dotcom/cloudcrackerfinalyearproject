@@ -57,6 +57,7 @@ async def db_lifecycle():
         from app.models.audit_log import AuditLog
         from app.models.refresh_token import RefreshToken
         from app.models.about import About
+        from app.models.store_settings import StoreSettings
 
         db_manager.client = mongomock_motor.AsyncMongoMockClient()
         db_manager.db = db_manager.client[settings.DB_NAME]
@@ -65,7 +66,7 @@ async def db_lifecycle():
             document_models=[
                 User, Category, Product, Cart, Wishlist, Order, OrderItem, Payment,
                 Address, Coupon, Inventory, Review, Image, Notification, AuditLog,
-                RefreshToken, About
+                RefreshToken, About, StoreSettings
             ]
         )
     yield

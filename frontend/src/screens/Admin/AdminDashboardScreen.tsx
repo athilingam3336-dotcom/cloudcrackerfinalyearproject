@@ -29,6 +29,7 @@ import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { DailyBusinessReportModal } from '@/components/admin/DailyBusinessReportModal';
 import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
+import { DeliveryThresholdModal } from '@/components/admin/DeliveryThresholdModal';
 import { useAttentionModalStore } from '@/store';
 
 type AdminDashboardScreenProps = NativeStackScreenProps<
@@ -46,6 +47,9 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
   const [isAnalyticsError, setIsAnalyticsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
+
+  // Delivery Threshold Settings Modal State
+  const [isDeliverySettingsModalVisible, setIsDeliverySettingsModalVisible] = useState(false);
 
   // Global Needs Your Attention Modal State
   const {
@@ -227,6 +231,7 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
           onNavigateToCoupons={() => navigation.navigate('CouponManagement')}
           onNavigateToDelivery={() => navigation.navigate('OrderManagement')}
           onNavigateToAbout={() => navigation.navigate('AboutManagement')}
+          onOpenDeliverySettings={() => setIsDeliverySettingsModalVisible(true)}
           onRefreshData={onRefresh}
         />
       </ScrollView>
@@ -250,6 +255,11 @@ export const AdminDashboardScreen: React.FC<AdminDashboardScreenProps> = ({
         onNavigateToOrders={() => navigation.navigate('OrderManagement')}
         onNavigateToInventory={() => navigation.navigate('InventoryManagement')}
         onNavigateToDelivery={() => navigation.navigate('OrderManagement')}
+      />
+
+      <DeliveryThresholdModal
+        visible={isDeliverySettingsModalVisible}
+        onClose={() => setIsDeliverySettingsModalVisible(false)}
       />
 
       <BottomNavBar activeTab="Profile" onTabPress={handleTabPress} />

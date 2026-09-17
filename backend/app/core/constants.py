@@ -22,6 +22,7 @@ class Collections:
     REVIEWS = "Reviews"
     IMAGES = "Images"
     ABOUT = "About"
+    STORE_SETTINGS = "StoreSettings"
 
 
 class ResponseMessages:

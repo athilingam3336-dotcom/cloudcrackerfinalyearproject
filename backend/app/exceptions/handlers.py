@@ -125,12 +125,14 @@ async def db_unavailable_exception_handler(request: Request, exc: Exception) -> 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception(f"Unhandled error on path {request.url.path} - {str(exc)}")
+    error_detail = str(exc) if str(exc) else "An unexpected system error occurred."
     response_body = ApiResponse(
         success=False,
-        message="An unexpected system error occurred. Please try again later.",
-        data={},
+        message=f"Server Exception: {error_detail}",
+        data={"path": request.url.path},
     )
     return JSONResponse(status_code=500, content=response_body.model_dump())
+
 
 
 def register_exception_handlers(app: FastAPI) -> None:

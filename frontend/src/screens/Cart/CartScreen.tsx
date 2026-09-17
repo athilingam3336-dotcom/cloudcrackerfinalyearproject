@@ -20,14 +20,111 @@ import { HomeHeader } from '@/components/common/HomeHeader';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { BottomNavBar, TabRoute } from '@/components/common/BottomNavBar';
 import { RootStackParamList } from '@/navigation/types';
-import { useCartStore, useNotificationStore } from '@/store';
+import { useCartStore, useNotificationStore, useSettingsStore } from '@/store';
 import { cartService } from '@/services/cartService';
 import { formatCurrency } from '@/utils/currency';
 import { resolveProductImage } from '@/constants/productImages';
+import { OnlineDeliveryBanner } from '@/components/cart/OnlineDeliveryBanner';
 
 import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+
+interface CartQuantityControlProps {
+  productId: string;
+  quantity: number;
+  stock: number;
+  onUpdateDelta: (delta: number) => Promise<void>;
+  onSetExact: (qty: number) => Promise<void>;
+}
+
+const CartQuantityControl: React.FC<CartQuantityControlProps> = ({
+  productId,
+  quantity,
+  stock,
+  onUpdateDelta,
+  onSetExact,
+}) => {
+  const [inputText, setInputText] = useState<string>(String(quantity));
+  const maxStock = typeof stock === 'number' && stock > 0 ? stock : 999;
+
+  useEffect(() => {
+    setInputText(String(quantity));
+  }, [quantity]);
+
+  const handleChangeText = (t: string) => {
+    const cleaned = t.replace(/[^0-9]/g, '');
+    if (!cleaned) {
+      setInputText('');
+      return;
+    }
+    const val = parseInt(cleaned, 10);
+    if (val > maxStock) {
+      Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+      setInputText(String(maxStock));
+      onSetExact(maxStock);
+      return;
+    }
+    setInputText(cleaned);
+  };
+
+  const handleCommit = async () => {
+    const val = parseInt(inputText, 10);
+    if (isNaN(val) || val < 1) {
+      setInputText(String(quantity));
+      return;
+    }
+    if (val > maxStock) {
+      Alert.alert('Stock Limit Reached', `Only ${maxStock} items available in stock.`);
+      setInputText(String(maxStock));
+      await onSetExact(maxStock);
+      return;
+    }
+    if (val !== quantity) {
+      await onSetExact(val);
+    }
+  };
+
+  return (
+    <View style={styles.quantityControl}>
+      <TouchableOpacity
+        style={styles.qtyBtn}
+        onPress={() => onUpdateDelta(-1)}
+        activeOpacity={0.7}
+      >
+        <MaterialIcons name="remove" size={16} color={Colors.onSurface} />
+      </TouchableOpacity>
+
+      <TextInput
+        style={styles.qtyInput}
+        value={inputText}
+        onChangeText={handleChangeText}
+        onBlur={handleCommit}
+        onSubmitEditing={handleCommit}
+        keyboardType="numeric"
+        maxLength={Math.max(3, String(maxStock).length)}
+        selectTextOnFocus
+      />
+
+      <TouchableOpacity
+        style={[
+          styles.qtyBtn,
+          quantity >= maxStock && { opacity: 0.4 },
+        ]}
+        onPress={() => {
+          if (quantity >= maxStock) {
+            Alert.alert('Stock Limit Reached', `Cannot add more. Stock limit is ${maxStock} items.`);
+            return;
+          }
+          onUpdateDelta(1);
+        }}
+        activeOpacity={0.7}
+      >
+        <MaterialIcons name="add" size={16} color={Colors.onSurface} />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 type CartScreenProps = NativeStackScreenProps<RootStackParamList, 'Cart'>;
 
@@ -48,12 +145,16 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
     fetchCart,
   } = useCartStore();
 
+  const setQuantity = useCartStore((state) => state.setQuantity);
   const setAppliedCoupon = useCartStore((state) => state.setAppliedCoupon);
   const unreadNotifs = useNotificationStore((state) => state.getUnreadCount());
 
+  const { minOnlineDeliveryAmount, fetchSettings } = useSettingsStore();
+
   useEffect(() => {
     fetchCart();
-  }, [fetchCart]);
+    fetchSettings();
+  }, [fetchCart, fetchSettings]);
 
   const [inputCoupon, setInputCoupon] = useState('');
 
@@ -99,25 +200,44 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.titleSection}>
-          <TouchableOpacity
-            style={styles.inlineBackRow}
-            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
-            <Text style={styles.inlineBackText}>Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Your Shopping Cart</Text>
-          <Text style={styles.subtitle}>
-            Review your selection before proceeding to secure checkout.
-          </Text>
-        </View>
+        {!isDesktop && (
+          <View style={styles.titleSection}>
+            <TouchableOpacity
+              style={styles.inlineBackRow}
+              onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
+              <Text style={styles.inlineBackText}>Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>Your Shopping Cart</Text>
+            <Text style={styles.subtitle}>
+              Review your selection before proceeding to secure checkout.
+            </Text>
+          </View>
+        )}
 
         {cartItems.length > 0 ? (
           <View style={[styles.cartContainer, isDesktop && styles.cartContainerDesktop]}>
             {/* Cart Items List */}
             <View style={[styles.itemsList, isDesktop && styles.itemsListDesktop]}>
+              {isDesktop && (
+                <View style={[styles.titleSection, { paddingHorizontal: 0, marginTop: 0, marginBottom: 12 }]}>
+                  <TouchableOpacity
+                    style={styles.inlineBackRow}
+                    onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+                    activeOpacity={0.7}
+                  >
+                    <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
+                    <Text style={styles.inlineBackText}>Back</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.title}>Your Shopping Cart</Text>
+                  <Text style={styles.subtitle}>
+                    Review your selection before proceeding to secure checkout.
+                  </Text>
+                </View>
+              )}
+
               {cartItems.map(({ product, quantity }) => (
                 <View key={product.id} style={styles.cartItemCard}>
                   <Image
@@ -134,6 +254,11 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                       {product.subtitle || product.category}
                     </Text>
                     <Text style={styles.itemPrice}>{formatCurrency(product.price)}</Text>
+                    {quantity > 1 && (
+                      <Text style={styles.itemCalculatedPrice}>
+                        {quantity} × {formatCurrency(product.price)} = {formatCurrency(product.price * quantity)}
+                      </Text>
+                    )}
                     {typeof product.stock === 'number' && quantity >= product.stock && (
                       <Text style={styles.stockLimitWarning}>
                         Stock limit reached ({product.stock} max available)
@@ -156,51 +281,36 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                       <MaterialIcons name="delete-outline" size={20} color={Colors.error} />
                     </TouchableOpacity>
 
-                    <View style={styles.quantityControl}>
-                      <TouchableOpacity
-                        style={styles.qtyBtn}
-                        onPress={async () => {
-                          try {
-                            await updateQuantity(product.id, -1);
-                          } catch (err: any) {
-                            Alert.alert('Cart Error', err?.message || 'Failed to update quantity.');
-                          }
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <MaterialIcons name="remove" size={16} color={Colors.onSurface} />
-                      </TouchableOpacity>
-                      <Text style={styles.qtyText}>{quantity}</Text>
-                      <TouchableOpacity
-                        style={[
-                          styles.qtyBtn,
-                          typeof product.stock === 'number' && quantity >= product.stock && { opacity: 0.4 },
-                        ]}
-                        onPress={async () => {
-                          const maxStock = typeof product.stock === 'number' ? product.stock : 999;
-                          if (quantity >= maxStock) {
-                            Alert.alert('Stock Limit Reached', `Cannot add more. Stock limit is ${maxStock} items.`);
-                            return;
-                          }
-                          try {
-                            await updateQuantity(product.id, 1);
-                          } catch (err: any) {
-                            Alert.alert('Stock Limit Reached', err?.message || 'Failed to update quantity.');
-                          }
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <MaterialIcons name="add" size={16} color={Colors.onSurface} />
-                      </TouchableOpacity>
-                    </View>
+                    <CartQuantityControl
+                      productId={product.id}
+                      quantity={quantity}
+                      stock={typeof product.stock === 'number' ? product.stock : 999}
+                      onUpdateDelta={async (delta) => {
+                        try {
+                          await updateQuantity(product.id, delta);
+                        } catch (err: any) {
+                          Alert.alert('Quantity Error', err?.message || 'Failed to update quantity.');
+                        }
+                      }}
+                      onSetExact={async (qty) => {
+                        try {
+                          await setQuantity(product.id, qty);
+                        } catch (err: any) {
+                          Alert.alert('Quantity Error', err?.message || 'Failed to set quantity.');
+                        }
+                      }}
+                    />
                   </View>
                 </View>
               ))}
             </View>
 
             {/* Order Summary & Coupon Section */}
-            <View style={[styles.summaryCard, isDesktop && styles.summaryCardDesktop]}>
-              <Text style={styles.summaryTitle}>Order Summary</Text>
+            <View style={[styles.summarySideContainer, isDesktop && styles.summaryCardDesktop]}>
+              <OnlineDeliveryBanner subtotal={subtotal} minAmount={minOnlineDeliveryAmount} />
+
+              <View style={styles.summaryCard}>
+                <Text style={styles.summaryTitle}>Order Summary</Text>
 
               {/* Coupon Form */}
               <View style={styles.couponRow}>
@@ -222,16 +332,6 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryRowLabel}>Subtotal</Text>
                   <Text style={styles.summaryRowValue}>{formatCurrency(subtotal)}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryRowLabel}>Hazmat Shipping</Text>
-                  <Text style={styles.summaryRowValue}>
-                    {shippingFee === 0 ? 'FREE' : formatCurrency(shippingFee)}
-                  </Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryRowLabel}>Estimated Tax / GST</Text>
-                  <Text style={styles.summaryRowValue}>{formatCurrency(taxAmount)}</Text>
                 </View>
                 {discount > 0 && (
                   <View style={styles.summaryRow}>
@@ -263,6 +363,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                 <Text style={styles.securityText}>SECURE SSL 256-BIT ENCRYPTION</Text>
               </View>
             </View>
+          </View>
           </View>
         ) : (
           <View style={styles.emptyContainer}>
@@ -383,6 +484,13 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginTop: 2,
   },
+  itemCalculatedPrice: {
+    ...Typography.bodyMd,
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+    marginTop: 2,
+  },
   stockLimitWarning: {
     ...Typography.labelLg,
     fontSize: 10,
@@ -398,25 +506,60 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 4,
   },
+  qtyRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  itemTotalPrice: {
+    ...Typography.titleLg,
+    fontSize: 15,
+    fontFamily: 'Inter-Bold',
+    color: Colors.primary,
+  },
   quantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: BorderRadius.lg,
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: Colors.surfaceContainerHigh,
-    height: 32,
+    borderColor: '#E5E7EB',
+    height: 36,
     paddingHorizontal: 4,
+    width: 110,
   },
   qtyBtn: {
-    padding: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  qtyInput: {
+    width: 44,
+    height: 32,
+    textAlign: 'center',
+    fontSize: 15,
+    fontFamily: 'Inter-Bold',
+    fontWeight: '700',
+    color: Colors.onSurface,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    outlineStyle: 'none',
+  } as any,
   qtyText: {
     ...Typography.bodyMd,
-    fontSize: 13,
+    fontSize: 15,
     fontFamily: 'Inter-Bold',
+    fontWeight: '700',
     color: Colors.onSurface,
     paddingHorizontal: 8,
+  },
+  summarySideContainer: {
+    width: '100%',
   },
   summaryCard: {
     backgroundColor: Colors.surfaceContainerLowest,

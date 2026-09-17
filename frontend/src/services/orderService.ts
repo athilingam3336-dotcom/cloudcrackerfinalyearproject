@@ -58,8 +58,8 @@ export interface PlaceOrderPayload {
   streetAddress: string;
   city: string;
   zipCode: string;
-  deliveryMethod: 'standard' | 'express';
-  paymentMethod: 'card' | 'upi' | 'cod';
+  deliveryMethod: 'online' | 'pickup' | string;
+  paymentMethod: 'card' | 'upi' | 'cod' | string;
   couponCode?: string;
 }
 
@@ -202,6 +202,7 @@ export class OrderService {
       payment_method: orderPayload.paymentMethod || 'card',
       shipping_address: shippingAddressStr.length > 5 ? shippingAddressStr : '742 Evergreen Terrace, Springfield, 62704',
       coupon_code: orderPayload.couponCode ? orderPayload.couponCode.trim() : undefined,
+      delivery_method: orderPayload.deliveryMethod || 'online',
     });
     const payload = res.data || res;
     return {

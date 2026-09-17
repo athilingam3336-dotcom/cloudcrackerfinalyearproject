@@ -197,6 +197,7 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
             {currentPaymentStatus === 'Pending' ? 'Pending Payment' :
              currentPaymentStatus === 'Under Review' ? 'Payment Submitted' :
              ['Rejected', 'Failed'].includes(currentPaymentStatus) ? 'Payment Failed' :
+             currentPaymentStatus === 'Pay at Store' ? 'Store Pickup Order Confirmed!' :
              'Order Confirmed!'}
           </Text>
           <Text style={styles.subtitle}>
@@ -206,6 +207,8 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
               ? "Your payment reference has been submitted. We are verifying the payment. You will be notified shortly."
               : ['Rejected', 'Failed'].includes(currentPaymentStatus)
               ? "Your payment verification failed. Please contact support or try placing a new order."
+              : currentPaymentStatus === 'Pay at Store'
+              ? "Your order is locked and ready for Store Pickup! Please visit our store, collect your crackers, and pay via Cash or UPI at the store."
               : "Your pyrotechnics are locked, loaded, and ready for dispatch. We've sent an order confirmation to your registered email."}
           </Text>
 
