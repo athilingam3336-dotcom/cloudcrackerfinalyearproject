@@ -14,6 +14,7 @@ from app.exceptions import (
 from app.models.coupon import Coupon
 from app.models.order import Order
 from app.models.payment import Payment
+from app.models.user import User
 from app.repositories.cart_repository import CartRepository
 from app.repositories.order_repository import OrderRepository
 from app.repositories.payment_repository import PaymentRepository
