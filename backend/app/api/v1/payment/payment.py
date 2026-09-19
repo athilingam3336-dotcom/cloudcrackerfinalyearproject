@@ -108,6 +108,7 @@ async def submit_upi_reference(
         user_id=str(current_user.id),
         order_id=order_id,
         transaction_reference=data.transaction_reference,
+        payer_phone=data.payer_phone,
     )
     return ApiResponse(
         success=True,
@@ -135,6 +136,31 @@ async def get_upi_payment_status(
     return ApiResponse(
         success=True,
         message="Payment status retrieved",
+        data=result,
+    )
+
+
+@base_router.post(
+    "/upi/resend-email/{order_id}",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Resend Payment QR Email (Customer)",
+    description="Resends the payment QR code email to the customer.",
+)
+async def resend_upi_payment_email(
+    background_tasks: BackgroundTasks,
+    order_id: str = Depends(get_validated_order_id),
+    current_user: User = Depends(get_current_user),
+    payment_service: PaymentService = Depends(),
+) -> ApiResponse:
+    result = await payment_service.resend_upi_payment_email(
+        user=current_user,
+        order_id=order_id,
+        background_tasks=background_tasks,
+    )
+    return ApiResponse(
+        success=True,
+        message="Payment QR email resent successfully",
         data=result,
     )
 

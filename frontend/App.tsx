@@ -17,6 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { PyrotechnicEffectOverlay } from '@/components/effects/PyrotechnicEffectOverlay';
+import { FloatingChatbot } from '@/components/common/FloatingChatbot';
 
 import { useUiStore } from '@/store';
 
@@ -221,6 +222,7 @@ export default function App() {
           <StatusBar style={isDarkMode ? 'light' : 'dark'} />
           <RootNavigator />
           <PyrotechnicEffectOverlay />
+          <FloatingChatbot />
         </NavigationContainer>
       </ThemeAppController>
     </SafeAreaProvider>

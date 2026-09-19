@@ -54,7 +54,43 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
   const [orderItems, setOrderItems] = useState<any[]>(initialItems);
   const [currentPaymentStatus, setCurrentPaymentStatus] = useState<string>(paymentStatus);
   const [utr, setUtr] = useState('');
+  const [payerPhone, setPayerPhone] = useState('');
   const [isSubmittingUtr, setIsSubmittingUtr] = useState(false);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Resend Email Cooldown timer
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [resendCooldown]);
+
+  const handleResendEmail = useCallback(async () => {
+    if (!orderId) {
+      Alert.alert('Error', 'Order ID is missing.');
+      return;
+    }
+    if (resendCooldown > 0) return;
+
+    setIsResendingEmail(true);
+    try {
+      await paymentService.resendUpiPaymentEmail(orderId);
+      setResendCooldown(60);
+      Alert.alert('Email Sent', 'Payment QR code email has been resent to your registered email address.');
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Failed to resend payment email.';
+      Alert.alert('Resend Error', msg);
+    } finally {
+      setIsResendingEmail(false);
+    }
+  }, [orderId, resendCooldown]);
 
   // Poll status if pending/under review
   useEffect(() => {
@@ -81,29 +117,35 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
     };
   }, [orderId, currentPaymentStatus]);
 
-
-
   const handleSubmitUtr = useCallback(async () => {
     if (!orderId) {
       Alert.alert('Error', 'Order ID is missing.');
       return;
     }
-    if (!utr.trim() || utr.trim().length < 4) {
-      Alert.alert('Validation Error', 'Please enter a valid UTR / Transaction Reference.');
+    const cleanPhone = payerPhone.trim();
+    if (!cleanPhone || cleanPhone.length < 10) {
+      Alert.alert(
+        'Paid Mobile Number Required',
+        'MUST enter the 10-digit Mobile Number from which GPay / PhonePe / Paytm cash was sent. Admin verifies payments using this mobile number.'
+      );
       return;
     }
+    const cleanUtr = utr.trim() || 'N/A';
     setIsSubmittingUtr(true);
     try {
-      await paymentService.submitUpiReference(orderId, utr);
+      await paymentService.submitUpiReference(orderId, cleanUtr, cleanPhone);
       setCurrentPaymentStatus('Under Review');
-      Alert.alert('Success', 'Payment reference submitted successfully. Please wait for admin verification.');
+      Alert.alert(
+        'Reference Submitted',
+        'Payment details submitted successfully! Admin will verify your payment using your Paid Mobile Number.'
+      );
     } catch (error: any) {
-      const msg = error.response?.data?.message || 'Failed to submit UTR.';
+      const msg = error.response?.data?.message || 'Failed to submit payment reference.';
       Alert.alert('Error', msg);
     } finally {
       setIsSubmittingUtr(false);
     }
-  }, [utr, orderId]);
+  }, [utr, payerPhone, orderId]);
 
   // If items weren't passed in route params, fetch the completed order from backend
   useEffect(() => {
@@ -214,18 +256,45 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
 
           {currentPaymentStatus === 'Pending' && (
             <View style={styles.qrContainer}>
+              {/* Important Instruction Notice Box */}
+              <View style={styles.noticeBox}>
+                <View style={styles.noticeHeader}>
+                  <MaterialIcons name="warning" size={20} color="#D32F2F" />
+                  <Text style={styles.noticeTitle}>CRITICAL REQUIREMENT</Text>
+                </View>
+                <Text style={styles.noticeText}>
+                  MUST enter the exact Mobile Number from which GPay / PhonePe / Paytm cash was sent. Admin will verify your payment using this Mobile Number and UTR!
+                </Text>
+              </View>
+
               <Text style={styles.qrHelpText}>
-                After completing payment via the QR code sent to your email, enter your 12-digit UTR or Reference No. below:
+                Enter the Paid Mobile Number and 12-digit UTR below to complete verification:
               </Text>
               
               <View style={styles.utrForm}>
+                <Text style={styles.inputFieldLabel}>Paid GPay / UPI Mobile Number *</Text>
                 <TextInput
                   style={styles.utrInput}
-                  placeholder="Enter 12-digit UTR or Reference No."
+                  placeholder="Enter Mobile No. used to send cash (MUST ENTER)"
+                  placeholderTextColor="#999"
+                  value={payerPhone}
+                  onChangeText={setPayerPhone}
+                  keyboardType="phone-pad"
+                  maxLength={15}
+                />
+
+                <Text style={styles.inputFieldLabel}>12-digit UTR / UPI Ref No. (Optional)</Text>
+                <TextInput
+                  style={styles.utrInput}
+                  placeholder="Enter 12-digit UTR if available (Optional)"
                   placeholderTextColor="#999"
                   value={utr}
                   onChangeText={setUtr}
                 />
+                <Text style={styles.utrHelpTip}>
+                  💡 <Text style={{ fontFamily: 'Inter-Bold' }}>What is UTR?</Text> It is the 12-digit "UPI Ref No" shown on your GPay / PhonePe / Paytm payment receipt (e.g. 4261...). If you cannot find it, leave it blank — entering your Paid Mobile Number above is sufficient for Admin verification!
+                </Text>
+
                 <TouchableOpacity
                   style={[styles.utrSubmitBtn, isSubmittingUtr && styles.utrSubmitBtnDisabled]}
                   onPress={handleSubmitUtr}
@@ -238,6 +307,39 @@ export const OrderSuccessScreen: React.FC<OrderSuccessScreenProps> = ({
                   )}
                 </TouchableOpacity>
               </View>
+
+              {/* Resend Payment Email Option */}
+              <TouchableOpacity
+                style={[
+                  styles.resendEmailBtn,
+                  (isResendingEmail || resendCooldown > 0) && styles.resendEmailBtnDisabled,
+                ]}
+                onPress={handleResendEmail}
+                disabled={isResendingEmail || resendCooldown > 0}
+                activeOpacity={0.7}
+              >
+                {isResendingEmail ? (
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                ) : (
+                  <View style={styles.resendEmailRow}>
+                    <MaterialIcons
+                      name="mark-email-read"
+                      size={18}
+                      color={resendCooldown > 0 ? '#999' : Colors.primary}
+                    />
+                    <Text
+                      style={[
+                        styles.resendEmailText,
+                        resendCooldown > 0 && { color: '#999' },
+                      ]}
+                    >
+                      {resendCooldown > 0
+                        ? `Resend Email in ${resendCooldown}s`
+                        : "Didn't receive email? Resend Payment Mail"}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
             </View>
           )}
 
@@ -702,6 +804,76 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontFamily: 'Inter-Bold',
     fontSize: 16,
+  },
+  resendEmailBtn: {
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: 'rgba(198, 40, 40, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  resendEmailBtnDisabled: {
+    borderColor: '#e0e0e0',
+    backgroundColor: '#f5f5f5',
+  },
+  resendEmailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  noticeBox: {
+    width: '100%',
+    backgroundColor: '#FFEBEE',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+    marginBottom: 12,
+  },
+  noticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  noticeTitle: {
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: '#D32F2F',
+    letterSpacing: 0.5,
+  },
+  noticeText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#B71C1C',
+    lineHeight: 18,
+  },
+  inputFieldLabel: {
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: Colors.onSurface,
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  utrHelpTip: {
+    fontSize: 11,
+    fontFamily: 'Inter-Regular',
+    color: Colors.onSurfaceVariant,
+    lineHeight: 16,
+    marginBottom: 12,
+    backgroundColor: '#F5F5F5',
+    padding: 8,
+    borderRadius: 6,
+  },
+  resendEmailText: {
+    color: Colors.primary,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
   },
 });
 

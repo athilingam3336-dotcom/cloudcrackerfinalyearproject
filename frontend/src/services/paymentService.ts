@@ -39,11 +39,12 @@ class PaymentService {
   }
 
   /**
-   * Submit the UTR for a pending UPI payment.
+   * Submit the UTR and GPay paid mobile number for a pending UPI payment.
    */
-  async submitUpiReference(orderId: string, utr: string): Promise<any> {
+  async submitUpiReference(orderId: string, utr: string, payerPhone?: string): Promise<any> {
     const { data: res } = await apiClient.post(`/payment/upi/submit-reference/${orderId}`, {
       transaction_reference: utr,
+      payer_phone: payerPhone,
     });
     return res.data || res;
   }
@@ -53,6 +54,14 @@ class PaymentService {
    */
   async getUpiPaymentStatus(orderId: string): Promise<{ transaction_id: string; payment_status: string }> {
     const { data: res } = await apiClient.get(`/payment/upi/status/${orderId}`);
+    return res.data || res;
+  }
+
+  /**
+   * Resend payment QR email for a pending UPI order.
+   */
+  async resendUpiPaymentEmail(orderId: string): Promise<any> {
+    const { data: res } = await apiClient.post(`/payment/upi/resend-email/${orderId}`);
     return res.data || res;
   }
 }

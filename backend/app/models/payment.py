@@ -16,6 +16,7 @@ class Payment(Document):
     amount: float = Field(..., gt=0)
     currency: str = "USD"
     transaction_reference: Optional[str] = None
+    payer_phone: Optional[str] = None
     verified_by: Optional[str] = None
     verified_at: Optional[datetime] = None
     payment_created_at: Optional[datetime] = None

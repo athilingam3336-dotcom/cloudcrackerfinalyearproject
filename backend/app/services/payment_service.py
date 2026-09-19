@@ -446,10 +446,10 @@ class PaymentService:
         }
 
     async def submit_upi_reference(
-        self, user_id: str, order_id: str, transaction_reference: str
+        self, user_id: str, order_id: str, transaction_reference: str, payer_phone: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Customer submits their UTR after scanning the QR code.
+        Customer submits their UTR and GPay paid phone number after scanning the QR code.
         Sets status to 'Under Review' — Admin must manually verify
         by checking their bank/UPI app before marking as Paid.
         This prevents fake UTR fraud.
@@ -466,21 +466,31 @@ class PaymentService:
                 message=f"Cannot submit reference. Payment is already in {payment.payment_status} state."
             )
 
-        # Only mark as Under Review — NOT auto-verified
-        # Admin must check bank account and manually verify
-        await self.payment_repo.update_status(
-            payment,
-            {
-                "payment_status": "Under Review",
-                "transaction_reference": transaction_reference.strip(),
-            },
-        )
+        clean_ref = transaction_reference.strip() if transaction_reference else "N/A"
+        if payer_phone and payer_phone.strip():
+            clean_phone = payer_phone.strip()
+            if clean_ref and clean_ref != "N/A":
+                full_ref = f"{clean_ref} (Paid Mobile: {clean_phone})"
+            else:
+                full_ref = f"Paid Mobile: {clean_phone}"
+        else:
+            clean_phone = None
+            full_ref = clean_ref or "N/A"
+
+        update_dict = {
+            "payment_status": "Under Review",
+            "transaction_reference": full_ref,
+        }
+        if clean_phone:
+            update_dict["payer_phone"] = clean_phone
+
+        await self.payment_repo.update_status(payment, update_dict)
         
         order = await self.order_repo.get_by_id(order_id)
         if order:
             await self.order_repo.update(order, {"payment_status": "Under Review"})
 
-        logger.info(f"Customer {user_id} submitted UTR {transaction_reference} for order {order_id}")
+        logger.info(f"Customer {user_id} submitted UTR {full_ref} for order {order_id}")
         return {"success": True, "payment_status": "Under Review"}
 
     async def get_upi_payment_status(self, user_id: str, order_id: str) -> Dict[str, Any]:
@@ -588,4 +598,81 @@ class PaymentService:
         except Exception:
             pass
         return OrderResponse(**order_resp)
+
+    async def resend_upi_payment_email(
+        self, user: User, order_id: str, background_tasks: BackgroundTasks
+    ) -> Dict[str, Any]:
+        """Resends payment QR code email to the customer for a pending UPI order."""
+        order = await self.order_repo.get_by_id(order_id)
+        if not order:
+            raise NotFoundException(message="Order not found.")
+
+        if str(order.user_id) != str(user.id):
+            raise BaseAppException(
+                status_code=403, message="You do not have permission to access this order."
+            )
+
+        if not user or not user.email:
+            raise ValidationException(message="User email address not found.")
+
+        upi_id = settings.UPI_PAYMENT_ID or "cloudcrackers@upi"
+        payee_name = settings.UPI_PAYEE_NAME or "CloudCrackers"
+        exact_amount = f"{order.total:.2f}"
+
+        upi_params = {
+            "pa": upi_id,
+            "pn": payee_name,
+            "am": exact_amount,
+            "cu": "INR",
+            "tn": order.order_number,
+        }
+        query_string = urllib.parse.urlencode(upi_params, safe='@')
+        upi_uri = f"upi://pay?{query_string}"
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(upi_uri)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        qr_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+        items = await self.order_repo.get_order_items(str(order.id))
+        products_to_order = []
+        for itm in items:
+            prod = await self.product_repo.get_by_id(str(itm.product_id))
+            products_to_order.append({
+                "id": str(itm.product_id),
+                "title": prod.title if prod else "Cracker Item",
+                "quantity": itm.quantity,
+                "price": itm.price,
+            })
+
+        background_tasks.add_task(
+            EmailService.send_upi_payment_email,
+            to_email=user.email,
+            customer_name=user.full_name or "Customer",
+            order_number=order.order_number,
+            order_id=str(order.id),
+            amount=exact_amount,
+            upi_payee_name=payee_name,
+            qr_base64=qr_base64,
+            items=products_to_order,
+            shipping=order.shipping_cost,
+            tax=order.tax_amount,
+            subtotal=order.subtotal,
+        )
+
+        logger.info(f"Resent UPI payment email for order {order.order_number} to {user.email}")
+
+        return {
+            "message": f"Payment QR email resent to {user.email}",
+            "email": user.email,
+            "order_number": order.order_number,
+        }
 

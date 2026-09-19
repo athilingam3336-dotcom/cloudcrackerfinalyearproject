@@ -226,6 +226,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress={() => handleProductPress(item.id)}
             onAddToCart={() => handleAddToCart(item)}
             onWishlistToggle={() => handleToggleWishlist(item)}
+            showQuantityStepper={true}
           />
         </View>
       );
@@ -254,6 +255,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress={() => handleProductPress(item.id)}
             onAddToCart={() => handleAddToCart(item)}
             onWishlistToggle={() => handleToggleWishlist(item)}
+            showQuantityStepper={true}
           />
         </View>
       );
@@ -294,6 +296,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress={() => handleProductPress(item.id)}
             onAddToCart={() => handleAddToCart(productObj)}
             onWishlistToggle={() => handleToggleWishlist(productObj)}
+            showQuantityStepper={true}
           />
         </View>
       );

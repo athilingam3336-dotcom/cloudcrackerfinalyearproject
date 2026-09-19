@@ -22,7 +22,9 @@ export interface ProductCardProps {
   isWishlisted?: boolean;
   onPress?: () => void;
   onAddToCart?: () => void;
+  onDecreaseToCart?: () => void;
   onWishlistToggle?: () => void;
+  showQuantityStepper?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = React.memo(
@@ -40,7 +42,9 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
     isWishlisted = false,
     onPress,
     onAddToCart,
+    onDecreaseToCart,
     onWishlistToggle,
+    showQuantityStepper = false,
   }) => {
     const isOutOfStock = (stock !== undefined && stock <= 0) || badge === 'Out of Stock';
     const effectiveBadge = isOutOfStock ? 'Out of Stock' : badge;
@@ -49,6 +53,15 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
     // Live Cart Quantity for this specific product
     const cartItem = useCartStore((state) => state.items.find((i) => i.product?.id === id));
     const cartQuantity = cartItem ? cartItem.quantity : 0;
+    const updateQuantity = useCartStore((state) => state.updateQuantity);
+
+    const handleDecrease = () => {
+      if (onDecreaseToCart) {
+        onDecreaseToCart();
+      } else {
+        updateQuantity(id, -1);
+      }
+    };
 
     return (
       <View style={styles.cardContainer}>
@@ -100,7 +113,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
               )}
             </View>
 
-            <View style={styles.footer}>
+            <View style={[styles.footer, cartQuantity > 0 && styles.footerWithStepper]}>
               <View style={styles.priceContainer}>
                 <Text style={styles.price}>{formatCurrency(price)}</Text>
                 {originalPrice && (
@@ -127,31 +140,57 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(
           </Pressable>
         )}
 
-        {/* Sibling Add to Cart Button with Counter Badge */}
+        {/* Sibling Add to Cart / Quantity Stepper Button */}
         {onAddToCart && (
           <View style={styles.addButtonWrapper}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.addButton,
-                pressed && !isOutOfStock && styles.buttonPressed,
-                isOutOfStock && styles.disabledAddButton,
-                cartQuantity > 0 && styles.activeCartAddButton,
-              ]}
-              onPress={isOutOfStock ? undefined : onAddToCart}
-              disabled={isOutOfStock}
-              accessibilityLabel={isOutOfStock ? `${title} is out of stock` : `Add ${title} to cart (${cartQuantity} in cart)`}
-              accessibilityRole="button"
-            >
-              <MaterialIcons
-                name={isOutOfStock ? 'block' : 'shopping-cart'}
-                size={16}
-                color={isOutOfStock ? Colors.onSurfaceVariant : Colors.onPrimary}
-              />
-            </Pressable>
-            {cartQuantity > 0 && (
-              <View style={styles.addButtonBadge}>
-                <Text style={styles.addButtonBadgeText}>{cartQuantity}</Text>
+            {cartQuantity > 0 && showQuantityStepper ? (
+              <View style={styles.quantityStepper}>
+                <Pressable
+                  style={({ pressed }) => [styles.stepperBtn, pressed && styles.buttonPressed]}
+                  onPress={handleDecrease}
+                  accessibilityLabel={`Decrease ${title} quantity in cart`}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <MaterialIcons name="remove" size={14} color="#ffffff" />
+                </Pressable>
+
+                <Text style={styles.stepperQuantityText}>{cartQuantity}</Text>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.stepperBtn,
+                    pressed && !isOutOfStock && styles.buttonPressed,
+                    isOutOfStock && styles.disabledStepperBtn,
+                  ]}
+                  onPress={isOutOfStock ? undefined : onAddToCart}
+                  disabled={isOutOfStock}
+                  accessibilityLabel={`Increase ${title} quantity in cart`}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <MaterialIcons name="add" size={14} color="#ffffff" />
+                </Pressable>
               </View>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.addButton,
+                  cartQuantity > 0 && styles.activeCartAddButton,
+                  pressed && !isOutOfStock && styles.buttonPressed,
+                  isOutOfStock && styles.disabledAddButton,
+                ]}
+                onPress={isOutOfStock ? undefined : onAddToCart}
+                disabled={isOutOfStock}
+                accessibilityLabel={isOutOfStock ? `${title} is out of stock` : `Add ${title} to cart`}
+                accessibilityRole="button"
+              >
+                <MaterialIcons
+                  name={isOutOfStock ? 'block' : (cartQuantity > 0 ? 'check' : 'shopping-cart')}
+                  size={16}
+                  color={isOutOfStock ? Colors.onSurfaceVariant : Colors.onPrimary}
+                />
+              </Pressable>
             )}
           </View>
         )}
@@ -265,6 +304,9 @@ const styles = StyleSheet.create({
     minHeight: 34,
     paddingRight: 42,
   },
+  footerWithStepper: {
+    paddingRight: 92,
+  },
   priceContainer: {
     flex: 1,
     flexShrink: 1,
@@ -301,6 +343,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 2,
+  },
+  quantityStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2E7D32',
+    borderRadius: BorderRadius.full,
+    height: 32,
+    paddingHorizontal: 3,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  stepperBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  disabledStepperBtn: {
+    opacity: 0.4,
+  },
+  stepperQuantityText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#ffffff',
+    paddingHorizontal: 6,
+    minWidth: 20,
+    textAlign: 'center',
   },
   activeCartAddButton: {
     backgroundColor: '#2E7D32',
