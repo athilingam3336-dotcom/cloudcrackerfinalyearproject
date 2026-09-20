@@ -11,6 +11,8 @@ export interface ChatMessage {
   text: string;
   timestamp: Date;
   recommendedProducts?: ProductItem[];
+  imageUrl?: string;
+  imageBase64?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,98 +78,87 @@ export class AiChatService {
       productCatalog: '',
     };
 
-    // 1. Business Analytics
-    try {
-      const analytics = await adminService.getBusinessAnalyticsData(true);
-      ctx.totalRevenue = analytics.totalRevenue || 0;
-      ctx.totalOrders = analytics.totalOrders || 0;
-      ctx.todayRevenue = analytics.todayRevenue || 0;
-      ctx.totalProducts = analytics.inventoryDistribution?.totalProducts || 0;
-      ctx.totalStockUnits = analytics.inventoryDistribution?.totalStockUnits || 0;
-      ctx.lowStockCount = analytics.inventoryDistribution?.lowStock || 0;
-      ctx.outOfStockCount = analytics.inventoryDistribution?.outOfStock || 0;
-      const breakdown = analytics.orderBreakdown || {};
-      ctx.pendingOrders = breakdown.pendingOrders || 0;
-      ctx.deliveredOrders = breakdown.completedOrders || 0;
-      ctx.cancelledOrders = breakdown.cancelledOrders || 0;
-      if (analytics.topProducts && analytics.topProducts.length > 0) {
-        ctx.topProducts = analytics.topProducts.slice(0, 5).map(
-          (p) => p.name + ' (Sold: ' + p.totalSold + ' units | Revenue: Rs.' + p.totalRevenue.toLocaleString('en-IN') + ')'
+    // Run all context gathering promises in parallel to save time
+    const promises = [
+      // 1. Business Analytics
+      adminService.getBusinessAnalyticsData(true).then(analytics => {
+        ctx.totalRevenue = analytics.totalRevenue || 0;
+        ctx.totalOrders = analytics.totalOrders || 0;
+        ctx.todayRevenue = analytics.todayRevenue || 0;
+        ctx.totalProducts = analytics.inventoryDistribution?.totalProducts || 0;
+        ctx.totalStockUnits = analytics.inventoryDistribution?.totalStockUnits || 0;
+        ctx.lowStockCount = analytics.inventoryDistribution?.lowStock || 0;
+        ctx.outOfStockCount = analytics.inventoryDistribution?.outOfStock || 0;
+        const breakdown = analytics.orderBreakdown || {};
+        ctx.pendingOrders = breakdown.pendingOrders || 0;
+        ctx.deliveredOrders = breakdown.completedOrders || 0;
+        ctx.cancelledOrders = breakdown.cancelledOrders || 0;
+        if (analytics.topProducts && analytics.topProducts.length > 0) {
+          ctx.topProducts = analytics.topProducts.slice(0, 5).map(
+            (p) => p.name + ' (Sold: ' + p.totalSold + ' units | Revenue: Rs.' + p.totalRevenue.toLocaleString('en-IN') + ')'
+          );
+        }
+      }),
+      // 2. Today's Report
+      adminService.getTodayReport().then(report => {
+        if (report && typeof report.today_revenue === 'number') {
+          ctx.todayRevenue = report.today_revenue;
+          ctx.todayOrders = report.today_orders;
+        }
+      }),
+      // 3. Orders summary
+      adminService.getAdminOrders(1, 50).then(ordersRes => {
+        const orders = ordersRes.orders || [];
+        if (ctx.pendingOrders === 0) ctx.pendingOrders = orders.filter((o) => o.orderStatus === 'Pending').length;
+        ctx.confirmedOrders = orders.filter((o) => o.orderStatus === 'Confirmed').length;
+        ctx.shippedOrders = orders.filter((o) => ['Shipped', 'In Transit'].includes(o.orderStatus)).length;
+        if (ctx.deliveredOrders === 0) ctx.deliveredOrders = orders.filter((o) => o.orderStatus === 'Delivered').length;
+        if (ctx.cancelledOrders === 0) ctx.cancelledOrders = orders.filter((o) => o.orderStatus === 'Cancelled').length;
+        ctx.recentOrders = orders.slice(0, 5).map(
+          (o) => 'Order #' + o.orderNumber + ' | ' + o.customerName + ' | Rs.' + o.totalAmount.toLocaleString('en-IN') + ' | ' + o.orderStatus + ' | Payment: ' + o.paymentStatus
         );
-      }
-    } catch {}
+      }),
+      // 4. Users
+      adminService.getAdminUsers({ page: 1, limit: 1 }).then(usersRes => {
+        ctx.totalUsers = usersRes.total || 0;
+      }),
+      // 5. Low stock products
+      adminService.getLowStockProducts().then(lowStock => {
+        const lowArr = Array.isArray(lowStock) ? lowStock : [];
+        ctx.lowStockProducts = lowArr.slice(0, 10).map(
+          (p: any) => (p.name || p.title) + ' (Stock: ' + (p.stock ?? p.stock_left ?? '?') + ' units)'
+        );
+        ctx.lowStockCount = lowArr.length;
+      }),
+      // 6. Out of stock products
+      adminService.getOutOfStockProducts().then(outOfStock => {
+        const oos = Array.isArray(outOfStock) ? outOfStock : [];
+        ctx.outOfStockProducts = oos.slice(0, 10).map((p: any) => p.name || p.title);
+        ctx.outOfStockCount = oos.length;
+      }),
+      // 7. Active coupons
+      adminService.getAdminCoupons({ statusFilter: 'active', limit: 20 }).then(couponsRes => {
+        const activeCoupons = (couponsRes.items || []).filter((c) => c.isActive);
+        ctx.activeCoupons = activeCoupons.slice(0, 8).map(
+          (c) => c.couponCode + ' (' + (c.discountType === 'percentage' ? c.percentage + '% OFF' : 'Rs.' + c.fixedAmount + ' OFF') + ' | Min Order: Rs.' + c.minimumOrder + ' | Used: ' + c.usedCount + '/' + c.usageLimit + ')'
+        );
+      }),
+      // 8. Full product catalog with live stock
+      productService.getProducts('all', '', 200).then(products => {
+        ctx.productCatalog = products
+          .map((p) => {
+            const stockNum = typeof p.stock === 'number' ? p.stock : null;
+            const stockLabel =
+              stockNum === null ? 'Stock Unknown' : stockNum === 0 ? 'Out of Stock' : stockNum <= 5 ? 'Low Stock (' + stockNum + ' left)' : 'In Stock (' + stockNum + ' units)';
+            const discount = p.originalPrice ? ' | Original: Rs.' + p.originalPrice : '';
+            const badge = p.badge ? ' [' + p.badge + ']' : '';
+            return '- ID:' + p.id + ' | ' + p.title + ' | Cat: ' + p.category + ' | Price: Rs.' + p.price + discount + badge + ' | ' + stockLabel + ' | Rating: ' + p.rating + 'star';
+          })
+          .join('\n');
+      })
+    ];
 
-    // 2. Today's Report
-    try {
-      const report = await adminService.getTodayReport();
-      if (report && typeof report.today_revenue === 'number') {
-        ctx.todayRevenue = report.today_revenue;
-        ctx.todayOrders = report.today_orders;
-      }
-    } catch {}
-
-    // 3. Orders summary
-    try {
-      const ordersRes = await adminService.getAdminOrders(1, 50);
-      const orders = ordersRes.orders || [];
-      if (ctx.pendingOrders === 0) ctx.pendingOrders = orders.filter((o) => o.orderStatus === 'Pending').length;
-      ctx.confirmedOrders = orders.filter((o) => o.orderStatus === 'Confirmed').length;
-      ctx.shippedOrders = orders.filter((o) => ['Shipped', 'In Transit'].includes(o.orderStatus)).length;
-      if (ctx.deliveredOrders === 0) ctx.deliveredOrders = orders.filter((o) => o.orderStatus === 'Delivered').length;
-      if (ctx.cancelledOrders === 0) ctx.cancelledOrders = orders.filter((o) => o.orderStatus === 'Cancelled').length;
-      ctx.recentOrders = orders.slice(0, 5).map(
-        (o) => 'Order #' + o.orderNumber + ' | ' + o.customerName + ' | Rs.' + o.totalAmount.toLocaleString('en-IN') + ' | ' + o.orderStatus + ' | Payment: ' + o.paymentStatus
-      );
-    } catch {}
-
-    // 4. Users
-    try {
-      const usersRes = await adminService.getAdminUsers({ page: 1, limit: 1 });
-      ctx.totalUsers = usersRes.total || 0;
-    } catch {}
-
-    // 5. Low stock products
-    try {
-      const lowStock = await adminService.getLowStockProducts();
-      const lowArr = Array.isArray(lowStock) ? lowStock : [];
-      ctx.lowStockProducts = lowArr.slice(0, 10).map(
-        (p: any) => (p.name || p.title) + ' (Stock: ' + (p.stock ?? p.stock_left ?? '?') + ' units)'
-      );
-      ctx.lowStockCount = lowArr.length;
-    } catch {}
-
-    // 6. Out of stock products
-    try {
-      const outOfStock = await adminService.getOutOfStockProducts();
-      const oos = Array.isArray(outOfStock) ? outOfStock : [];
-      ctx.outOfStockProducts = oos.slice(0, 10).map((p: any) => p.name || p.title);
-      ctx.outOfStockCount = oos.length;
-    } catch {}
-
-    // 7. Active coupons
-    try {
-      const couponsRes = await adminService.getAdminCoupons({ statusFilter: 'active', limit: 20 });
-      const activeCoupons = (couponsRes.items || []).filter((c) => c.isActive);
-      ctx.activeCoupons = activeCoupons.slice(0, 8).map(
-        (c) =>
-          c.couponCode + ' (' + (c.discountType === 'percentage' ? c.percentage + '% OFF' : 'Rs.' + c.fixedAmount + ' OFF') + ' | Min Order: Rs.' + c.minimumOrder + ' | Used: ' + c.usedCount + '/' + c.usageLimit + ')'
-      );
-    } catch {}
-
-    // 8. Full product catalog with live stock
-    try {
-      const products = await productService.getProducts('all', '', 200);
-      ctx.productCatalog = products
-        .map((p) => {
-          const stockNum = typeof p.stock === 'number' ? p.stock : null;
-          const stockLabel =
-            stockNum === null ? 'Stock Unknown' : stockNum === 0 ? 'Out of Stock' : stockNum <= 5 ? 'Low Stock (' + stockNum + ' left)' : 'In Stock (' + stockNum + ' units)';
-          const discount = p.originalPrice ? ' | Original: Rs.' + p.originalPrice : '';
-          const badge = p.badge ? ' [' + p.badge + ']' : '';
-          return '- ID:' + p.id + ' | ' + p.title + ' | Cat: ' + p.category + ' | Price: Rs.' + p.price + discount + badge + ' | ' + stockLabel + ' | Rating: ' + p.rating + 'star';
-        })
-        .join('\n');
-    } catch {}
+    await Promise.allSettled(promises);
 
     return ctx;
   }
@@ -272,13 +263,14 @@ RULES:
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // MAIN SEND MESSAGE
+  // MAIN SEND MESSAGE (GEMINI API)
   // ───────────────────────────────────────────────────────────────────────────
   public async sendMessage(
     userText: string,
-    chatHistory: ChatMessage[] = []
+    chatHistory: ChatMessage[] = [],
+    imageBase64?: string
   ): Promise<{ text: string; recommendedProducts: ProductItem[] }> {
-    const apiKey = ENV.OPENAI_API_KEY;
+    const apiKey = ENV.GEMINI_API_KEY;
 
     // Gather live admin context
     const ctx = await this.gatherAdminContext();
@@ -291,63 +283,118 @@ RULES:
     const matchedProducts = this.matchProducts(products, userText.toLowerCase());
 
     // If no API key, use smart fallback
-    if (!apiKey || apiKey.includes('your-api-key')) {
+    if (!apiKey || apiKey.includes('YOUR_GEMINI_API_KEY_HERE')) {
       return this.generateAdminFallbackResponse(userText, matchedProducts, ctx);
     }
 
     try {
-      const systemPrompt = this.buildAdminSystemPrompt(ctx);
+      const systemPrompt = this.buildAdminSystemPrompt(ctx) + `\n\nIf the admin asks to add a product, use the addProduct tool. Extract details from text or image (if provided). If an image is provided, generate an appropriate title, description, and price based on visual cues.`;
 
-      const conversationPayload = [
-        { role: 'system', content: systemPrompt },
-        ...chatHistory.slice(-8).map((msg) => ({
-          role: msg.sender === 'user' ? 'user' : 'assistant',
-          content: msg.text,
-        })),
-        { role: 'user', content: userText },
-      ];
+      // Convert chat history to Gemini format
+      const conversationPayload = chatHistory.slice(-8).map((msg) => {
+        const parts: any[] = [{ text: msg.text }];
+        if (msg.imageBase64) {
+          parts.push({
+            inline_data: {
+              mime_type: 'image/jpeg',
+              data: msg.imageBase64,
+            },
+          });
+        }
+        return {
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts,
+        };
+      });
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Add the current user message
+      const currentUserParts: any[] = [{ text: userText }];
+      if (imageBase64) {
+        currentUserParts.push({
+          inline_data: {
+            mime_type: 'image/jpeg',
+            data: imageBase64,
+          },
+        });
+      }
+      
+      conversationPayload.push({
+        role: 'user',
+        parts: currentUserParts,
+      });
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + apiKey,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: conversationPayload,
-          temperature: 0.6,
-          max_tokens: 700,
+          contents: conversationPayload,
+          systemInstruction: {
+            role: 'user',
+            parts: [{ text: systemPrompt }]
+          },
+          tools: [{
+            function_declarations: [
+              {
+                name: "addProduct",
+                description: "Adds a new product to the database. Use this when the admin asks to add a product or uploads a product image to add.",
+                parameters: {
+                  type: "OBJECT",
+                  properties: {
+                    name: { type: "STRING", description: "Name/title of the product" },
+                    description: { type: "STRING", description: "Detailed description" },
+                    price: { type: "NUMBER", description: "Price of the product" },
+                    category_id: { type: "STRING", description: "Category ID (e.g., 'sparklers', 'rockets', 'flower-pots', 'atom-bombs', 'chakkars', 'others'). Default to 'others' if unknown." },
+                    stock: { type: "NUMBER", description: "Initial stock quantity (default 50)" }
+                  },
+                  required: ["name", "description", "price", "category_id", "stock"]
+                }
+              }
+            ]
+          }],
+          tool_config: { function_calling_config: { mode: "AUTO" } },
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 700,
+          }
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.warn('[AdminAiChat] OpenAI error:', response.status, errorData);
-        if (response.status === 404 || response.status === 429) {
-          const fallbackRes = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: 'Bearer ' + apiKey,
-            },
-            body: JSON.stringify({
-              model: 'gpt-3.5-turbo',
-              messages: conversationPayload,
-              temperature: 0.6,
-              max_tokens: 700,
-            }),
-          });
-          if (fallbackRes.ok) {
-            const data = await fallbackRes.json();
-            return { text: data.choices[0]?.message?.content || '', recommendedProducts: matchedProducts };
-          }
-        }
+        console.warn('[AdminAiChat] Gemini error:', response.status, errorData);
         return this.generateAdminFallbackResponse(userText, matchedProducts, ctx);
       }
 
       const data = await response.json();
-      const aiText = data.choices[0]?.message?.content || 'I have the latest data ready. Please ask me anything!';
+      
+      // Handle Function Calling
+      if (data.candidates?.[0]?.content?.parts?.[0]?.functionCall) {
+        const call = data.candidates[0].content.parts[0].functionCall;
+        if (call.name === 'addProduct') {
+          try {
+            const args = call.args;
+            await adminService.createProduct({
+              name: args.name,
+              description: args.description,
+              price: Number(args.price),
+              category_id: args.category_id,
+              stock: Number(args.stock),
+              is_featured: true,
+              time_of_day: 'both'
+            });
+            return {
+              text: `✅ **Product Added Successfully!**\n\n🎆 **${args.name}**\n💰 Price: ₹${args.price}\n📦 Stock: ${args.stock} units\n📁 Category: ${args.category_id}`,
+              recommendedProducts: []
+            };
+          } catch (e: any) {
+             return { text: `❌ Failed to add product: ${e.message}`, recommendedProducts: [] };
+          }
+        }
+      }
+
+      const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I have the latest data ready. Please ask me anything!';
       return { text: aiText, recommendedProducts: matchedProducts };
     } catch (err) {
       console.error('[AdminAiChat] Exception:', err);

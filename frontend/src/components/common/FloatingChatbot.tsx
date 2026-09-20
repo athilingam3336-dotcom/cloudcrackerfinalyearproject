@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { AiChatService, ChatMessage } from '@/services/aiChatService';
 import { ProductItem } from '@/constants/mockData';
 import { useCartStore } from '@/store/cartStore';
@@ -26,6 +27,7 @@ export const FloatingChatbot: React.FC = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ uri: string; base64: string } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome-msg',
@@ -98,24 +100,49 @@ export const FloatingChatbot: React.FC = () => {
     }, 150);
   };
 
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.6,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setSelectedImage({
+          uri: result.assets[0].uri,
+          base64: result.assets[0].base64 || '',
+        });
+      }
+    } catch (error) {
+      console.warn('Error picking image:', error);
+    }
+  };
+
   const handleSend = async (textToSend?: string) => {
     const query = (textToSend || inputText).trim();
-    if (!query || isLoading) return;
+    if ((!query && !selectedImage) || isLoading) return;
 
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       sender: 'user',
       text: query,
       timestamp: new Date(),
+      imageUrl: selectedImage?.uri,
+      imageBase64: selectedImage?.base64,
     };
+
+    const imageBase64ToSend = selectedImage?.base64;
 
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInputText('');
+    setSelectedImage(null);
     setIsLoading(true);
     scrollToBottom();
 
     try {
-      const res = await aiService.sendMessage(query, messages);
+      const res = await aiService.sendMessage(query, messages, imageBase64ToSend);
       const aiMsg: ChatMessage = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
@@ -281,6 +308,15 @@ export const FloatingChatbot: React.FC = () => {
                         {renderFormattedText(item.text)}
                       </Text>
 
+                      {/* Display User Attached Image */}
+                      {item.imageUrl && (
+                        <Image
+                          source={{ uri: item.imageUrl }}
+                          style={{ width: 150, height: 150, borderRadius: 8, marginTop: 8 }}
+                          resizeMode="cover"
+                        />
+                      )}
+
                       {/* Product Recommendations horizontal list */}
                       {item.recommendedProducts && item.recommendedProducts.length > 0 && (
                         <View style={styles.recommendedContainer}>
@@ -405,11 +441,32 @@ export const FloatingChatbot: React.FC = () => {
               </ScrollView>
             </View>
 
+            {/* Image Preview if selected */}
+            {selectedImage && (
+              <View style={styles.imagePreviewContainer}>
+                <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} />
+                <TouchableOpacity
+                  style={styles.removeImageBtn}
+                  onPress={() => setSelectedImage(null)}
+                >
+                  <MaterialIcons name="close" size={12} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
+
             {/* Input Bar */}
             <View style={[styles.inputBar, isDarkMode && styles.inputBarDark]}>
+              <TouchableOpacity
+                style={styles.attachBtn}
+                onPress={pickImage}
+                disabled={isLoading}
+              >
+                <MaterialIcons name="image" size={20} color={isDarkMode ? '#9ca3af' : '#6b7280'} />
+              </TouchableOpacity>
+              
               <TextInput
                 style={[styles.input, isDarkMode && styles.inputDark]}
-                placeholder="Ask in English, Tamil, or Thanglish..."
+                placeholder="Ask or attach image..."
                 placeholderTextColor={isDarkMode ? '#9ca3af' : '#6b7280'}
                 value={inputText}
                 onChangeText={setInputText}
@@ -419,10 +476,10 @@ export const FloatingChatbot: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.sendBtn,
-                  (!inputText.trim() || isLoading) && styles.sendBtnDisabled,
+                  (!inputText.trim() && !selectedImage || isLoading) && styles.sendBtnDisabled,
                 ]}
                 onPress={() => handleSend()}
-                disabled={!inputText.trim() || isLoading}
+                disabled={(!inputText.trim() && !selectedImage) || isLoading}
               >
                 <MaterialIcons name="send" size={18} color="#ffffff" />
               </TouchableOpacity>
@@ -483,16 +540,17 @@ export const FloatingChatbot: React.FC = () => {
             activeOpacity={0.85}
             onPress={handleFabPress}
           >
-            <View style={styles.fabContent}>
-              <MaterialIcons
-                name={isOpen ? 'remove' : 'chat'}
-                size={26}
-                color="#ffffff"
-              />
-              <View style={styles.fabBadge}>
-                <Text style={styles.fabBadgeText}>AI</Text>
+            {isOpen ? (
+              <View style={styles.fabCloseContainer}>
+                <MaterialIcons name="keyboard-arrow-down" size={28} color="#ffffff" />
               </View>
-            </View>
+            ) : (
+              <Image
+                source={require('../../../assets/ai_bot.png')}
+                style={styles.fabRobotImage}
+                resizeMode="cover"
+              />
+            )}
           </TouchableOpacity>
         </View>
       )}
@@ -501,6 +559,71 @@ export const FloatingChatbot: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  // ── Additional Input Styles ───────────────────────────────────────────────
+  imagePreviewContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    flexDirection: 'row',
+  },
+  imagePreview: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: 4,
+    left: 66,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  attachBtn: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderTopWidth: 1,
+    borderColor: 'rgba(229, 231, 235, 0.8)',
+    backgroundColor: '#ffffff',
+  },
+  inputBarDark: {
+    borderColor: '#374151',
+    backgroundColor: '#1e1f26',
+  },
+  input: {
+    flex: 1,
+    height: 40,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    marginRight: 10,
+  },
+  inputDark: {
+    backgroundColor: '#2b2d38',
+    color: '#e5e7eb',
+  },
+  sendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtnDisabled: {
+    backgroundColor: '#9ca3af',
+  },
   // ── Minimized bar styles ──────────────────────────────────────────────────
   webFixedMinimizedBar: {
     position: 'fixed' as any,
@@ -575,22 +698,34 @@ const styles = StyleSheet.create({
     zIndex: 99999,
   },
   fabButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#dc2626',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
+    shadowColor: '#b91c1c',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 14,
+  },
+  fabCloseContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#b91c1c',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#dc2626',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 12,
   },
   fabContent: {
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  fabRobotImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
   },
   fabBadge: {
     position: 'absolute',
