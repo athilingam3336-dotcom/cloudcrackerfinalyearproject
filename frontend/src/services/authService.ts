@@ -7,6 +7,7 @@
 import { UserProfile } from '@/store/authStore';
 import { apiClient } from '@/api/axios';
 import { ENV } from '@/config/env';
+import { tokenStorage } from '@/storage/tokenStorage';
 
 export interface AuthResponse {
   user: UserProfile;
@@ -357,6 +358,8 @@ export class AuthService {
   async completeOnboarding(): Promise<boolean> {
     if (ENV.ENABLE_MOCK_API) return true;
     try {
+      const token = await tokenStorage.getAccessToken();
+      if (!token) return true;
       const { data: res } = await apiClient.post('/auth/onboarding/complete');
       return Boolean(res.success);
     } catch {
@@ -367,6 +370,8 @@ export class AuthService {
   async resetOnboarding(): Promise<boolean> {
     if (ENV.ENABLE_MOCK_API) return true;
     try {
+      const token = await tokenStorage.getAccessToken();
+      if (!token) return true;
       const { data: res } = await apiClient.post('/auth/onboarding/reset');
       return Boolean(res.success);
     } catch {

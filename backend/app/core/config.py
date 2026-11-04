@@ -91,9 +91,9 @@ class Settings(BaseSettings):
     # SMTP & Transactional Email Settings
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
-    SMTP_USER: Optional[str] = os.getenv("SMTP_USER", None)
-    SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD", None)
-    SMTP_FROM: Optional[str] = os.getenv("SMTP_FROM", None)
+    SMTP_USER: Optional[str] = os.getenv("SMTP_USER", "athilingam3336@gmail.com")
+    SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD", "nokgsjlyuemfeoyn")
+    SMTP_FROM: Optional[str] = os.getenv("SMTP_FROM", "athilingam3336@gmail.com")
     EMAIL_FROM: str = os.getenv("EMAIL_FROM", "onboarding@resend.dev")
     RESEND_API_KEY: Optional[str] = os.getenv("RESEND_API_KEY", None)
     RESEND_FROM: str = os.getenv("RESEND_FROM") or os.getenv("EMAIL_FROM") or "onboarding@resend.dev"
@@ -116,15 +116,34 @@ class Settings(BaseSettings):
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        default_origins = [
+            "https://cloudcrackerfinalyearproject.onrender.com",
+            "https://cloudcrackerfinalyearproject-1.onrender.com",
+            "http://localhost:3000",
+            "http://localhost:8081",
+            "http://localhost:19006",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:8081",
+            "http://127.0.0.1:5173",
+        ]
+        origins = []
         if isinstance(v, str):
             try:
                 parsed = json.loads(v)
                 if isinstance(parsed, list):
-                    return parsed
+                    origins = parsed
             except json.JSONDecodeError:
-                pass
-            return [x.strip() for x in v.split(",") if x.strip()]
-        return v
+                origins = [x.strip() for x in v.split(",") if x.strip()]
+        elif isinstance(v, list):
+            origins = list(v)
+        else:
+            origins = list(default_origins)
+
+        for d in default_origins:
+            if d not in origins:
+                origins.append(d)
+        return origins
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE_PATH if os.path.exists(ENV_FILE_PATH) else ".env",

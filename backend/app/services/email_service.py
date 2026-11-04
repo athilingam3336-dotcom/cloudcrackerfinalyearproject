@@ -637,15 +637,15 @@ class EmailService:
 
             msg.attach(MIMEText(html_content, "html"))
 
-            # Optimized fast timeout (15s) for SMTP TLS handshakes
+            # Optimized fast SMTP: Try Port 587 STARTTLS first (fastest and most reliable for Gmail), then Port 465 SSL fallback
             try:
-                with smtplib.SMTP_SSL(smtp_host, 465, timeout=15) as server:
+                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=8) as server:
+                    server.starttls()
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, [to_email], msg.as_string())
-            except Exception as ssl_err:
-                logger.warning(f"SMTP SSL 465 failed ({ssl_err}), trying Port {smtp_port} STARTTLS...")
-                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=15) as server:
-                    server.starttls()
+            except Exception as tls_err:
+                logger.warning(f"SMTP Port {smtp_port} STARTTLS failed ({tls_err}), trying Port 465 SSL fallback...")
+                with smtplib.SMTP_SSL(smtp_host, 465, timeout=8) as server:
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, [to_email], msg.as_string())
 
@@ -900,13 +900,13 @@ class EmailService:
 
             # 5. Send Email via SMTP
             try:
-                with smtplib.SMTP_SSL(smtp_host, 465, timeout=15) as server:
+                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=8) as server:
+                    server.starttls()
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, admin_emails, msg.as_string())
-            except Exception as ssl_err:
-                logger.warning(f"Admin report email SSL 465 failed ({ssl_err}), trying 587 STARTTLS...")
-                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=15) as server:
-                    server.starttls()
+            except Exception as tls_err:
+                logger.warning(f"Admin report email 587 STARTTLS failed ({tls_err}), trying 465 SSL fallback...")
+                with smtplib.SMTP_SSL(smtp_host, 465, timeout=8) as server:
                     server.login(smtp_user, smtp_pass)
                     server.sendmail(smtp_from, admin_emails, msg.as_string())
 
@@ -1145,9 +1145,16 @@ Sivakasi Pyrotechnics Store
             img.add_header('Content-Disposition', 'inline', filename=f"payment-qr-{order_number}.png")
             msg.attach(img)
 
-            with smtplib.SMTP_SSL(smtp_host, 465, timeout=15) as server:
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(smtp_from, [to_email], msg.as_string())
+            try:
+                with smtplib.SMTP(smtp_host, int(smtp_port), timeout=8) as server:
+                    server.starttls()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_from, [to_email], msg.as_string())
+            except Exception as tls_err:
+                logger.warning(f"UPI QR email 587 STARTTLS failed ({tls_err}), trying 465 SSL fallback...")
+                with smtplib.SMTP_SSL(smtp_host, 465, timeout=8) as server:
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_from, [to_email], msg.as_string())
 
             logger.info(f"UPI QR email sent to {to_email}")
             return True
