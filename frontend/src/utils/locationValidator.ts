@@ -39,7 +39,7 @@ const PROHIBITED_WORDS = new Set([
   'தேவிடியா', 'புண்டை', 'புண்ட', 'ஓத்த', 'சுண்ணி', 'பூள', 'கூதி', 'கேண', 'பொறம்போக்கு', 'நாயே', 'தாயோளி',
 
   // Spam / Gibberish markers
-  'unknown', 'undefined', 'null', 'test', 'demo', 'fake', 'dummy', 'asdf', 'qwerty', 'temp', 'sample', 'tester',
+  'fake', 'asdf', 'qwerty',
 ]);
 
 // Words that indicate address labels or noise to strip

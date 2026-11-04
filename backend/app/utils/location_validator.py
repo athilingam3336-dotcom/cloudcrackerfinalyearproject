@@ -41,7 +41,7 @@ PROHIBITED_WORDS: Set[str] = {
     "தேவிடியா", "புண்டை", "புண்ட", "ஓத்த", "சுண்ணி", "பூள", "கூதி", "கேண", "பொறம்போக்கு", "நாயே", "தாயோளி",
 
     # Spam / Gibberish markers
-    "unknown", "undefined", "null", "test", "demo", "fake", "dummy", "asdf", "qwerty", "temp", "sample", "tester",
+    "fake", "asdf", "qwerty",
 }
 
 TN_LOCATION_DIRECTORY: List[Dict[str, Any]] = [
@@ -363,22 +363,82 @@ def extract_and_validate_location(
     if not addr:
         return False, None
 
-    pin_match = re.search(r"\b(6\d{5})\b", addr)
-    if not pin_match:
+    # Check for any 6-digit pincode in address
+    all_pins = re.findall(r"\b(\d{6})\b", addr)
+    if all_pins:
+        found_pin = all_pins[-1]
+        pin_num = int(found_pin)
+        if not found_pin.startswith("6") or pin_num < 600001 or pin_num > 643999:
+            # Out of state pincode
+            return False, None
+
+        city_cand = explicit_city.strip() if explicit_city else ""
+        if not city_cand:
+            m = re.search(r"([a-zA-Z\s]{3,30})\s*[-,\s]\s*" + re.escape(found_pin), addr)
+            if m and m.group(1):
+                city_cand = m.group(1).strip()
+            else:
+                parts = [p.strip() for p in addr.split(",") if p.strip()]
+                if len(parts) >= 2:
+                    city_cand = re.sub(r"\d+", "", parts[-2]).strip()
+                elif parts:
+                    city_cand = re.sub(r"\d+", "", parts[0]).strip()
+
+        # 1. If city candidate extracted, validate with found_pin
+        if city_cand:
+            ok, canon, _ = validate_city_and_pincode(city_cand, found_pin)
+            if ok:
+                return True, canon
+
+        # 2. Check if any recognized city in the entire address matches or mismatches
+        clean_addr = re.sub(r"[^a-z\s]", " ", addr.lower())
+        clean_addr = re.sub(r"\s+", " ", clean_addr).strip()
+        pin_prefix3 = found_pin[:3]
+
+        matched_cities = []
+        for loc in TN_LOCATION_DIRECTORY:
+            canon_lower = loc["canonical"].lower()
+            pattern = r"(^|\b)" + re.escape(canon_lower) + r"(\b|$)"
+            found_name = bool(re.search(pattern, clean_addr))
+            if not found_name:
+                for alias in loc.get("aliases", []):
+                    alias_pattern = r"(^|\b)" + re.escape(alias.lower()) + r"(\b|$)"
+                    if re.search(alias_pattern, clean_addr):
+                        found_name = True
+                        break
+            if found_name:
+                matched_cities.append(loc)
+
+        if matched_cities:
+            # Check if any matched city matches the pincode
+            for loc in matched_cities:
+                matches_prefix = pin_prefix3 in loc["prefixes"]
+                matches_exact = "exact_pincodes" in loc and found_pin in loc["exact_pincodes"]
+                if matches_prefix or matches_exact:
+                    return True, loc["canonical"]
+            # If city was found in address but none matched the pincode, it's a mismatch!
+            return False, None
+
+        # If pincode is valid TN pincode and no contradictory city was named, infer canonical city from pincode
+        for loc in TN_LOCATION_DIRECTORY:
+            matches_prefix = pin_prefix3 in loc["prefixes"]
+            matches_exact = "exact_pincodes" in loc and found_pin in loc["exact_pincodes"]
+            if matches_prefix or matches_exact:
+                return True, loc["canonical"]
+
         return False, None
-    found_pin = pin_match.group(1)
 
-    city_cand = explicit_city.strip() if explicit_city else ""
-    if not city_cand:
-        m = re.search(r"([a-zA-Z\s]{3,30})\s*[-,\s]\s*6\d{5}", addr)
-        if m and m.group(1):
-            city_cand = m.group(1).strip()
-        else:
-            parts = [p.strip() for p in addr.split(",") if p.strip()]
-            if len(parts) >= 2:
-                city_cand = re.sub(r"\d+", "", parts[-2]).strip()
-            elif parts:
-                city_cand = re.sub(r"\d+", "", parts[0]).strip()
+    # No 6-digit pincode in address: check if a recognized Tamil Nadu city is mentioned
+    clean_addr = re.sub(r"[^a-z\s]", " ", addr.lower())
+    clean_addr = re.sub(r"\s+", " ", clean_addr).strip()
+    for loc in TN_LOCATION_DIRECTORY:
+        canon_lower = loc["canonical"].lower()
+        pattern = r"(^|\b)" + re.escape(canon_lower) + r"(\b|$)"
+        if re.search(pattern, clean_addr):
+            return True, loc["canonical"]
+        for alias in loc.get("aliases", []):
+            alias_pattern = r"(^|\b)" + re.escape(alias.lower()) + r"(\b|$)"
+            if re.search(alias_pattern, clean_addr):
+                return True, loc["canonical"]
 
-    ok, canon, _ = validate_city_and_pincode(city_cand, found_pin)
-    return ok, canon
+    return False, None
