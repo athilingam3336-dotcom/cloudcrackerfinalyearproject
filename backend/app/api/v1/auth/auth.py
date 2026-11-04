@@ -293,3 +293,37 @@ async def update_me(
 )
 async def logout() -> ApiResponse:
     return ApiResponse(success=True, message="Logout Successful", data={})
+
+
+@router.post(
+    "/onboarding/complete",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mark onboarding tour completed",
+)
+async def complete_onboarding(current_user: User = Depends(get_current_user)) -> ApiResponse:
+    current_user.has_completed_onboarding = True
+    current_user.updated_at = datetime.utcnow()
+    await current_user.save()
+    return ApiResponse(
+        success=True,
+        message="Onboarding marked completed.",
+        data={"has_completed_onboarding": True},
+    )
+
+
+@router.post(
+    "/onboarding/reset",
+    response_model=ApiResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reset onboarding tour for replay",
+)
+async def reset_onboarding(current_user: User = Depends(get_current_user)) -> ApiResponse:
+    current_user.has_completed_onboarding = False
+    current_user.updated_at = datetime.utcnow()
+    await current_user.save()
+    return ApiResponse(
+        success=True,
+        message="Onboarding reset successfully.",
+        data={"has_completed_onboarding": False},
+    )

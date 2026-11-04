@@ -59,39 +59,45 @@ export const WebMobileHeader: React.FC<WebMobileHeaderProps> = React.memo(
         </View>
 
         <View style={styles.rightRow}>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={onNotificationPress || (() => navigation.navigate('Notifications'))}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="notifications-none" size={22} color={Colors.onSurface} />
-            {notificationCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{notificationCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View nativeID="tour-target-bell">
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={onNotificationPress || (() => navigation.navigate('Notifications'))}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="notifications-none" size={22} color={Colors.onSurface} />
+              {notificationCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{notificationCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={onCartPress || (() => navigation.navigate('Cart'))}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="shopping-cart" size={22} color={Colors.primary} />
-            {cartCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{cartCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View nativeID="tour-target-cart">
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={onCartPress || (() => navigation.navigate('Cart'))}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="shopping-cart" size={22} color={Colors.primary} />
+              {cartCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{cartCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={onProfilePress || (() => navigation.navigate('UserProfile'))}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="person-outline" size={22} color={Colors.onSurface} />
-          </TouchableOpacity>
+          <View nativeID="tour-target-profile">
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={onProfilePress || (() => navigation.navigate('UserProfile'))}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="person-outline" size={22} color={Colors.onSurface} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );

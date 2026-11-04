@@ -13,6 +13,7 @@ export interface UserProfile {
   ordersCount: number;
   avatarUrl?: string;
   phone?: string;
+  hasCompletedOnboarding?: boolean;
 }
 
 export interface AuthState {
@@ -40,6 +41,8 @@ export interface AuthState {
   ) => Promise<boolean>;
   logout: () => void;
   updateProfile: (partialUser: Partial<UserProfile>) => void;
+  completeOnboarding: () => Promise<void>;
+  resetOnboarding: () => Promise<void>;
   resetAuth: () => void;
 }
 
@@ -85,6 +88,15 @@ const customStorage = {
   },
 };
 
+const normalizeUser = (user: any): UserProfile | null => {
+  if (!user) return null;
+  return {
+    ...user,
+    role: (typeof user.role === 'string' ? user.role.toLowerCase() : user.role) as 'user' | 'admin',
+    hasCompletedOnboarding: Boolean(user.has_completed_onboarding ?? user.hasCompletedOnboarding),
+  };
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -101,7 +113,7 @@ export const useAuthStore = create<AuthState>()(
           await tokenStorage.setAccessToken(response.accessToken);
           await tokenStorage.setRefreshToken(response.refreshToken);
           set({
-            user: response.user,
+            user: normalizeUser(response.user),
             token: response.accessToken,
             isAuthenticated: true,
             isLoading: false,
@@ -131,7 +143,7 @@ export const useAuthStore = create<AuthState>()(
           await tokenStorage.setAccessToken(response.accessToken);
           await tokenStorage.setRefreshToken(response.refreshToken);
           set({
-            user: response.user,
+            user: normalizeUser(response.user),
             token: response.accessToken,
             isAuthenticated: true,
             isLoading: false,
@@ -161,7 +173,7 @@ export const useAuthStore = create<AuthState>()(
           await tokenStorage.setAccessToken(response.accessToken);
           await tokenStorage.setRefreshToken(response.refreshToken);
           set({
-            user: response.user,
+            user: normalizeUser(response.user),
             token: response.accessToken,
             isAuthenticated: true,
             isLoading: false,
@@ -196,7 +208,7 @@ export const useAuthStore = create<AuthState>()(
           await tokenStorage.setAccessToken(response.accessToken);
           await tokenStorage.setRefreshToken(response.refreshToken);
           set({
-            user: response.user,
+            user: normalizeUser(response.user),
             token: response.accessToken,
             isAuthenticated: true,
             isLoading: false,
@@ -267,6 +279,24 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, ...partialUser } : (partialUser as UserProfile),
           isAuthenticated: true,
         }));
+      },
+
+      completeOnboarding: async () => {
+        set((state) => ({
+          user: state.user ? { ...state.user, hasCompletedOnboarding: true } : null,
+        }));
+        try {
+          await authService.completeOnboarding();
+        } catch {}
+      },
+
+      resetOnboarding: async () => {
+        set((state) => ({
+          user: state.user ? { ...state.user, hasCompletedOnboarding: false } : null,
+        }));
+        try {
+          await authService.resetOnboarding();
+        } catch {}
       },
 
       resetAuth: () => {

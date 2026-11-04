@@ -23,6 +23,7 @@ import { PasswordInput } from '@/components/inputs/PasswordInput';
 import { Checkbox } from '@/components/inputs/Checkbox';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { InstagramAccountChooserModal } from '@/components/auth/InstagramAccountChooserModal';
+import { SweetAlertModal, SweetAlertType } from '@/components/common/SweetAlertModal';
 import { googleAuthService } from '@/services/googleAuthService';
 import { instagramAuthService } from '@/services/instagramAuthService';
 import { authService, GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
@@ -57,6 +58,26 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
   const [isInstagramLoading, setIsInstagramLoading] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [errors, setErrors] = useState<RegisterErrors>({});
+
+  // SweetAlert State
+  const [sweetAlert, setSweetAlert] = useState<{
+    visible: boolean;
+    type: SweetAlertType;
+    title: string;
+    message: string;
+    confirmText?: string;
+    onConfirmCallback?: () => void;
+  } | null>(null);
+
+  const showSweetAlertError = (title: string, message: string) => {
+    setSweetAlert({
+      visible: true,
+      type: 'error',
+      title,
+      message,
+      confirmText: 'OK',
+    });
+  };
 
   // Email OTP Verification State
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -298,6 +319,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
       setIsSendingOtp(false);
       const msg = err.response?.data?.message || err.message || 'Unable to send verification email. Please try again.';
       setErrors((prev) => ({ ...prev, general: msg }));
+      showSweetAlertError('Verification Email Failed', msg);
     }
   };
 
@@ -315,17 +337,22 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
       setIsSendingOtp(false);
       const msg = err.response?.data?.message || err.message || 'Unable to send verification email. Please try again.';
       setErrors((prev) => ({ ...prev, otp: msg, general: msg }));
+      showSweetAlertError('Resend OTP Failed', msg);
     }
   };
 
   const handleVerifyAndCreateAccount = async () => {
     if (otpCode.length !== 6) {
-      setErrors((prev) => ({ ...prev, otp: 'Please enter a 6-digit OTP code.' }));
+      const msg = 'Please enter a 6-digit OTP code.';
+      setErrors((prev) => ({ ...prev, otp: msg }));
+      showSweetAlertError('Invalid Code', msg);
       return;
     }
 
     if (otpExpirySeconds <= 0) {
-      setErrors((prev) => ({ ...prev, otp: 'OTP expired. Please request a new OTP.' }));
+      const msg = 'OTP expired. Please request a new OTP.';
+      setErrors((prev) => ({ ...prev, otp: msg }));
+      showSweetAlertError('Code Expired', msg);
       return;
     }
 
@@ -343,13 +370,22 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
           confirmPassword
         );
         setIsVerifyingOtp(false);
-        alert('Account created successfully! Please log in.');
-        navigation.navigate('Login');
+        setSweetAlert({
+          visible: true,
+          type: 'success',
+          title: 'Account Created!',
+          message: 'Your account has been created successfully. You can now sign in with your email and password.',
+          confirmText: 'Sign In Now',
+          onConfirmCallback: () => {
+            navigation.navigate('Login');
+          },
+        });
       }
     } catch (err: any) {
       setIsVerifyingOtp(false);
       const msg = err.response?.data?.message || err.message || 'Invalid OTP. Please check the code and try again.';
       setErrors((prev) => ({ ...prev, otp: msg, general: msg }));
+      showSweetAlertError('Verification Error', msg);
     }
   };
 
@@ -721,6 +757,21 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation, rout
         onSelectAccount={handleInstagramAccountSelect}
         isLoading={isInstagramLoading}
       />
+
+      {sweetAlert && (
+        <SweetAlertModal
+          visible={sweetAlert.visible}
+          type={sweetAlert.type}
+          title={sweetAlert.title}
+          message={sweetAlert.message}
+          confirmText={sweetAlert.confirmText || 'OK'}
+          onConfirm={() => {
+            const cb = sweetAlert.onConfirmCallback;
+            setSweetAlert(null);
+            if (cb) cb();
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };

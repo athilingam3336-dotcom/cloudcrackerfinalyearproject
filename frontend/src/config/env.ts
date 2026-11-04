@@ -1,9 +1,11 @@
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 const PROD_API_URL = 'https://cloudcrackerfinalyearproject.onrender.com/api/v1';
+const DEV_API_URL = 'http://localhost:8000/api/v1';
 
 const getApiBaseUrl = (): string => {
-  let envUrl = process.env.EXPO_PUBLIC_API_URL || PROD_API_URL;
+  let envUrl = process.env.EXPO_PUBLIC_API_URL || (__DEV__ ? DEV_API_URL : PROD_API_URL);
 
   // On Web Platform in Browser
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -14,7 +16,9 @@ const getApiBaseUrl = (): string => {
   } else if (Platform.OS !== 'web') {
     // On Native Mobile App
     if (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
-      envUrl = envUrl.replace(/localhost|127\.0\.0\.1/g, '10.82.144.11');
+      const hostUri = Constants.expoConfig?.hostUri || (Constants as any).manifest2?.extra?.expoClient?.hostUri || (Constants as any).manifest?.debuggerHost;
+      const lanIp = hostUri ? hostUri.split(':')[0] : '192.168.1.114';
+      envUrl = envUrl.replace(/localhost|127\.0\.0\.1/g, lanIp);
       console.log(`[API Config] Mobile auto-rewrote localhost to LAN IP: ${envUrl}`);
     }
   }

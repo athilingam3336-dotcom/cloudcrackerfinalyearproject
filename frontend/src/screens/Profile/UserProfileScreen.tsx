@@ -26,9 +26,11 @@ import { tokenStorage } from '@/storage/tokenStorage';
 import { useAuthStore } from '@/store/authStore';
 import { useProductStore } from '@/store/productStore';
 import { useNotificationStore } from '@/store';
+import { useSettingsStore } from '@/store/settingsStore';
 import { profileService } from '@/services/profileService';
 import { aboutService, AboutData } from '@/services/aboutService';
 import { sanitizeRemoteImageUrl } from '@/constants/productImages';
+import { InteractiveOnboardingTour } from '@/components/common/InteractiveOnboardingTour';
 
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
 import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
@@ -44,9 +46,31 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   navigation,
 }) => {
   const { handleTabPress } = useSmartTabNavigation();
+  const { locationMapUrl, contactPhone, contactEmail, whatsappNumber, fetchSettings } = useSettingsStore();
+
+  React.useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  const activeMapUrl = locationMapUrl || CLIENT_INFO.locationMapUrl;
+  const activePhone = contactPhone || CLIENT_INFO.primaryPhone;
+  const activeWhatsapp = whatsappNumber || contactPhone || CLIENT_INFO.primaryPhone;
+  const activeEmail = contactEmail || CLIENT_INFO.email;
+
+  const handleOpenStoreMap = () => {
+    if (!activeMapUrl) return;
+    const target = activeMapUrl.trim();
+    if (target.startsWith('http://') || target.startsWith('https://')) {
+      Linking.openURL(target);
+    } else {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`);
+    }
+  };
   const user = useAuthStore((state) => state.user);
   const updateProfile = useAuthStore((state) => state.updateProfile);
+  const resetOnboarding = useAuthStore((state) => state.resetOnboarding);
   const [isAboutModalVisible, setIsAboutModalVisible] = useState(false);
+  const [isTourVisible, setIsTourVisible] = useState(false);
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
 
   React.useEffect(() => {
@@ -141,10 +165,10 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
     {
       id: 'store_location',
       title: 'Store Location & Contact',
-      subtitle: `${CLIENT_INFO.primaryPhone} • ${CLIENT_INFO.email}`,
+      subtitle: `Call: ${activePhone} • WA: ${activeWhatsapp}`,
       icon: 'location-on',
       badge: 'MAP',
-      onPress: () => Linking.openURL(CLIENT_INFO.locationMapUrl),
+      onPress: handleOpenStoreMap,
     },
     {
       id: 'about',
@@ -161,6 +185,17 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
       icon: 'settings',
       badge: null,
       onPress: () => navigation.navigate('Settings'),
+    },
+    {
+      id: 'tour',
+      title: 'Take a Tour (Help & Walkthrough)',
+      subtitle: isAdmin ? 'Replay interactive Admin onboarding tour' : 'Replay interactive Customer store tour',
+      icon: 'explore',
+      badge: 'TOUR',
+      onPress: () => {
+        resetOnboarding();
+        setIsTourVisible(true);
+      },
     },
   ];
 
@@ -484,6 +519,14 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
             </View>
           </View>
         </Modal>
+
+        {/* Interactive Onboarding Tour (Restartable from Help) */}
+        <InteractiveOnboardingTour
+          visible={isTourVisible}
+          role={user?.role || 'user'}
+          onFinish={() => setIsTourVisible(false)}
+          onSkip={() => setIsTourVisible(false)}
+        />
       </SafeAreaView>
     </ResponsiveContainer>
   );

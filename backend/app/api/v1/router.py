@@ -21,6 +21,8 @@ from app.api.v1.audit_logs.audit_logs import router as audit_logs_router
 from app.api.v1.tokens.tokens import router as tokens_router, admin_router as admin_tokens_router
 from app.api.v1.about.about import router as about_router
 from app.api.v1.settings.settings import router as settings_router, admin_router as admin_settings_router
+from app.api.v1.admin.store_reset import router as store_reset_router
+from app.api.v1.admin.admin_promote import router as admin_promote_router
 
 api_v1_router = APIRouter()
 
@@ -51,3 +53,5 @@ api_v1_router.include_router(admin_tokens_router)
 api_v1_router.include_router(about_router)
 api_v1_router.include_router(settings_router)
 api_v1_router.include_router(admin_settings_router)
+api_v1_router.include_router(store_reset_router)
+api_v1_router.include_router(admin_promote_router)

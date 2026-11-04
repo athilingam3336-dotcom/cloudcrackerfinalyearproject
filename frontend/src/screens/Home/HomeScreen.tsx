@@ -36,6 +36,8 @@ import { productService } from '@/services/productService';
 import { paymentService } from '@/services/paymentService';
 import { useWishlistStore, useCartStore, useNotificationStore, useAuthStore, useAttentionModalStore } from '@/store';
 import { NeedsYourAttentionModal } from '@/components/admin/NeedsYourAttentionModal';
+import { InteractiveOnboardingTour } from '@/components/common/InteractiveOnboardingTour';
+import { HomeAnnouncementPopupModal } from '@/components/common/HomeAnnouncementPopupModal';
 import {
   MOCK_PRODUCTS,
   MOCK_FEATURED_PRODUCTS,
@@ -104,6 +106,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     closeAttentionModal,
     analyticsData: globalAnalyticsData,
   } = useAttentionModalStore();
+
+  // Customer Onboarding Tour State
+  const [showTour, setShowTour] = useState(false);
+
+  React.useEffect(() => {
+    if (isAuthenticated && user && user.role !== 'admin' && !user.hasCompletedOnboarding) {
+      const timer = setTimeout(() => {
+        setShowTour(true);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, user?.hasCompletedOnboarding, user?.role]);
 
   // Wishlist handler
   const handleToggleWishlist = useCallback(
@@ -434,13 +448,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
 
         {/* Search Bar */}
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onClear={() => setSearchQuery('')}
-          onFilterPress={() => navigation.navigate('ProductListing')}
-          placeholder="Search rockets, sparklers, barrages..."
-        />
+        <View nativeID="tour-target-search">
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onClear={() => setSearchQuery('')}
+            onFilterPress={() => navigation.navigate('ProductListing')}
+            placeholder="Search rockets, sparklers, barrages..."
+          />
+        </View>
 
         {/* Hero Banner Carousel */}
         <BannerCarousel
@@ -602,6 +618,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             navigation.navigate('OrderManagement');
           }}
         />
+
+        {/* Customer Interactive Onboarding Tour */}
+        <InteractiveOnboardingTour
+          visible={showTour}
+          role={user?.role || 'user'}
+          onFinish={() => setShowTour(false)}
+          onSkip={() => setShowTour(false)}
+        />
+
+        {/* Festive Announcement & 3-Day Diwali Closure Popup Modal */}
+        <HomeAnnouncementPopupModal />
 
         {/* Reusable Bottom Navigation Bar */}
         <BottomNavBar activeTab="Home" onTabPress={handleTabPress} />

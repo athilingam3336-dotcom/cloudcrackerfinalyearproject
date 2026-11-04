@@ -23,6 +23,7 @@ import { PasswordInput } from '@/components/inputs/PasswordInput';
 import { Checkbox } from '@/components/inputs/Checkbox';
 import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { InstagramAccountChooserModal } from '@/components/auth/InstagramAccountChooserModal';
+import { SweetAlertModal, SweetAlertType } from '@/components/common/SweetAlertModal';
 import { googleAuthService } from '@/services/googleAuthService';
 import { instagramAuthService } from '@/services/instagramAuthService';
 import { authService, GoogleAuthPayload, InstagramAuthPayload } from '@/services/authService';
@@ -46,6 +47,49 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [showColdStartNotice, setShowColdStartNotice] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
+
+  // SweetAlert Modal State
+  const [sweetAlert, setSweetAlert] = useState<{
+    visible: boolean;
+    type: SweetAlertType;
+    title: string;
+    message: string;
+    confirmText?: string;
+  } | null>(null);
+
+  const showSweetAlertError = (rawError: string) => {
+    let title = 'Sign In Failed';
+    let message = rawError || 'Invalid email address or password. Please try again.';
+
+    const lower = (rawError || '').toLowerCase();
+    if (lower.includes('invalid') || lower.includes('password') || lower.includes('credential')) {
+      title = 'Invalid Credentials';
+      message = 'The email address or password you entered is incorrect. Please check your credentials and try again.';
+    } else if (lower.includes('not found') || lower.includes('no account') || lower.includes('user not')) {
+      title = 'Account Not Found';
+      message = 'No account was found with this email address. Please make sure you have registered or create a new account.';
+    } else if (lower.includes('inactive') || lower.includes('disabled') || lower.includes('suspended')) {
+      title = 'Account Restricted';
+      message = 'This account has been disabled or suspended. Please contact Meera Crackers support.';
+    } else if (lower.includes('network') || lower.includes('failed to fetch') || lower.includes('timeout') || lower.includes('connect')) {
+      title = 'Connection Problem';
+      message = 'Unable to connect to the server. Please verify your internet connection and try again.';
+    } else if (lower.includes('google')) {
+      title = 'Google Sign In Error';
+      message = rawError || 'Google authentication could not be completed. Please try again.';
+    } else if (lower.includes('instagram')) {
+      title = 'Instagram Sign In Error';
+      message = rawError || 'Instagram authentication could not be completed. Please try again.';
+    }
+
+    setSweetAlert({
+      visible: true,
+      type: 'error',
+      title,
+      message,
+      confirmText: 'Try Again',
+    });
+  };
 
   useEffect(() => {
     let timer: any;
@@ -91,9 +135,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           window.history.replaceState({}, document.title, window.location.pathname);
         }
         if (errorParam === 'access_denied' || errorReason === 'user_denied') {
-          setErrors({ general: 'Instagram authorization was cancelled.' });
+          const msg = 'Instagram authorization was cancelled.';
+          setErrors({ general: msg });
+          showSweetAlertError(msg);
         } else {
-          setErrors({ general: 'Instagram authentication error. Please try again.' });
+          const msg = 'Instagram authentication error. Please try again.';
+          setErrors({ general: msg });
+          showSweetAlertError(msg);
         }
         return;
       }
@@ -114,7 +162,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           }
         } else {
           const storeError = useAuthStore.getState().error;
-          setErrors({ general: storeError || 'Instagram authentication failed. Please try again.' });
+          const msg = storeError || 'Instagram authentication failed. Please try again.';
+          setErrors({ general: msg });
+          showSweetAlertError(msg);
         }
       }
     };
@@ -135,7 +185,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       newErrors.password = 'Password is required';
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    if (Object.keys(newErrors).length > 0) {
+      if (!email.trim() && !password) {
+        showSweetAlertError('Please enter both your email address and password to sign in.');
+      } else if (newErrors.email) {
+        showSweetAlertError(newErrors.email);
+      } else if (newErrors.password) {
+        showSweetAlertError(newErrors.password);
+      }
+      return false;
+    }
+    return true;
   };
 
   const handleLogin = async () => {
@@ -155,7 +216,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
       }
     } else {
       const storeError = useAuthStore.getState().error;
-      setErrors({ general: storeError || 'Invalid email or password. Please try again.' });
+      const errorMsg = storeError || 'Invalid email or password. Please try again.';
+      setErrors({ general: errorMsg });
+      showSweetAlertError(errorMsg);
     }
   };
 
@@ -176,12 +239,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
           }
         } else {
           const storeError = useAuthStore.getState().error;
-          setErrors({ general: storeError || 'Google authentication failed.' });
+          const msg = storeError || 'Google authentication failed.';
+          setErrors({ general: msg });
+          showSweetAlertError(msg);
         }
       },
       (errorMsg: string) => {
         setIsGoogleLoading(false);
-        setErrors({ general: errorMsg || 'Google authentication error.' });
+        const msg = errorMsg || 'Google authentication error.';
+        setErrors({ general: msg });
+        showSweetAlertError(msg);
       }
     );
   };
@@ -401,6 +468,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) =
         onSelectAccount={handleInstagramAccountSelect}
         isLoading={isInstagramLoading}
       />
+
+      {sweetAlert && (
+        <SweetAlertModal
+          visible={sweetAlert.visible}
+          type={sweetAlert.type}
+          title={sweetAlert.title}
+          message={sweetAlert.message}
+          confirmText={sweetAlert.confirmText || 'Try Again'}
+          onConfirm={() => setSweetAlert(null)}
+        />
+      )}
     </SafeAreaView>
   </ResponsiveContainer>
   );

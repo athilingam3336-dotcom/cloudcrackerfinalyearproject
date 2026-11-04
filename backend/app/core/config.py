@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     TEST_MONGODB_URI: Optional[str] = None  # Dedicated URI for test environment
     DB_NAME: str = "cloudcrackers"
 
+    @field_validator("MONGODB_URL", "MONGODB_URI", "TEST_MONGODB_URI", "DB_NAME", mode="before")
+    @classmethod
+    def strip_quotes(cls, v):
+        if isinstance(v, str):
+            v = v.strip().strip("'\"")
+        return v
+
     @model_validator(mode="after")
     def resolve_mongodb_url(self) -> "Settings":
         """Resolve MongoDB connection based on ENVIRONMENT:

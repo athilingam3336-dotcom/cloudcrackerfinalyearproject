@@ -33,6 +33,8 @@ import { OnlineDeliveryBanner } from '@/components/cart/OnlineDeliveryBanner';
 import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
+import { SweetAlertModal, SweetAlertType } from '@/components/common/SweetAlertModal';
+import { containsBadWords, validateCityAndPincode } from '@/utils/locationValidator';
 
 type CheckoutScreenProps = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
 
@@ -143,6 +145,13 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [sweetAlert, setSweetAlert] = useState<{
+    visible: boolean;
+    type: SweetAlertType;
+    title: string;
+    message: string;
+    confirmText?: string;
+  } | null>(null);
 
   const handleProceedToPayment = useCallback(() => {
     setPaymentError(null);
@@ -155,9 +164,45 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
       if (!pincode.trim()) missingFields.push('Pincode');
     }
     if (missingFields.length > 0) {
-      setPaymentError(`⚠️ Please fill in: ${missingFields.join(', ')} before proceeding to payment.`);
+      const msg = `Please fill in: ${missingFields.join(', ')} before proceeding to payment.`;
+      setPaymentError(`⚠️ ${msg}`);
+      setSweetAlert({
+        visible: true,
+        type: 'warning',
+        title: 'Incomplete Details',
+        message: msg,
+        confirmText: 'Okay',
+      });
       return;
     }
+
+    // Profanity / Bad words validation
+    if (containsBadWords(fullName) || containsBadWords(address) || containsBadWords(city)) {
+      setSweetAlert({
+        visible: true,
+        type: 'warning',
+        title: 'Inappropriate Content',
+        message: 'Please remove any offensive language, slurs, or invalid words from your details before proceeding.',
+        confirmText: 'Edit Details',
+      });
+      return;
+    }
+
+    // Location & Pincode validation for online delivery
+    if (!isPickup) {
+      const locVal = validateCityAndPincode(city, pincode);
+      if (!locVal.isValid) {
+        setSweetAlert({
+          visible: true,
+          type: 'warning',
+          title: 'Location & Pincode Check',
+          message: locVal.reason || 'Please enter a valid Tamil Nadu town/city and its matching 6-digit pincode.',
+          confirmText: 'Correct Location',
+        });
+        return;
+      }
+    }
+
     setCurrentStep(2);
   }, [fullName, address, city, pincode, deliveryMethod]);
 
@@ -172,24 +217,56 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
       if (!pincode.trim()) missingFields.push('Pincode');
     }
     if (missingFields.length > 0) {
-      const errorMsg = `⚠️ Please fill in: ${missingFields.join(', ')} before placing your order.`;
-      setPaymentError(errorMsg);
+      const errorMsg = `Please fill in: ${missingFields.join(', ')} before placing your order.`;
+      setPaymentError(`⚠️ ${errorMsg}`);
       setCurrentStep(1);
-      if (Platform.OS === 'web') {
-        window.alert(`Incomplete Details!\nPlease fill in: ${missingFields.join(', ')}`);
-      } else {
-        Alert.alert('Incomplete Details', `Please fill in: ${missingFields.join(', ')}`);
-      }
+      setSweetAlert({
+        visible: true,
+        type: 'warning',
+        title: 'Incomplete Details',
+        message: errorMsg,
+        confirmText: 'Okay',
+      });
       return;
     }
+
+    // Profanity / Bad words validation
+    if (containsBadWords(fullName) || containsBadWords(address) || containsBadWords(city)) {
+      setSweetAlert({
+        visible: true,
+        type: 'warning',
+        title: 'Inappropriate Content',
+        message: 'Please remove any offensive language, slurs, or invalid words from your details before placing your order.',
+        confirmText: 'Edit Details',
+      });
+      return;
+    }
+
+    // Location & Pincode validation for online delivery
+    if (!isPickup) {
+      const locVal = validateCityAndPincode(city, pincode);
+      if (!locVal.isValid) {
+        setSweetAlert({
+          visible: true,
+          type: 'warning',
+          title: 'Location & Pincode Mismatch',
+          message: locVal.reason || 'Please enter a valid Tamil Nadu town/city and its matching 6-digit pincode.',
+          confirmText: 'Correct Location',
+        });
+        return;
+      }
+    }
+
     if (items.length === 0) {
       const errorMsg = 'Your cart is empty. Please add items before checkout.';
       setPaymentError(errorMsg);
-      if (Platform.OS === 'web') {
-        window.alert(errorMsg);
-      } else {
-        Alert.alert('Cart Empty', errorMsg);
-      }
+      setSweetAlert({
+        visible: true,
+        type: 'warning',
+        title: 'Cart is Empty',
+        message: errorMsg,
+        confirmText: 'Browse Products',
+      });
       return;
     }
 
@@ -294,16 +371,24 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
         });
       }
     } catch (err: any) {
-      const errMsg = err?.response?.data?.message || err?.message || 'Failed to initiate order.';
+      const errMsg = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Failed to initiate order.';
       setPaymentError(errMsg);
       if (err?.status === 401 || err?.response?.status === 401) {
-        Alert.alert(
-          'Session Expired',
-          'Your login session has expired. Please log in again to complete your order.',
-          [{ text: 'Login', onPress: () => navigation.navigate('Login') }]
-        );
+        setSweetAlert({
+          visible: true,
+          type: 'warning',
+          title: 'Session Expired',
+          message: 'Your login session has expired. Please log in again to complete your order.',
+          confirmText: 'Login Now',
+        });
       } else {
-        Alert.alert('Checkout Error', errMsg);
+        setSweetAlert({
+          visible: true,
+          type: 'error',
+          title: 'Order Notice',
+          message: errMsg,
+          confirmText: 'Okay',
+        });
       }
     } finally {
       setIsPlacingOrder(false);
@@ -843,6 +928,23 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation }) =>
       </ScrollView>
 
       <BottomNavBar activeTab="Cart" onTabPress={handleTabPress} />
+
+      {sweetAlert && (
+        <SweetAlertModal
+          visible={sweetAlert.visible}
+          type={sweetAlert.type}
+          title={sweetAlert.title}
+          message={sweetAlert.message}
+          confirmText={sweetAlert.confirmText || 'Okay'}
+          onConfirm={() => {
+            const title = sweetAlert.title;
+            setSweetAlert(null);
+            if (title === 'Session Expired') {
+              navigation.navigate('Login');
+            }
+          }}
+        />
+      )}
     </SafeAreaView>
   </ResponsiveContainer>
 );

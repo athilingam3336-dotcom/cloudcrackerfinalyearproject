@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
@@ -6,6 +6,8 @@ import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { StoreHeaderSettingsModal } from '@/components/admin/StoreHeaderSettingsModal';
 import { sanitizeRemoteImageUrl, LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 import { CLIENT_INFO } from '@/constants/clientInfo';
 import { MAX_CONTENT_WIDTH } from '@/constants/responsive';
@@ -51,6 +53,37 @@ export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
     const activeAvatar = sanitizeRemoteImageUrl(avatarUrl || user?.avatarUrl);
     const isAdmin = user?.role === 'admin' || (user as any)?.isAdmin;
 
+    const [isHeaderSettingsModalVisible, setIsHeaderSettingsModalVisible] = useState(false);
+
+    const {
+      announcementText,
+      locationMapUrl,
+      contactEmail,
+      contactPhone,
+      whatsappNumber,
+      fetchSettings,
+    } = useSettingsStore();
+
+    useEffect(() => {
+      fetchSettings();
+    }, [fetchSettings]);
+
+    const activeAnnouncement = announcementText || 'Direct Sivakasi Factory Prices | Express Delivery Across Tamil Nadu & All India';
+    const activeMapUrl = locationMapUrl || CLIENT_INFO.locationMapUrl;
+    const activeEmail = contactEmail || CLIENT_INFO.email;
+    const activePhone = contactPhone || CLIENT_INFO.primaryPhone;
+    const activeWhatsapp = whatsappNumber || CLIENT_INFO.primaryPhone;
+
+    const handleOpenMap = () => {
+      if (!activeMapUrl) return;
+      const target = activeMapUrl.trim();
+      if (target.startsWith('http://') || target.startsWith('https://')) {
+        Linking.openURL(target);
+      } else {
+        Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`);
+      }
+    };
+
     const handleNav = (tab: string) => {
       if (onNavigateTab) {
         onNavigateTab(tab);
@@ -79,13 +112,13 @@ export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
             <View style={styles.announcementLeft}>
               <MaterialIcons name="local-shipping" size={15} color="#FFD700" />
               <Text style={styles.announcementText}>
-                Direct Sivakasi Factory Prices | Express Delivery Across Tamil Nadu & All India
+                {activeAnnouncement}
               </Text>
             </View>
             <View style={styles.announcementRight}>
               <TouchableOpacity
                 style={styles.announcementLink}
-                onPress={() => Linking.openURL(CLIENT_INFO.locationMapUrl)}
+                onPress={handleOpenMap}
               >
                 <MaterialIcons name="place" size={13} color="#FFD700" />
                 <Text style={styles.announcementLinkText}>Store Map 📍</Text>
@@ -93,27 +126,44 @@ export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
               <Text style={styles.announcementDivider}>|</Text>
               <TouchableOpacity
                 style={styles.announcementLink}
-                onPress={() => Linking.openURL(`mailto:${CLIENT_INFO.email}`)}
+                onPress={() => Linking.openURL(`mailto:${activeEmail}`)}
               >
                 <MaterialIcons name="email" size={13} color="#60A5FA" />
-                <Text style={styles.announcementLinkText}>{CLIENT_INFO.email}</Text>
+                <Text style={styles.announcementLinkText}>{activeEmail}</Text>
               </TouchableOpacity>
               <Text style={styles.announcementDivider}>|</Text>
               <TouchableOpacity
                 style={styles.announcementLink}
-                onPress={() => Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`)}
+                onPress={() => Linking.openURL(`tel:${activePhone}`)}
               >
                 <MaterialIcons name="phone" size={13} color="#FFFFFF" />
-                <Text style={styles.announcementLinkText}>Call: {CLIENT_INFO.primaryPhone}</Text>
+                <Text style={styles.announcementLinkText}>Call: {activePhone}</Text>
               </TouchableOpacity>
               <Text style={styles.announcementDivider}>|</Text>
               <TouchableOpacity
                 style={styles.announcementLink}
-                onPress={() => Linking.openURL(`https://wa.me/${CLIENT_INFO.primaryPhone}`)}
+                onPress={() => {
+                  const cleanPhone = activeWhatsapp.replace(/[^0-9]/g, '');
+                  const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+                  Linking.openURL(`https://wa.me/${waPhone}`);
+                }}
               >
                 <MaterialIcons name="chat" size={13} color="#25D366" />
                 <Text style={styles.announcementLinkText}>WhatsApp Order</Text>
               </TouchableOpacity>
+
+              {isAdmin && (
+                <>
+                  <Text style={styles.announcementDivider}>|</Text>
+                  <TouchableOpacity
+                    style={styles.adminEditHeaderBtn}
+                    onPress={() => setIsHeaderSettingsModalVisible(true)}
+                  >
+                    <MaterialIcons name="edit" size={12} color="#FFFFFF" />
+                    <Text style={styles.adminEditHeaderText}>Edit Bar</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -135,12 +185,22 @@ export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
 
             {/* Desktop Navigation Links */}
             <View style={styles.navLinksRow}>
-              <TouchableOpacity style={styles.navLinkBtn} onPress={() => handleNav('Home')}>
-                <Text style={styles.navLinkText}>Home</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.navLinkBtn} onPress={() => handleNav('Categories')}>
-                <Text style={styles.navLinkText}>Categories</Text>
-              </TouchableOpacity>
+              <View nativeID="tour-target-home">
+                <TouchableOpacity
+                  style={styles.navLinkBtn}
+                  onPress={() => handleNav('Home')}
+                >
+                  <Text style={styles.navLinkText}>Home</Text>
+                </TouchableOpacity>
+              </View>
+              <View nativeID="tour-target-categories">
+                <TouchableOpacity
+                  style={styles.navLinkBtn}
+                  onPress={() => handleNav('Categories')}
+                >
+                  <Text style={styles.navLinkText}>Categories</Text>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity style={styles.navLinkBtn} onPress={() => handleNav('Wishlist')}>
                 <Text style={styles.navLinkText}>Wishlist</Text>
               </TouchableOpacity>
@@ -148,28 +208,36 @@ export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
                 <Text style={styles.navLinkText}>Cart</Text>
               </TouchableOpacity>
               {isAdmin && (
-                <TouchableOpacity
-                  style={[styles.navLinkBtn, styles.adminBadgeBtn]}
-                  onPress={() => handleNav('AdminDashboard')}
-                >
-                  <MaterialIcons name="admin-panel-settings" size={16} color={Colors.primary} />
-                  <Text style={[styles.navLinkText, { color: Colors.primary, fontFamily: 'Inter-Bold' }]}>
-                    Admin Panel
-                  </Text>
-                </TouchableOpacity>
+                <View nativeID="tour-target-admin-panel">
+                  <TouchableOpacity
+                    style={[styles.navLinkBtn, styles.adminBadgeBtn]}
+                    onPress={() => handleNav('AdminDashboard')}
+                  >
+                    <MaterialIcons name="admin-panel-settings" size={16} color={Colors.primary} />
+                    <Text style={[styles.navLinkText, { color: Colors.primary, fontFamily: 'Inter-Bold' }]}>
+                      Admin Panel
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
 
             {/* Right Action Icons */}
             <View style={styles.rightActionsRow}>
-              <TouchableOpacity style={styles.actionIconBtn} onPress={onNotificationPress} activeOpacity={0.7}>
-                <MaterialIcons name="notifications-none" size={22} color={Colors.onSurface} />
-                {notificationCount > 0 && (
-                  <View style={styles.badgeCircle}>
-                    <Text style={styles.badgeText}>{notificationCount}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              <View nativeID="tour-target-bell">
+                <TouchableOpacity
+                  style={styles.actionIconBtn}
+                  onPress={onNotificationPress}
+                  activeOpacity={0.7}
+                >
+                  <MaterialIcons name="notifications-none" size={22} color={Colors.onSurface} />
+                  {notificationCount > 0 && (
+                    <View style={styles.badgeCircle}>
+                      <Text style={styles.badgeText}>{notificationCount}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
 
               <TouchableOpacity
                 style={styles.actionIconBtn}
@@ -179,39 +247,50 @@ export const WebDesktopHeader: React.FC<WebDesktopHeaderProps> = React.memo(
                 <MaterialIcons name="favorite-border" size={22} color={Colors.onSurface} />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.cartActionBtn}
-                onPress={onCartPress || (() => handleNav('Cart'))}
-                activeOpacity={0.8}
-              >
-                <MaterialIcons name="shopping-cart" size={20} color="#FFFFFF" />
-                <Text style={styles.cartBtnText}>Cart</Text>
-                {cartCount > 0 && (
-                  <View style={styles.cartHeaderBadge}>
-                    <Text style={styles.cartHeaderBadgeText}>{cartCount}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              <View nativeID="tour-target-cart">
+                <TouchableOpacity
+                  style={styles.cartActionBtn}
+                  onPress={onCartPress || (() => handleNav('Cart'))}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons name="shopping-cart" size={20} color="#FFFFFF" />
+                  <Text style={styles.cartBtnText}>Cart</Text>
+                  {cartCount > 0 && (
+                    <View style={styles.cartHeaderBadge}>
+                      <Text style={styles.cartHeaderBadgeText}>{cartCount}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
 
-              <TouchableOpacity
-                style={styles.userProfileBtn}
-                onPress={onProfilePress || (() => navigation.navigate('UserProfile'))}
-                activeOpacity={0.8}
-              >
-                {activeAvatar ? (
-                  <Image source={{ uri: activeAvatar }} style={styles.avatarImg} />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <MaterialIcons name="person" size={18} color={Colors.primary} />
-                  </View>
-                )}
-                <Text style={styles.userNameText} numberOfLines={1}>
-                  {activeUserName}
-                </Text>
-              </TouchableOpacity>
+              <View nativeID="tour-target-profile">
+                <TouchableOpacity
+                  style={styles.userProfileBtn}
+                  onPress={onProfilePress || (() => navigation.navigate('UserProfile'))}
+                  activeOpacity={0.8}
+                >
+                  {activeAvatar ? (
+                    <Image source={{ uri: activeAvatar }} style={styles.avatarImg} />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <MaterialIcons name="person" size={18} color={Colors.primary} />
+                    </View>
+                  )}
+                  <Text style={styles.userNameText} numberOfLines={1}>
+                    {activeUserName}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
+
+        {isAdmin && (
+          <StoreHeaderSettingsModal
+            visible={isHeaderSettingsModalVisible}
+            onClose={() => setIsHeaderSettingsModalVisible(false)}
+          />
+        )}
       </View>
     );
   }
@@ -269,6 +348,23 @@ const styles = StyleSheet.create({
   announcementDivider: {
     color: 'rgba(255, 255, 255, 0.4)',
     fontSize: 11,
+  },
+  adminEditHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  adminEditHeaderText: {
+    ...Typography.labelLg,
+    fontSize: 10.5,
+    color: '#FFFFFF',
+    fontFamily: 'Inter-Bold',
   },
   mainHeaderBar: {
     paddingVertical: Spacing.sm + 2,

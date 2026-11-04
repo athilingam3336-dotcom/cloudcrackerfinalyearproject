@@ -22,6 +22,7 @@ class User(Document):
     updated_by: Optional[str] = None
     status: str = "active"
     avatar_url: Optional[str] = None
+    has_completed_onboarding: bool = False
 
     class Settings:
         name = Collections.USERS

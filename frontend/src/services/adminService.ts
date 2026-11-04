@@ -8,6 +8,7 @@ import { ProductItem } from '@/constants/mockData';
 import { apiClient } from '@/api/axios';
 import { ENV } from '@/config/env';
 import { productService } from './productService';
+import { extractAndValidateLocation } from '../utils/locationValidator';
 
 export function normalizeAdminOrderStatus(rawStatus?: string): string {
   if (!rawStatus) return 'Pending';
@@ -162,6 +163,7 @@ export interface BusinessAnalyticsData {
   seasonalTrends: AnalyticsSeasonalPoint[];
   lastUpdated: number;
   rawOrders?: any[];
+  rawProducts?: any[];
 }
 
 export interface UserOrderItemUI {
@@ -688,6 +690,7 @@ export class AdminService {
       seasonalTrends,
       lastUpdated: Date.now(),
       rawOrders: [],
+      rawProducts: [],
     };
   }
 
@@ -892,22 +895,24 @@ export class AdminService {
         totalStockUnits,
       };
 
-      // 6. Location Sales
+      // 6. Location Sales (Strict Tamil Nadu Pincode & Profanity Cross-Validation)
       const locMap: Record<string, { revenue: number; ordersCount: number }> = {};
       for (const o of rawOrders) {
         const addr = typeof o.shipping_address === 'string'
           ? o.shipping_address
           : o.shipping_address?.city || o.shipping_address?.full_name || '';
 
-        if (addr && addr.trim()) {
-          const parts = addr.split(',').map((s: string) => s.trim());
-          let city = parts.length > 1 ? parts[parts.length - 2] : parts[0];
-          city = city.replace(/\d+/g, '').replace(/\([^)]*\)/g, '').trim();
-          if (city.length > 2) {
-            if (!locMap[city]) locMap[city] = { revenue: 0, ordersCount: 0 };
-            locMap[city].revenue += (o.total || o.totalAmount || 0);
-            locMap[city].ordersCount += 1;
-          }
+        const explicitCity = (o.city || (typeof o.shipping_address === 'object' ? o.shipping_address?.city : undefined)) as string | undefined;
+        const explicitPin = (o.pincode || (typeof o.shipping_address === 'object' ? o.shipping_address?.pincode : undefined)) as string | undefined;
+
+        const valRes = extractAndValidateLocation(addr, explicitCity, explicitPin);
+
+        // Discard any badwords, invalid towns, or mismatched pincodes
+        if (valRes.isValid && valRes.canonicalCity) {
+          const city = valRes.canonicalCity;
+          if (!locMap[city]) locMap[city] = { revenue: 0, ordersCount: 0 };
+          locMap[city].revenue += (o.total || o.totalAmount || 0);
+          locMap[city].ordersCount += 1;
         }
       }
 
@@ -994,6 +999,7 @@ export class AdminService {
         seasonalTrends,
         lastUpdated: Date.now(),
         rawOrders,
+        rawProducts,
       };
 
       const cacheEntry = { data: analyticsData, timestamp: Date.now() };
@@ -2076,6 +2082,194 @@ export class AdminService {
         'No sales recorded yet today. Real-time sales analytics will automatically populate once orders arrive.'
       ],
     };
+  }
+
+  /**
+   * Dual-Admin Store Reset API
+   */
+  async getResetSecurityStatus(): Promise<{
+    can_reset: boolean;
+    admin_count: number;
+    registered_admins_masked: string[];
+    message: string;
+  }> {
+    const response = await apiClient.get('/admin/store-reset/status');
+    return response.data?.data || response.data;
+  }
+
+  async requestStoreResetOtp(): Promise<{
+    session_id: string;
+    admin1_email?: string;
+    admin2_email?: string;
+    admin1_masked: string;
+    admin2_masked: string;
+    expires_in_seconds: number;
+    message: string;
+  }> {
+    const response = await apiClient.post('/admin/store-reset/request-otp');
+    return {
+      ...(response.data?.data || {}),
+      message: response.data?.message || 'Dual OTP codes sent successfully.',
+    };
+  }
+
+  async verifyAndResetStore(payload: {
+    session_id: string;
+    otp1: string;
+    otp2: string;
+    confirm_text?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    deleted_orders?: number;
+    deleted_payments?: number;
+  }> {
+    const response = await apiClient.post('/admin/store-reset/verify-and-reset', payload);
+    return {
+      success: true,
+      message: response.data?.message || 'Store data successfully reset.',
+      ...(response.data?.data || {}),
+    };
+  }
+
+  /**
+   * Dual-Admin Promotion API
+   */
+  async getPromotionSecurityStatus(): Promise<{
+    can_promote: boolean;
+    admin_count: number;
+    registered_admins: string[];
+    message: string;
+  }> {
+    const response = await apiClient.get('/admin/promote-admin/status');
+    return response.data?.data || response.data;
+  }
+
+  async requestAdminPromotion(payload: {
+    candidate_email: string;
+    full_name?: string;
+  }): Promise<{
+    session_id: string;
+    candidate_email: string;
+    candidate_name?: string;
+    admin1_email: string;
+    admin2_email: string;
+    expires_in_seconds: number;
+    message: string;
+  }> {
+    const response = await apiClient.post('/admin/promote-admin/request-promotion', payload);
+    return {
+      ...(response.data?.data || {}),
+      message: response.data?.message || 'Dual OTP codes sent successfully.',
+    };
+  }
+
+  async resendPromotionDualOtp(session_id: string): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/admin/promote-admin/resend-dual-otp', { session_id });
+    return response.data;
+  }
+
+  async verifyPromotionDualOtp(payload: {
+    session_id: string;
+    admin1_otp: string;
+    admin2_otp: string;
+  }): Promise<{
+    success: boolean;
+    stage: string;
+    message: string;
+    data: {
+      session_id: string;
+      candidate_email: string;
+      candidate_name?: string;
+      dual_approved: boolean;
+      expires_in_seconds: number;
+    };
+  }> {
+    const response = await apiClient.post('/admin/promote-admin/verify-dual-otp', payload);
+    return response.data;
+  }
+
+  async resendCandidateOtp(session_id: string): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/admin/promote-admin/resend-candidate-otp', { session_id });
+    return response.data;
+  }
+
+  async verifyCandidateAndPromote(payload: {
+    session_id: string;
+    candidate_otp: string;
+    temporary_password?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      full_name?: string;
+      role: string;
+      status: string;
+    };
+  }> {
+    const response = await apiClient.post('/admin/promote-admin/verify-candidate-and-promote', payload);
+    return response.data;
+  }
+
+  /**
+   * Dual-Admin Demotion / Revocation API
+   */
+  async getActiveAdminsList(): Promise<{
+    admin_count: number;
+    can_demote: boolean;
+    admins: Array<{
+      id: string;
+      email: string;
+      full_name?: string;
+      is_current_user?: boolean;
+    }>;
+    min_required_for_removal: number;
+    message?: string;
+  }> {
+    const response = await apiClient.get('/admin/promote-admin/admins-list');
+    return response.data?.data || response.data;
+  }
+
+  async requestAdminDemotion(payload: {
+    target_admin_email: string;
+  }): Promise<{
+    session_id: string;
+    target_admin_email: string;
+    target_admin_name?: string;
+    admin1_email: string;
+    admin2_email: string;
+    expires_in_seconds: number;
+    message: string;
+  }> {
+    const response = await apiClient.post('/admin/promote-admin/request-demotion', payload);
+    return {
+      ...(response.data?.data || {}),
+      message: response.data?.message || 'Dual OTP codes sent to authorizing administrators.',
+    };
+  }
+
+  async resendDemotionDualOtp(session_id: string): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/admin/promote-admin/resend-demotion-otp', { session_id });
+    return response.data;
+  }
+
+  async verifyDemotionAndRevoke(payload: {
+    session_id: string;
+    admin1_otp: string;
+    admin2_otp: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      email: string;
+      full_name?: string;
+      role: string;
+      revoked_by: string;
+    };
+  }> {
+    const response = await apiClient.post('/admin/promote-admin/verify-demotion', payload);
+    return response.data;
   }
 }
 

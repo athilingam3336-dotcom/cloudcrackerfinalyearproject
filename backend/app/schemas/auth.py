@@ -162,6 +162,7 @@ class UserResponse(BaseModel):
     updated_at: datetime
     status: str
     avatar_url: Optional[str] = None
+    has_completed_onboarding: bool = False
 
     @model_validator(mode="before")
     @classmethod

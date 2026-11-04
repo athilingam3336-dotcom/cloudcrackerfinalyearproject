@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { CLIENT_INFO } from '@/constants/clientInfo';
 import { MAX_CONTENT_WIDTH } from '@/constants/responsive';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
@@ -14,16 +15,39 @@ export const FooterSection: React.FC = React.memo(() => {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
 
+  const { locationMapUrl, contactPhone, contactEmail, whatsappNumber, fetchSettings } = useSettingsStore();
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  const activeMapUrl = locationMapUrl || CLIENT_INFO.locationMapUrl;
+  const activePhone = contactPhone || CLIENT_INFO.primaryPhone;
+  const activeWhatsapp = whatsappNumber || contactPhone || CLIENT_INFO.primaryPhone;
+  const activeEmail = contactEmail || CLIENT_INFO.email;
+
   const handleOpenMap = () => {
-    Linking.openURL(CLIENT_INFO.locationMapUrl);
+    if (!activeMapUrl) return;
+    const target = activeMapUrl.trim();
+    if (target.startsWith('http://') || target.startsWith('https://')) {
+      Linking.openURL(target);
+    } else {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`);
+    }
   };
 
   const handleEmailPress = () => {
-    Linking.openURL(`mailto:${CLIENT_INFO.email}`);
+    Linking.openURL(`mailto:${activeEmail}`);
   };
 
   const handlePhonePress = () => {
-    Linking.openURL(`tel:${CLIENT_INFO.primaryPhone}`);
+    Linking.openURL(`tel:${activePhone}`);
+  };
+
+  const handleWhatsappPress = () => {
+    const clean = activeWhatsapp.replace(/\D/g, '');
+    const waPhone = clean.length === 10 ? `91${clean}` : clean;
+    Linking.openURL(`https://wa.me/${waPhone}`);
   };
 
   // ── 1. COMPACT & STREAMLINED MOBILE FOOTER (HEIGHT ~110px) ──
@@ -68,12 +92,17 @@ export const FooterSection: React.FC = React.memo(() => {
         <View style={styles.mobileContactRow}>
           <TouchableOpacity style={styles.mobileContactItem} onPress={handlePhonePress} activeOpacity={0.7}>
             <MaterialIcons name="phone" size={13} color="#E11D48" />
-            <Text style={styles.contactTextMobile}>{CLIENT_INFO.primaryPhone}</Text>
+            <Text style={styles.contactTextMobile}>{activePhone}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.mobileContactItem} onPress={handleWhatsappPress} activeOpacity={0.7}>
+            <MaterialIcons name="chat" size={13} color="#16A34A" />
+            <Text style={[styles.contactTextMobile, { color: '#16A34A' }]}>WhatsApp</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.mobileMapItem} onPress={handleOpenMap} activeOpacity={0.7}>
             <MaterialIcons name="place" size={14} color="#FACC15" />
-            <Text style={styles.mapTextMobile}>Store Location 📍</Text>
+            <Text style={styles.mapTextMobile}>Store 📍</Text>
           </TouchableOpacity>
         </View>
 
@@ -139,14 +168,21 @@ export const FooterSection: React.FC = React.memo(() => {
               <View style={styles.iconCircle}>
                 <MaterialIcons name="phone" size={14} color="#E11D48" />
               </View>
-              <Text style={styles.contactValue}>{CLIENT_INFO.primaryPhone}</Text>
+              <Text style={styles.contactValue}>{activePhone}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.contactRow} onPress={handleWhatsappPress} activeOpacity={0.7}>
+              <View style={[styles.iconCircle, { backgroundColor: '#DCFCE7' }]}>
+                <MaterialIcons name="chat" size={14} color="#16A34A" />
+              </View>
+              <Text style={styles.contactValue}>WhatsApp: {activeWhatsapp}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.contactRow} onPress={handleEmailPress} activeOpacity={0.7}>
               <View style={styles.iconCircle}>
                 <MaterialIcons name="email" size={14} color="#E11D48" />
               </View>
-              <Text style={styles.contactValue}>{CLIENT_INFO.email}</Text>
+              <Text style={styles.contactValue}>{activeEmail}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.mapBtn} onPress={handleOpenMap} activeOpacity={0.8}>

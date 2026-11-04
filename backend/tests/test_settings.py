@@ -44,3 +44,39 @@ async def test_customer_cannot_update_settings(client: AsyncClient, customer_hea
         headers=customer_headers,
     )
     assert response.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_admin_phone_validation_rejects_short_digits(client: AsyncClient, admin_headers: dict):
+    # Short 3 or 4-digit phone should fail validation with 422
+    response_short_phone = await client.put(
+        "/api/v1/admin/settings",
+        json={"contact_phone": "733"},
+        headers=admin_headers,
+    )
+    assert response_short_phone.status_code == 422
+
+    response_short_whatsapp = await client.put(
+        "/api/v1/admin/settings",
+        json={"whatsapp_number": "987"},
+        headers=admin_headers,
+    )
+    assert response_short_whatsapp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_admin_phone_validation_accepts_valid_10_digits(client: AsyncClient, admin_headers: dict):
+    # Valid 10-digit Indian numbers starting with 6-9
+    response = await client.put(
+        "/api/v1/admin/settings",
+        json={
+            "contact_phone": "+91 7339624431",
+            "whatsapp_number": "7339624431",
+            "contact_email": "Meeracrackers@gmail.com",
+        },
+        headers=admin_headers,
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["contact_phone"] == "7339624431"
+    assert data["whatsapp_number"] == "7339624431"

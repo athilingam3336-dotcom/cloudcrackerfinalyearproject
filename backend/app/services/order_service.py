@@ -105,6 +105,19 @@ class OrderService:
             else:
                 selected_delivery_method = "STORE_PICKUP"
 
+        # Validate address content and Tamil Nadu location matching
+        from app.utils.location_validator import contains_bad_words, extract_and_validate_location
+        if contains_bad_words(data.shipping_address):
+            raise ValidationException(
+                message="Shipping address contains inappropriate or prohibited language."
+            )
+        if selected_delivery_method == "ONLINE_DELIVERY":
+            is_valid_loc, _ = extract_and_validate_location(data.shipping_address)
+            if not is_valid_loc:
+                raise ValidationException(
+                    message="Please enter a valid Tamil Nadu town/city name and matching 6-digit pincode (600000 - 643999)."
+                )
+
         # Calculate shipping and tax (Shipping is always ₹0)
         shipping = 0.0
         tax = round(0.05 * grand_total, 2)

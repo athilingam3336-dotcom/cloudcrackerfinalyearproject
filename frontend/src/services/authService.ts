@@ -55,6 +55,7 @@ export class AuthService {
       membership: user.membership || (normalizedRole === 'admin' ? 'Administrator' : 'Standard Member'),
       ordersCount: user.ordersCount || 0,
       avatarUrl: user.avatarUrl || user.avatar_url,
+      hasCompletedOnboarding: Boolean(user.has_completed_onboarding ?? user.hasCompletedOnboarding),
     };
   }
 
@@ -351,6 +352,26 @@ export class AuthService {
     const { data: res } = await apiClient.post('/auth/verify-email-otp', { email, otp });
     const payload = res.data || res;
     return Boolean(payload.verified ?? res.success);
+  }
+
+  async completeOnboarding(): Promise<boolean> {
+    if (ENV.ENABLE_MOCK_API) return true;
+    try {
+      const { data: res } = await apiClient.post('/auth/onboarding/complete');
+      return Boolean(res.success);
+    } catch {
+      return false;
+    }
+  }
+
+  async resetOnboarding(): Promise<boolean> {
+    if (ENV.ENABLE_MOCK_API) return true;
+    try {
+      const { data: res } = await apiClient.post('/auth/onboarding/reset');
+      return Boolean(res.success);
+    } catch {
+      return false;
+    }
   }
 }
 

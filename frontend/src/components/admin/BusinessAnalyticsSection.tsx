@@ -19,6 +19,14 @@ import {
   adminService,
 } from '@/services/adminService';
 import { UniversalSvgChart } from '@/components/common/UniversalSvgChart';
+import { AdvancedAnalyticsInsights } from './AdvancedAnalyticsInsights';
+import {
+  extractAndValidateLocation,
+  containsBadWords,
+  TN_LOCATION_DIRECTORY,
+  DEFAULT_TN_TOP_LOCATIONS,
+} from '@/utils/locationValidator';
+import { useSettingsStore } from '@/store/settingsStore';
 
 // Brand & Status Palette matching store red theme
 const BRAND_RED = '#D5342E';
@@ -32,6 +40,7 @@ export interface BusinessAnalyticsSectionProps {
   isError?: boolean;
   onRetry?: () => void;
   onOpenTodayReport?: () => void;
+  onOpenAnalyticsModal?: () => void;
   onNavigateToInventory?: () => void;
   onNavigateToProducts?: () => void;
   onNavigateToCategories?: () => void;
@@ -41,6 +50,7 @@ export interface BusinessAnalyticsSectionProps {
   onNavigateToDelivery?: () => void;
   onNavigateToAbout?: () => void;
   onOpenDeliverySettings?: () => void;
+  onOpenFestivePopup?: () => void;
   onRefreshData?: () => void;
   onOpenAttentionModal?: () => void;
 }
@@ -51,6 +61,7 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
   isError = false,
   onRetry,
   onOpenTodayReport,
+  onOpenAnalyticsModal,
   onNavigateToInventory,
   onNavigateToProducts,
   onNavigateToCategories,
@@ -60,12 +71,15 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
   onNavigateToDelivery,
   onNavigateToAbout,
   onOpenDeliverySettings,
+  onOpenFestivePopup,
   onRefreshData,
   onOpenAttentionModal,
 }) => {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768 && width < 1024;
+
+  const { popupEnabled } = useSettingsStore();
 
   // ── 1. Date Filter State for Date-Wise Financial Report ─────────────────────
   const [selectedReportDate, setSelectedReportDate] = useState<string>(() => {
@@ -98,11 +112,7 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
     return days;
   }, [calendarViewDate]);
 
-  // ── 2. Filter State for Payment Collection Table ──────────────────────────
-  const [paymentFilterTab, setPaymentFilterTab] = useState<'All' | 'Paid' | 'Pending'>('All');
-  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-
-  // ── 3. Time Range State for Sales Overview Line Chart ─────────────────────
+  // ── 2. Time Range State for Sales Overview Line Chart ─────────────────────
   const [salesTimeRange, setSalesTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly'>('Daily');
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
 
@@ -436,32 +446,62 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
   }, [rawOrders, analyticsData]);
 
   // ── 10. Real DB Top Locations (MongoDB Atlas) ──
+  // Strictly validated: Only shows valid Tamil Nadu cities where the town and 6-digit pincode match.
+  // Profanities, bad words, and gibberish are strictly rejected.
   const realLocationSales = useMemo(() => {
+    // 1. Check pre-aggregated analytics data if available
     if (analyticsData?.locationSales && analyticsData.locationSales.length > 0) {
-      const totalLocRev = analyticsData.locationSales.reduce((sum, l) => sum + (l.revenue || 0), 0) || 1;
-      return analyticsData.locationSales.slice(0, 6).map((l) => ({
-        city: l.location || 'Tamil Nadu',
-        pct: `${Math.round(((l.revenue || 1) / totalLocRev) * 100)}%`,
-        ordersCount: l.ordersCount || 1,
-      }));
+      const validPoints = analyticsData.locationSales
+        .filter((l) => {
+          if (!l.location || containsBadWords(l.location)) return false;
+          const locLower = l.location.toLowerCase().trim();
+          return TN_LOCATION_DIRECTORY.some(
+            (dir) => dir.canonical.toLowerCase() === locLower || dir.aliases.some((al) => locLower.includes(al) || al.includes(locLower))
+          );
+        })
+        .map((l) => {
+          const locLower = (l.location || '').toLowerCase().trim();
+          const match = TN_LOCATION_DIRECTORY.find(
+            (dir) => dir.canonical.toLowerCase() === locLower || dir.aliases.some((al) => locLower.includes(al) || al.includes(locLower))
+          );
+          return {
+            ...l,
+            location: match ? match.canonical : l.location,
+          };
+        });
+
+      if (validPoints.length > 0) {
+        const totalLocRev = validPoints.reduce((sum, l) => sum + (l.revenue || 0), 0) || 1;
+        return validPoints.slice(0, 6).map((l) => ({
+          city: l.location || 'Tamil Nadu',
+          pct: `${Math.round(((l.revenue || 1) / totalLocRev) * 100)}%`,
+          ordersCount: l.ordersCount || 1,
+        }));
+      }
     }
 
+    // 2. Cross-validate raw orders from MongoDB Atlas
     if (rawOrders.length > 0) {
       const locMap: Record<string, { count: number; rev: number }> = {};
       let totalRevVal = 0;
 
       rawOrders.forEach((o) => {
-        let city = o.city || o.shippingAddress?.city;
-        if (!city && o.shipping_address) {
-          const parts = o.shipping_address.split(',');
-          if (parts.length >= 2) {
-            city = parts[parts.length - 2].trim();
-          } else {
-            city = parts[0].trim();
-          }
-        }
-        city = city || 'Sivakasi';
+        const rawAddr = typeof o.shipping_address === 'string'
+          ? o.shipping_address
+          : typeof o.shippingAddress === 'string'
+          ? o.shippingAddress
+          : '';
 
+        const explicitCity = (o.city || (typeof o.shippingAddress === 'object' ? o.shippingAddress?.city : undefined)) as string | undefined;
+        const explicitPin = (o.pincode || (typeof o.shippingAddress === 'object' ? o.shippingAddress?.pincode : undefined)) as string | undefined;
+
+        // Perform strict profanity and Tamil Nadu city-pincode cross-validation
+        const valRes = extractAndValidateLocation(rawAddr, explicitCity, explicitPin);
+
+        // Reject if invalid, bad word, or mismatched!
+        if (!valRes.isValid || !valRes.canonicalCity) return;
+
+        const city = valRes.canonicalCity;
         if (!locMap[city]) locMap[city] = { count: 0, rev: 0 };
         const amt = Number(o.total || o.totalAmount || 0);
         locMap[city].count += 1;
@@ -482,14 +522,8 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
       }
     }
 
-    return [
-      { city: 'Sivakasi', pct: '34%', ordersCount: 12 },
-      { city: 'Madurai', pct: '22%', ordersCount: 8 },
-      { city: 'Chennai', pct: '18%', ordersCount: 6 },
-      { city: 'Coimbatore', pct: '14%', ordersCount: 5 },
-      { city: 'Virudhunagar', pct: '8%', ordersCount: 3 },
-      { city: 'Trichy', pct: '4%', ordersCount: 2 },
-    ];
+    // 3. Fallback to verified default Tamil Nadu top cracker hubs
+    return DEFAULT_TN_TOP_LOCATIONS;
   }, [analyticsData, rawOrders]);
 
   // Filter raw orders for the Date-Wise Financial Report
@@ -550,46 +584,6 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
     };
   }, [rawOrders, selectedReportDate]);
 
-  // Filtered orders for Payment Collection Table strictly from real DB data
-  const filteredPaymentOrders = useMemo(() => {
-    let list = rawOrders.filter((o) => {
-      const dVal = o.created_at || o.createdAt || o.date;
-      if (!dVal) return false;
-      return new Date(dVal).toISOString().slice(0, 10) === selectedReportDate;
-    });
-
-    if (list.length === 0) {
-      list = [...rawOrders];
-    }
-
-    if (paymentFilterTab === 'Paid') {
-      return list.filter((o) => {
-        const pst = String(o.payment_status || o.paymentStatus || '').toLowerCase();
-        return ['paid', 'confirmed', 'verified', 'success'].includes(pst);
-      });
-    }
-    if (paymentFilterTab === 'Pending') {
-      return list.filter((o) => {
-        const pst = String(o.payment_status || o.paymentStatus || '').toLowerCase();
-        return !['paid', 'confirmed', 'verified', 'success'].includes(pst);
-      });
-    }
-    return list.slice(0, 5);
-  }, [rawOrders, paymentFilterTab, selectedReportDate]);
-
-  // Handle Mark Paid action
-  const handleMarkAsPaid = async (orderId: string) => {
-    try {
-      setUpdatingOrderId(orderId);
-      await adminService.updatePaymentStatus(orderId, 'Paid');
-      if (onRefreshData) onRefreshData();
-    } catch (err) {
-      console.warn('Could not mark order as paid:', err);
-    } finally {
-      setUpdatingOrderId(null);
-    }
-  };
-
   // ── Loading state ──
   if (isLoading && !analyticsData) {
     return (
@@ -606,7 +600,7 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
       {/* ── ROW 1: TOP 4 KPI STAT CARDS ── */}
       <View style={styles.kpiGridRow}>
         {/* Stat Card 1: Today's Sales */}
-        <View style={[styles.kpiStatCard, { flexBasis: isDesktop ? '23.5%' : '47%' }]}>
+        <View nativeID="tour-target-sales-card" style={[styles.kpiStatCard, { flexBasis: isDesktop ? '23.5%' : '47%' }]}>
           <View style={styles.kpiHeaderRow}>
             <View style={[styles.kpiIconCircle, { backgroundColor: '#DCFCE7' }]}>
               <Text style={{ fontSize: 13, fontWeight: 'bold', color: SUCCESS_GREEN }}>₹</Text>
@@ -1040,123 +1034,10 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
         </View>
       </View>
 
-      {/* ── ROW 4: PAYMENT COLLECTION, INVENTORY HEALTH, CATEGORIES, TOP LOCATIONS ── */}
+      {/* ── ROW 4: INVENTORY HEALTH & SALES BY CATEGORY ── */}
       <View style={[styles.gridRow, isDesktop && styles.gridRow2Col]}>
-        {/* Payment Collection Interactive Table Card */}
-        <View style={[styles.card, { flex: 1.3, overflow: 'hidden' }]}>
-          <View style={styles.cardHeaderRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <MaterialIcons name="payment" size={20} color={BRAND_RED} />
-              <Text style={styles.cardTitle}>Payment Collection</Text>
-            </View>
-
-            <View style={styles.tabGroup}>
-              {(['All', 'Paid', 'Pending'] as const).map((tab) => (
-                <TouchableOpacity
-                  key={tab}
-                  style={[styles.filterTabBtn, paymentFilterTab === tab && styles.filterTabBtnActive]}
-                  onPress={() => setPaymentFilterTab(tab)}
-                >
-                  <Text style={[styles.filterTabText, paymentFilterTab === tab && styles.filterTabTextActive]}>
-                    {tab}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ width: '100%' }}>
-            <View style={{ minWidth: 480, width: '100%' }}>
-              <View style={styles.tableHeaderRow}>
-                <Text style={[styles.thText, { width: 130 }]}>Customer</Text>
-                <Text style={[styles.thText, { width: 100 }]}>Order ID</Text>
-                <Text style={[styles.thText, { width: 90 }]}>Amount</Text>
-                <Text style={[styles.thText, { width: 80 }]}>Status</Text>
-                <Text style={[styles.thText, { width: 80, textAlign: 'right' }]}>Action</Text>
-              </View>
-
-              <View style={{ gap: 4 }}>
-                {filteredPaymentOrders.length > 0 ? (
-                  filteredPaymentOrders.map((o: any, idx: number) => {
-                    const pst = String(o.payment_status || o.paymentStatus || 'Paid').toLowerCase();
-                    const isPaid = ['paid', 'confirmed', 'verified', 'success'].includes(pst);
-                    const orderId = o.id || `ord-${idx}`;
-
-                    // Real customer name from order shippingAddress or customerName
-                    let custName = o.customer_name || o.customerName;
-                    if (!custName && o.shipping_address) {
-                      const firstPart = o.shipping_address.split(',')[0];
-                      if (firstPart) custName = firstPart.split('(')[0].trim();
-                    }
-                    if (!custName && o.shippingAddress) {
-                      if (typeof o.shippingAddress === 'string') {
-                        custName = o.shippingAddress.split(',')[0].split('(')[0].trim();
-                      } else if (o.shippingAddress.name) {
-                        custName = o.shippingAddress.name;
-                      }
-                    }
-                    if (!custName) custName = o.user_id ? `User ${String(o.user_id).slice(-4).toUpperCase()}` : 'Customer';
-
-                    // Clean single-line short Order ID
-                    let orderNum = String(o.order_number || o.orderNumber || o.id || '');
-                    if (orderNum.length > 12) {
-                      orderNum = `CC-${orderNum.slice(-6).toUpperCase()}`;
-                    } else if (!orderNum.startsWith('MC-') && !orderNum.startsWith('CC-')) {
-                      orderNum = `MC-${orderNum}`;
-                    }
-
-                    return (
-                      <View key={orderId} style={styles.tableDataRow}>
-                        <Text style={[styles.tdText, { width: 130, fontFamily: 'Inter-SemiBold' }]} numberOfLines={1}>
-                          {custName}
-                        </Text>
-                        <Text style={[styles.tdText, { width: 100, color: '#64748B' }]} numberOfLines={1}>
-                          {orderNum}
-                        </Text>
-                        <Text style={[styles.tdText, { width: 90, fontFamily: 'Inter-Bold', color: '#0F172A' }]} numberOfLines={1}>
-                          {formatCurrency(o.amount || o.totalAmount || o.total || 0)}
-                        </Text>
-                        <View style={{ width: 80 }}>
-                          <View style={[styles.badge, isPaid ? styles.badgePaid : styles.badgePending]}>
-                            <Text style={[styles.badgeText, isPaid ? styles.badgeTextPaid : styles.badgeTextPending]}>
-                              {isPaid ? 'Paid' : 'Pending'}
-                            </Text>
-                          </View>
-                        </View>
-                        <View style={{ width: 80, alignItems: 'flex-end' }}>
-                          {!isPaid ? (
-                            <TouchableOpacity
-                              style={styles.markPaidBtn}
-                              onPress={() => handleMarkAsPaid(orderId)}
-                              disabled={updatingOrderId === orderId}
-                            >
-                              {updatingOrderId === orderId ? (
-                                <ActivityIndicator size="small" color="#FFF" />
-                              ) : (
-                                <Text style={styles.markPaidText}>Mark Paid</Text>
-                              )}
-                            </TouchableOpacity>
-                          ) : (
-                            <TouchableOpacity onPress={onNavigateToOrders}>
-                              <Text style={styles.viewLinkText}>View</Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      </View>
-                    );
-                  })
-                ) : (
-                  <Text style={{ fontSize: 12, color: '#94A3B8', fontStyle: 'italic', textAlign: 'center', marginVertical: 12 }}>
-                    No payment collection records available.
-                  </Text>
-                )}
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-
         {/* Inventory Health Card */}
-        <View style={[styles.card, { flex: 0.8, overflow: 'hidden' }]}>
+        <View style={[styles.card, { flex: 1, overflow: 'hidden' }]}>
           <View style={styles.cardHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <MaterialIcons name="health-and-safety" size={20} color={SUCCESS_GREEN} />
@@ -1230,10 +1111,7 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
             </View>
           </View>
         </View>
-      </View>
 
-      {/* ── ROW 5: SALES BY CATEGORY & TOP LOCATIONS (TAMIL NADU ONLY) ── */}
-      <View style={[styles.gridRow, isDesktop && styles.gridRow2Col]}>
         {/* Sales by Category Progress Bars Card */}
         <View style={[styles.card, { flex: 1 }]}>
           <View style={styles.cardHeaderRow}>
@@ -1260,6 +1138,10 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
             ))}
           </View>
         </View>
+      </View>
+
+      {/* ── ROW 5: TOP LOCATIONS (TAMIL NADU ONLY) ── */}
+      <View style={styles.gridRow}>
 
         {/* Top Locations (Tamil Nadu) - Clean Grid Without Map Graphic */}
         <View style={[styles.card, { flex: 1 }]}>
@@ -1333,6 +1215,24 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
             <Text style={[styles.quickActionLabel, { color: '#E65100' }]}>Today's Report</Text>
           </TouchableOpacity>
 
+          <View nativeID="tour-target-ai-analytics" style={{ flex: 1, minWidth: 100 }}>
+            <TouchableOpacity
+              style={[
+                styles.quickActionBtn,
+                { borderColor: '#FCA5A5', backgroundColor: '#FFF5F5', width: '100%' },
+              ]}
+              onPress={onOpenAnalyticsModal}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#FEE2E2' }]}>
+                <MaterialIcons name="insights" size={22} color={BRAND_RED} />
+              </View>
+              <Text style={[styles.quickActionLabel, { color: BRAND_RED, fontFamily: 'Inter-Bold' }]}>
+                AI Insights
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity style={styles.quickActionBtn} onPress={onNavigateToOrders} activeOpacity={0.8}>
             <View style={[styles.quickActionIcon, { backgroundColor: '#E3F2FD' }]}>
               <MaterialIcons name="receipt-long" size={22} color="#1565C0" />
@@ -1387,6 +1287,111 @@ export const BusinessAnalyticsSection: React.FC<BusinessAnalyticsSectionProps> =
               <MaterialIcons name="local-shipping" size={22} color={BRAND_RED} />
             </View>
             <Text style={styles.quickActionLabel}>Delivery Min Threshold</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickActionBtn, popupEnabled ? styles.quickActionBtnHighlight : undefined]}
+            onPress={onOpenFestivePopup}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.quickActionIcon,
+                { backgroundColor: popupEnabled ? '#FEF2F2' : '#F1F5F9' },
+              ]}
+            >
+              <MaterialIcons
+                name="campaign"
+                size={22}
+                color={popupEnabled ? BRAND_RED : '#64748B'}
+              />
+            </View>
+            <Text
+              style={[
+                styles.quickActionLabel,
+                popupEnabled ? { color: BRAND_RED, fontFamily: 'Inter-Bold' } : undefined,
+              ]}
+            >
+              Festive Popup Alert
+            </Text>
+            <View
+              style={[
+                styles.quickActionStatusBadge,
+                { backgroundColor: popupEnabled ? '#DC2626' : '#94A3B8' },
+              ]}
+            >
+              <Text style={styles.quickActionStatusBadgeText}>
+                {popupEnabled ? 'ACTIVE' : 'OFF'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ── ROW 7: ADVANCED AI & MACHINE LEARNING ANALYTICS & INSIGHTS LAUNCHPAD ── */}
+      <View nativeID="tour-target-ai-launchpad" style={styles.aiAnalyticsLaunchCard}>
+        <View style={styles.aiLaunchTopRow}>
+          <View style={styles.aiLaunchLeft}>
+            <View style={styles.aiLaunchIconBadge}>
+              <MaterialIcons name="insights" size={24} color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <Text style={styles.aiLaunchTitle}>Analytics & Insights</Text>
+                <View style={styles.aiLaunchBadge}>
+                  <Text style={styles.aiLaunchBadgeText}>AI & ML POWERED</Text>
+                </View>
+              </View>
+              <Text style={styles.aiLaunchSubtitle}>
+                4 Visual Algorithms: Product Associations (Apriori), Customer Types (K-Means), Order Safety (IQR), Sales Forecast (Regression).
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.aiLaunchOpenBtn}
+            onPress={onOpenAnalyticsModal}
+            activeOpacity={0.88}
+          >
+            <MaterialIcons name="auto-awesome" size={18} color="#FFFFFF" />
+            <Text style={styles.aiLaunchOpenBtnText}>Open Analytics & Insights</Text>
+            <MaterialIcons name="arrow-forward" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
+        {/* 4 Feature Visual Quick Pills */}
+        <View style={styles.aiLaunchPillsRow}>
+          <TouchableOpacity
+            style={styles.aiFeaturePill}
+            onPress={onOpenAnalyticsModal}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 16 }}>🛒</Text>
+            <Text style={styles.aiFeaturePillText}>Apriori Combos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.aiFeaturePill}
+            onPress={onOpenAnalyticsModal}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 16 }}>👑</Text>
+            <Text style={styles.aiFeaturePillText}>K-Means Types</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.aiFeaturePill}
+            onPress={onOpenAnalyticsModal}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 16 }}>🛡️</Text>
+            <Text style={styles.aiFeaturePillText}>IQR Order Radar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.aiFeaturePill}
+            onPress={onOpenAnalyticsModal}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 16 }}>🚀</Text>
+            <Text style={styles.aiFeaturePillText}>Sales Forecast</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -2013,6 +2018,18 @@ const styles = StyleSheet.create({
     color: '#334155',
     textAlign: 'center',
   },
+  quickActionStatusBadge: {
+    marginTop: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  quickActionStatusBadgeText: {
+    fontSize: 9,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
   bottomBannerCard: {
     width: '100%',
     backgroundColor: '#FFF1F2',
@@ -2136,6 +2153,110 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
+  },
+  aiAnalyticsLaunchCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+    borderRadius: BorderRadius.lg,
+    padding: 20,
+    gap: 16,
+    shadowColor: '#990000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  aiLaunchTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  aiLaunchLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+    minWidth: 260,
+  },
+  aiLaunchIconBadge: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: BRAND_RED,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aiLaunchTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#0F172A',
+  },
+  aiLaunchBadge: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 8,
+  },
+  aiLaunchBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: BRAND_RED,
+    letterSpacing: 0.5,
+  },
+  aiLaunchSubtitle: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+    marginTop: 2,
+    lineHeight: 17,
+  },
+  aiLaunchOpenBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: BRAND_RED,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: BRAND_RED,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  aiLaunchOpenBtnText: {
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+  },
+  aiLaunchPillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#FEE2E2',
+    paddingTop: 14,
+  },
+  aiFeaturePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  aiFeaturePillText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#0F172A',
   },
 });
 

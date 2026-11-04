@@ -21,6 +21,7 @@ import { PrimaryButton } from '@/components/buttons/PrimaryButton';
 import { RootStackParamList } from '@/navigation/types';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store/authStore';
+import { SweetAlertModal, SweetAlertType } from '@/components/common/SweetAlertModal';
 
 type ForgotPasswordScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -45,6 +46,25 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
     confirmPassword?: string;
     general?: string;
   }>({});
+
+  // SweetAlert State
+  const [sweetAlert, setSweetAlert] = useState<{
+    visible: boolean;
+    type: SweetAlertType;
+    title: string;
+    message: string;
+    confirmText?: string;
+  } | null>(null);
+
+  const showSweetAlertError = (title: string, message: string) => {
+    setSweetAlert({
+      visible: true,
+      type: 'error',
+      title,
+      message,
+      confirmText: 'Try Again',
+    });
+  };
 
   const storeResetPassword = useAuthStore((state) => state.resetPassword);
 
@@ -99,13 +119,17 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
       setStep(2);
     } catch (err: any) {
       setIsLoading(false);
-      setErrors({ email: err.response?.data?.message || err.message || 'No account associated with this email.' });
+      const msg = err.response?.data?.message || err.message || 'No account associated with this email.';
+      setErrors({ email: msg });
+      showSweetAlertError('Email Not Found', msg);
     }
   };
 
   const handleVerifyOtp = async () => {
     if (otpCode.length !== 6) {
-      setErrors({ otp: 'Please enter a 6-digit OTP code.' });
+      const msg = 'Please enter a 6-digit OTP code.';
+      setErrors({ otp: msg });
+      showSweetAlertError('Invalid Code', msg);
       return;
     }
     setIsLoading(true);
@@ -119,7 +143,9 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
       setStep(3); // Go to New Password step
     } catch (err: any) {
       setIsLoading(false);
-      setErrors({ otp: err.response?.data?.message || err.message || 'Invalid or expired OTP code.' });
+      const msg = err.response?.data?.message || err.message || 'Invalid or expired OTP code.';
+      setErrors({ otp: msg });
+      showSweetAlertError('Verification Error', msg);
     }
   };
 
@@ -139,7 +165,9 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
       setStep(4);
     } else {
       const storeError = useAuthStore.getState().error;
-      setErrors({ general: storeError || 'Failed to reset password. Please try again.' });
+      const msg = storeError || 'Failed to reset password. Please try again.';
+      setErrors({ general: msg });
+      showSweetAlertError('Reset Password Failed', msg);
     }
   };
 
@@ -428,6 +456,17 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {sweetAlert && (
+        <SweetAlertModal
+          visible={sweetAlert.visible}
+          type={sweetAlert.type}
+          title={sweetAlert.title}
+          message={sweetAlert.message}
+          confirmText={sweetAlert.confirmText || 'Try Again'}
+          onConfirm={() => setSweetAlert(null)}
+        />
+      )}
     </SafeAreaView>
   );
 };

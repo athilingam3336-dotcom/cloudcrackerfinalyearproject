@@ -10,7 +10,10 @@ import {
   Image,
   Animated,
   ActivityIndicator,
+  PanResponder,
+  Dimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,8 +22,57 @@ import { ProductItem } from '@/constants/mockData';
 import { useCartStore } from '@/store/cartStore';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const aiService = AiChatService.getInstance();
+
+const FAB_SIZE = 70;
+const STORAGE_KEY = 'MEERA_CHATBOT_POSITION_V2';
+
+const getViewportDimensions = () => {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  }
+  const dims = Dimensions.get('window');
+  return { width: dims.width, height: dims.height };
+};
+
+const getDefaultPosition = () => {
+  const { width, height } = getViewportDimensions();
+  return {
+    x: Math.max(12, width - FAB_SIZE - 24),
+    y: Math.max(12, height - FAB_SIZE - 24),
+  };
+};
+
+const savePosition = async (pos: { x: number; y: number }) => {
+  try {
+    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+    } else {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+    }
+  } catch {
+    // ignore
+  }
+};
+
+const loadSavedPosition = async (): Promise<{ x: number; y: number } | null> => {
+  try {
+    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : null;
+    } else {
+      const data = await AsyncStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : null;
+    }
+  } catch {
+    return null;
+  }
+};
 
 export const FloatingChatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,12 +94,224 @@ export const FloatingChatbot: React.FC = () => {
   const navigation = useNavigation<any>();
   const user = useAuthStore((state) => state.user);
 
-  // Admin role மட்டும் chatbot காட்டு
-  if (!user || user.role !== 'admin') return null;
-
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const minimizeAnim = useRef(new Animated.Value(0)).current;
+
+  // ── Draggable Position State ─────────────────────────────────────────────
+  const [position, setPosition] = useState<{ x: number; y: number }>(() => getDefaultPosition());
+  const positionRef = useRef(position);
+  positionRef.current = position;
+
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const dragOrigin = useRef<{ startX: number; startY: number }>({ startX: 0, startY: 0 });
+
+  // Load saved position and watch window resize
+  useEffect(() => {
+    loadSavedPosition().then((saved) => {
+      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+        const { width, height } = getViewportDimensions();
+        const clampedX = Math.max(12, Math.min(width - FAB_SIZE - 12, saved.x));
+        const clampedY = Math.max(12, Math.min(height - FAB_SIZE - 12, saved.y));
+        setPosition({ x: clampedX, y: clampedY });
+      }
+    });
+
+    const handleResize = () => {
+      const { width, height } = getViewportDimensions();
+      setPosition((prev) => ({
+        x: Math.max(12, Math.min(width - FAB_SIZE - 12, prev.x)),
+        y: Math.max(12, Math.min(height - FAB_SIZE - 12, prev.y)),
+      }));
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    } else {
+      const sub = Dimensions.addEventListener('change', handleResize);
+      return () => sub.remove();
+    }
+  }, []);
+
+  // Web Mouse Drag Handler
+  const handleMouseDown = (e: any) => {
+    if (Platform.OS !== 'web') return;
+    if (e.button !== undefined && e.button !== 0) return;
+
+    const target = e.target as HTMLElement | null;
+    if (
+      target?.closest?.('button') ||
+      target?.closest?.('[role="button"]') ||
+      target?.tagName === 'INPUT' ||
+      target?.tagName === 'TEXTAREA'
+    ) {
+      return;
+    }
+
+    e.preventDefault?.();
+
+    const startMouseX = e.clientX ?? e.pageX ?? 0;
+    const startMouseY = e.clientY ?? e.pageY ?? 0;
+    const startX = positionRef.current.x;
+    const startY = positionRef.current.y;
+    let hasMoved = false;
+
+    const onMouseMove = (moveEvt: MouseEvent) => {
+      const dx = moveEvt.clientX - startMouseX;
+      const dy = moveEvt.clientY - startMouseY;
+
+      if (!hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+        hasMoved = true;
+        isDraggingRef.current = true;
+        setIsDragging(true);
+        if (typeof document !== 'undefined') {
+          document.body.style.userSelect = 'none';
+        }
+      }
+
+      if (hasMoved) {
+        const { width, height } = getViewportDimensions();
+        const newX = Math.max(8, Math.min(width - FAB_SIZE - 8, startX + dx));
+        const newY = Math.max(8, Math.min(height - FAB_SIZE - 8, startY + dy));
+        setPosition({ x: newX, y: newY });
+      }
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+
+      if (typeof document !== 'undefined') {
+        document.body.style.userSelect = '';
+      }
+
+      if (hasMoved) {
+        savePosition(positionRef.current);
+        setTimeout(() => {
+          isDraggingRef.current = false;
+          setIsDragging(false);
+        }, 120);
+      } else {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+      }
+    };
+
+    window.addEventListener('mousemove', onMouseMove, { passive: false });
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  // Web Mobile Touch Drag Handler
+  const handleTouchStart = (e: any) => {
+    if (Platform.OS !== 'web') return;
+    const touch = e.touches?.[0];
+    if (!touch) return;
+
+    const target = e.target as HTMLElement | null;
+    if (
+      target?.closest?.('button') ||
+      target?.closest?.('[role="button"]') ||
+      target?.tagName === 'INPUT' ||
+      target?.tagName === 'TEXTAREA'
+    ) {
+      return;
+    }
+
+    const startTouchX = touch.clientX;
+    const startTouchY = touch.clientY;
+    const startX = positionRef.current.x;
+    const startY = positionRef.current.y;
+    let hasMoved = false;
+
+    const onTouchMove = (moveEvt: TouchEvent) => {
+      const moveTouch = moveEvt.touches?.[0];
+      if (!moveTouch) return;
+      const dx = moveTouch.clientX - startTouchX;
+      const dy = moveTouch.clientY - startTouchY;
+
+      if (!hasMoved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+        hasMoved = true;
+        isDraggingRef.current = true;
+        setIsDragging(true);
+      }
+
+      if (hasMoved) {
+        if (moveEvt.cancelable) moveEvt.preventDefault();
+        const { width, height } = getViewportDimensions();
+        const newX = Math.max(8, Math.min(width - FAB_SIZE - 8, startX + dx));
+        const newY = Math.max(8, Math.min(height - FAB_SIZE - 8, startY + dy));
+        setPosition({ x: newX, y: newY });
+      }
+    };
+
+    const onTouchEnd = () => {
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
+
+      if (hasMoved) {
+        savePosition(positionRef.current);
+        setTimeout(() => {
+          isDraggingRef.current = false;
+          setIsDragging(false);
+        }, 120);
+      } else {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+      }
+    };
+
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('touchcancel', onTouchEnd);
+  };
+
+  // Native Mobile PanResponder (Android / iOS)
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gesture) => {
+        return Math.abs(gesture.dx) > 5 || Math.abs(gesture.dy) > 5;
+      },
+      onPanResponderGrant: () => {
+        isDraggingRef.current = true;
+        setIsDragging(true);
+        dragOrigin.current = {
+          startX: positionRef.current.x,
+          startY: positionRef.current.y,
+        };
+      },
+      onPanResponderMove: (_, gesture) => {
+        const { width, height } = getViewportDimensions();
+        const newX = Math.max(8, Math.min(width - FAB_SIZE - 8, dragOrigin.current.startX + gesture.dx));
+        const newY = Math.max(8, Math.min(height - FAB_SIZE - 8, dragOrigin.current.startY + gesture.dy));
+        setPosition({ x: newX, y: newY });
+      },
+      onPanResponderRelease: () => {
+        savePosition(positionRef.current);
+        setTimeout(() => {
+          isDraggingRef.current = false;
+          setIsDragging(false);
+        }, 120);
+      },
+      onPanResponderTerminate: () => {
+        setTimeout(() => {
+          isDraggingRef.current = false;
+          setIsDragging(false);
+        }, 120);
+      },
+    })
+  ).current;
+
+  const dragHandlers =
+    Platform.OS === 'web'
+      ? {
+          onMouseDown: handleMouseDown,
+          onTouchStart: handleTouchStart,
+        }
+      : panResponder.panHandlers;
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -66,6 +330,10 @@ export const FloatingChatbot: React.FC = () => {
       tension: 60,
     }).start();
   }, [isMinimized]);
+
+  // Admin role mattum chatbot kaatu
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  if (!user || !isAdmin) return null;
 
   // Open chat fully
   const handleOpen = () => {
@@ -87,6 +355,7 @@ export const FloatingChatbot: React.FC = () => {
 
   // FAB tap: if open → minimize; if minimized/closed → open
   const handleFabPress = () => {
+    if (isDraggingRef.current) return;
     if (isOpen) {
       handleMinimize();
     } else {
@@ -152,12 +421,15 @@ export const FloatingChatbot: React.FC = () => {
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch {
+      const liveSettings = useSettingsStore.getState();
+      const currentWa = liveSettings.whatsappNumber || '7339624431';
+      const currentEmail = liveSettings.contactEmail || 'Meeracrackers@gmail.com';
       setMessages((prev) => [
         ...prev,
         {
           id: `ai-err-${Date.now()}`,
           sender: 'ai',
-          text: '🎆 Contact Meera Crackers support directly via **WhatsApp: +91 7339624431** or Email **Meeracrackers@gmail.com** for immediate help!',
+          text: `🎆 Contact Meera Crackers support directly via **WhatsApp: +91 ${currentWa}** or Email **${currentEmail}** for immediate help!`,
           timestamp: new Date(),
         },
       ]);
@@ -201,6 +473,38 @@ export const FloatingChatbot: React.FC = () => {
     });
   };
 
+  const { width: vpWidth, height: vpHeight } = getViewportDimensions();
+  const drawerW = Math.min(380, vpWidth - 24);
+  const drawerH = Math.min(540, vpHeight - 90);
+
+  // Drawer horizontal positioning:
+  let drawerX: number;
+  if (position.x < vpWidth / 2) {
+    drawerX = Math.max(12, Math.min(position.x, vpWidth - drawerW - 12));
+  } else {
+    drawerX = Math.max(12, Math.min(position.x + FAB_SIZE - drawerW, vpWidth - drawerW - 12));
+  }
+
+  // Drawer vertical positioning:
+  let drawerY: number;
+  if (position.y - drawerH - 12 >= 12) {
+    drawerY = position.y - drawerH - 12;
+  } else if (position.y + FAB_SIZE + drawerH + 12 <= vpHeight - 12) {
+    drawerY = position.y + FAB_SIZE + 12;
+  } else {
+    drawerY = Math.max(12, Math.min(position.y - drawerH / 2, vpHeight - drawerH - 12));
+  }
+
+  // Minimized bar positioning:
+  const minBarW = Math.min(300, vpWidth - 24);
+  let minBarX: number;
+  if (position.x < vpWidth / 2) {
+    minBarX = Math.max(12, Math.min(position.x, vpWidth - minBarW - 12));
+  } else {
+    minBarX = Math.max(12, Math.min(position.x + FAB_SIZE - minBarW, vpWidth - minBarW - 12));
+  }
+  const minBarY = Math.max(12, Math.min(position.y, vpHeight - 56 - 12));
+
   return (
     <>
       {/* ── FULL CHAT DRAWER ── */}
@@ -208,7 +512,14 @@ export const FloatingChatbot: React.FC = () => {
         <View
           style={[
             styles.drawerWrapper,
-            Platform.OS === 'web' && (styles.webFixedDrawer as any),
+            {
+              left: drawerX,
+              top: drawerY,
+            },
+            Platform.OS === 'web' && ({
+              position: 'fixed',
+              userSelect: 'none',
+            } as any),
           ]}
           pointerEvents="box-none"
         >
@@ -216,15 +527,24 @@ export const FloatingChatbot: React.FC = () => {
             style={[
               styles.chatContainer,
               isDarkMode && styles.darkContainer,
+              { width: drawerW, height: drawerH },
             ]}
           >
-            {/* Header — tap title area to minimize, X to close fully */}
-            <View style={styles.header}>
-              <TouchableOpacity
-                style={styles.headerLeft}
-                onPress={handleMinimize}
-                activeOpacity={0.8}
-              >
+            {/* Header — drag handle to move, buttons to minimize / close */}
+            <View
+              style={[
+                styles.header,
+                Platform.OS === 'web' && ({
+                  cursor: isDragging ? 'grabbing' : 'grab',
+                  userSelect: 'none',
+                } as any),
+              ]}
+              {...dragHandlers}
+            >
+              <View style={styles.headerLeft}>
+                <View style={styles.dragHandleIcon}>
+                  <MaterialIcons name="drag-indicator" size={18} color="rgba(255, 255, 255, 0.75)" />
+                </View>
                 <View style={styles.avatarCircle}>
                   <MaterialIcons name="auto-awesome" size={20} color="#ffffff" />
                 </View>
@@ -232,10 +552,10 @@ export const FloatingChatbot: React.FC = () => {
                   <Text style={styles.headerTitle}>Meera Admin AI 🔐</Text>
                   <View style={styles.statusRow}>
                     <View style={styles.onlineDot} />
-                    <Text style={styles.statusText}>Admin Panel • Live Data</Text>
+                    <Text style={styles.statusText}>Drag to move • Live Data</Text>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </View>
               <View style={styles.headerRight}>
                 <TouchableOpacity
                   onPress={handleClearHistory}
@@ -493,15 +813,28 @@ export const FloatingChatbot: React.FC = () => {
         <View
           style={[
             styles.minimizedBarWrapper,
-            Platform.OS === 'web' && (styles.webFixedMinimizedBar as any),
+            {
+              left: minBarX,
+              top: minBarY,
+            },
+            Platform.OS === 'web' && ({
+              position: 'fixed',
+              cursor: isDragging ? 'grabbing' : 'grab',
+              userSelect: 'none',
+              touchAction: 'none',
+            } as any),
           ]}
+          {...dragHandlers}
         >
           <TouchableOpacity
             style={styles.minimizedBar}
-            onPress={handleOpen}
+            onPress={() => {
+              if (!isDraggingRef.current) handleOpen();
+            }}
             activeOpacity={0.9}
           >
             <View style={styles.minimizedLeft}>
+              <MaterialIcons name="drag-indicator" size={16} color="rgba(255,255,255,0.7)" />
               <View style={styles.minimizedAvatar}>
                 <MaterialIcons name="auto-awesome" size={14} color="#ffffff" />
               </View>
@@ -509,8 +842,8 @@ export const FloatingChatbot: React.FC = () => {
                 <Text style={styles.minimizedTitle}>Meera Admin AI 🔐</Text>
                 <Text style={styles.minimizedSub}>
                   {messages.length > 1
-                    ? messages[messages.length - 1].text.slice(0, 38) + '...'
-                    : 'Tap to open chat'}
+                    ? messages[messages.length - 1].text.slice(0, 36) + '...'
+                    : 'Tap to open • Drag to move'}
                 </Text>
               </View>
             </View>
@@ -532,12 +865,27 @@ export const FloatingChatbot: React.FC = () => {
         <View
           style={[
             styles.fabWrapper,
-            Platform.OS === 'web' && (styles.webFixedFab as any),
+            {
+              left: position.x,
+              top: position.y,
+              transform: [{ scale: isDragging ? 1.08 : 1 }],
+            },
+            Platform.OS === 'web' && ({
+              position: 'fixed',
+              cursor: isDragging ? 'grabbing' : 'grab',
+              userSelect: 'none',
+              touchAction: 'none',
+              transition: isDragging ? 'none' : 'transform 0.15s ease',
+            } as any),
           ]}
+          {...dragHandlers}
         >
           <TouchableOpacity
-            style={styles.fabButton}
-            activeOpacity={0.85}
+            style={[
+              styles.fabButton,
+              isDragging && styles.fabButtonDragging,
+            ]}
+            activeOpacity={0.88}
             onPress={handleFabPress}
           >
             {isOpen ? (
@@ -545,11 +893,19 @@ export const FloatingChatbot: React.FC = () => {
                 <MaterialIcons name="keyboard-arrow-down" size={28} color="#ffffff" />
               </View>
             ) : (
-              <Image
-                source={require('../../../assets/ai_bot.png')}
-                style={styles.fabRobotImage}
-                resizeMode="cover"
-              />
+              <View style={styles.fabRobotWrapper}>
+                <Image
+                  source={require('../../../assets/ai_bot.png')}
+                  style={styles.fabRobotImage}
+                  resizeMode="cover"
+                  // @ts-ignore
+                  draggable={false}
+                />
+                <View style={styles.dragPillBadge}>
+                  <MaterialIcons name="drag-indicator" size={10} color="#78350f" />
+                  <Text style={styles.dragPillText}>AI</Text>
+                </View>
+              </View>
             )}
           </TouchableOpacity>
         </View>
@@ -627,14 +983,10 @@ const styles = StyleSheet.create({
   // ── Minimized bar styles ──────────────────────────────────────────────────
   webFixedMinimizedBar: {
     position: 'fixed' as any,
-    right: 24,
-    bottom: 24,
     zIndex: 99999,
   },
   minimizedBarWrapper: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
     zIndex: 99999,
   },
   minimizedBar: {
@@ -656,7 +1008,7 @@ const styles = StyleSheet.create({
   minimizedLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     flex: 1,
   },
   minimizedAvatar: {
@@ -687,14 +1039,10 @@ const styles = StyleSheet.create({
   // ── FAB styles ─────────────────────────────────────────────────────────────
   webFixedFab: {
     position: 'fixed' as any,
-    right: 24,
-    bottom: 24,
     zIndex: 99999,
   },
   fabWrapper: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
     zIndex: 99999,
   },
   fabButton: {
@@ -702,12 +1050,24 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     backgroundColor: 'transparent',
-    overflow: 'hidden',
+    overflow: 'visible',
     shadowColor: '#b91c1c',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.5,
     shadowRadius: 12,
     elevation: 14,
+  },
+  fabButtonDragging: {
+    shadowOpacity: 0.85,
+    shadowRadius: 20,
+    elevation: 24,
+  },
+  fabRobotWrapper: {
+    width: 70,
+    height: 70,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fabCloseContainer: {
     width: 70,
@@ -726,6 +1086,36 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
+    // @ts-ignore
+    userSelect: 'none',
+    pointerEvents: 'none',
+  },
+  dragPillBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#fbbf24',
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  dragPillText: {
+    color: '#78350f',
+    fontSize: 9.5,
+    fontWeight: '800',
+  },
+  dragHandleIcon: {
+    marginRight: 4,
   },
   fabBadge: {
     position: 'absolute',
@@ -746,14 +1136,10 @@ const styles = StyleSheet.create({
 
   webFixedDrawer: {
     position: 'fixed' as any,
-    right: 24,
-    bottom: 95,
     zIndex: 99998,
   },
   drawerWrapper: {
     position: 'absolute',
-    right: 16,
-    bottom: 85,
     zIndex: 99998,
   },
   chatContainer: {
@@ -1011,43 +1397,5 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: '#374151',
     fontWeight: '600',
-  },
-
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    gap: 8,
-  },
-  inputBarDark: {
-    backgroundColor: '#1e1f26',
-    borderTopColor: '#33343d',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 13.5,
-    color: '#111827',
-  },
-  inputDark: {
-    backgroundColor: '#2b2d38',
-    color: '#f3f4f6',
-  },
-  sendBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#dc2626',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendBtnDisabled: {
-    backgroundColor: '#9ca3af',
   },
 });

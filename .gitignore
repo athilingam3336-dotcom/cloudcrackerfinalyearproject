@@ -50,8 +50,15 @@ backend/mongosh-*.tgz
 backend/mongodb-compass_*.deb
 
 # Python
+backend/.venv
 backend/.venv/
 backend/venv/
+.venv
+.venv/
+env/
+venv/
+*.pid
+backend/*.pid
 __pycache__/
 *.pyc
 

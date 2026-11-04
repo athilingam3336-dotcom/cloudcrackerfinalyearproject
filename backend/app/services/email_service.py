@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import smtplib
+from datetime import datetime, timezone, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from app.core.config import settings
@@ -144,8 +145,471 @@ class EmailService:
         # 3. Optimized SMTP Fallback
         return await asyncio.to_thread(cls.send_otp_email_sync, to_email, otp_code, html_content)
 
+    @classmethod
+    async def send_dual_admin_reset_email(
+        cls, to_email: str, admin_label: str, requester_name: str, otp_code: str
+    ) -> bool:
+        """Sends Dual-Admin Store Reset authorization OTP email in clean, professional English
+        with Google Mobile Notification quick-copy support and exact IST timestamp.
+        """
+        # Subject starts with code so Android & Gmail notification parser renders "[ Copy <code> ]"
+        subject = f"{otp_code} is your Meera Crackers verification code ({admin_label})"
+
+        # IST timestamp (UTC + 5:30)
+        now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        formatted_date = now_ist.strftime("%b %d, %Y • %I:%M %p IST")
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{otp_code} is your verification code</title>
+  </head>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+      <!-- Header -->
+      <tr>
+        <td style="background-color: #990000; padding: 20px 24px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.5px;">MEERA CRACKERS</h1>
+          <p style="color: #fecaca; margin: 4px 0 0 0; font-size: 12px;">Store Admin Verification</p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding: 24px;">
+          <!-- Details Summary Table -->
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b;">Purpose:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right;">Store Reset Authorization</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Recipient:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{admin_label}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Requested by:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{requester_name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Date &amp; Time:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{formatted_date}</td>
+            </tr>
+          </table>
+
+          <p style="font-size: 13.5px; color: #334155; margin: 0 0 14px 0; text-align: center;">
+            Your 6-digit authorization code is:
+          </p>
+
+          <!-- Big Bold OTP Box -->
+          <div style="background-color: #fef2f2; border: 2px dashed #dc2626; border-radius: 10px; padding: 18px 10px; text-align: center; margin: 0 0 18px 0;">
+            <div style="font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #990000; font-family: monospace; user-select: all; -webkit-user-select: all;">
+              {otp_code}
+            </div>
+            <p style="margin: 6px 0 0 0; font-size: 11px; color: #dc2626; font-weight: 600;">
+              Tap &amp; hold or double tap to copy code
+            </p>
+          </div>
+
+          <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0; text-align: center;">
+            ⏱️ Code expires in <strong>10 minutes</strong>.<br/>
+            Do not share this code. If you did not request this, ignore this email.
+          </p>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style="background-color: #f8fafc; padding: 12px 24px; border-top: 1px solid #e2e8f0; text-align: center;">
+          <p style="font-size: 11px; color: #94a3b8; margin: 0;">&copy; Meera Crackers World &bull; Automated Security Service</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>"""
+        # Try Resend if configured
+        if settings.RESEND_API_KEY:
+            try:
+                import httpx
+                clean_api_key = settings.RESEND_API_KEY.strip().strip("'\"")
+                resend_sender = settings.EMAIL_FROM or settings.RESEND_FROM or "onboarding@resend.dev"
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    res = await client.post(
+                        "https://api.resend.com/emails",
+                        headers={"Authorization": f"Bearer {clean_api_key}", "Content-Type": "application/json"},
+                        json={"from": resend_sender, "to": [to_email], "subject": subject, "html": html_content},
+                    )
+                    if res.status_code in (200, 201, 202):
+                        return True
+            except Exception as e:
+                logger.warning(f"Resend dual admin email error: {e}")
+
+        return await asyncio.to_thread(cls.send_otp_email_sync, to_email, otp_code, html_content, subject)
+
+    @classmethod
+    async def send_dual_admin_promotion_email(
+        cls,
+        to_email: str,
+        admin_label: str,
+        requester_name: str,
+        candidate_email: str,
+        otp_code: str,
+    ) -> bool:
+        """Sends Dual-Admin Administrator Role Grant authorization OTP email in clean, professional English
+        with Google Mobile Notification quick-copy support and exact IST timestamp.
+        """
+        subject = f"{otp_code} is your Meera Crackers verification code ({admin_label})"
+        now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        formatted_date = now_ist.strftime("%b %d, %Y • %I:%M %p IST")
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{otp_code} is your verification code</title>
+  </head>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+      <!-- Header -->
+      <tr>
+        <td style="background-color: #990000; padding: 20px 24px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.5px;">MEERA CRACKERS</h1>
+          <p style="color: #fecaca; margin: 4px 0 0 0; font-size: 12px;">Admin Promotion Authorization</p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding: 24px;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b;">Action:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right;">Grant Administrator Privileges</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Candidate Email:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{candidate_email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Approving Admin:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{admin_label}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Requested by:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{requester_name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Date &amp; Time:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{formatted_date}</td>
+            </tr>
+          </table>
+
+          <p style="font-size: 13.5px; color: #334155; margin: 0 0 14px 0; text-align: center;">
+            Your 6-digit approval authorization code is:
+          </p>
+
+          <div style="background-color: #fef2f2; border: 2px dashed #dc2626; border-radius: 10px; padding: 18px 10px; text-align: center; margin: 0 0 18px 0;">
+            <div style="font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #990000; font-family: monospace; user-select: all; -webkit-user-select: all;">
+              {otp_code}
+            </div>
+            <p style="margin: 6px 0 0 0; font-size: 11px; color: #dc2626; font-weight: 600;">
+              Tap &amp; hold or double tap to copy code
+            </p>
+          </div>
+
+          <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0; text-align: center;">
+            ⏱️ Code expires in <strong>10 minutes</strong>.<br/>
+            Both administrators must authorize this promotion before candidate verification.
+          </p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="background-color: #f8fafc; padding: 12px 24px; border-top: 1px solid #e2e8f0; text-align: center;">
+          <p style="font-size: 11px; color: #94a3b8; margin: 0;">&copy; Meera Crackers World &bull; Multi-Admin Security</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>"""
+
+        if settings.RESEND_API_KEY:
+            try:
+                import httpx
+                clean_api_key = settings.RESEND_API_KEY.strip().strip("'\"")
+                resend_sender = settings.EMAIL_FROM or settings.RESEND_FROM or "onboarding@resend.dev"
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    res = await client.post(
+                        "https://api.resend.com/emails",
+                        headers={"Authorization": f"Bearer {clean_api_key}", "Content-Type": "application/json"},
+                        json={"from": resend_sender, "to": [to_email], "subject": subject, "html": html_content},
+                    )
+                    if res.status_code in (200, 201, 202):
+                        return True
+            except Exception as e:
+                logger.warning(f"Resend dual admin promotion email error: {e}")
+
+        return await asyncio.to_thread(cls.send_otp_email_sync, to_email, otp_code, html_content, subject)
+
+    @classmethod
+    async def send_candidate_admin_otp_email(
+        cls,
+        to_email: str,
+        candidate_name: str,
+        otp_code: str,
+    ) -> bool:
+        """Sends verification code to the candidate administrator's email."""
+        subject = f"{otp_code} is your Meera Crackers Admin Verification Code"
+        now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        formatted_date = now_ist.strftime("%b %d, %Y • %I:%M %p IST")
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{otp_code} is your admin verification code</title>
+  </head>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+      <!-- Header -->
+      <tr>
+        <td style="background-color: #0f766e; padding: 20px 24px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.5px;">MEERA CRACKERS</h1>
+          <p style="color: #ccfbf1; margin: 4px 0 0 0; font-size: 12px;">Administrator Activation</p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding: 24px;">
+          <h2 style="font-size: 16px; color: #0f172a; margin: 0 0 10px 0; text-align: center;">
+            Dual-Admin Approval Granted!
+          </h2>
+          <p style="font-size: 13.5px; color: #475569; line-height: 1.5; margin: 0 0 16px 0; text-align: center;">
+            Hello <strong>{candidate_name or to_email}</strong>,<br/>
+            Existing store administrators have authorized granting you full <strong>Administrator Privileges</strong> on Meera Crackers World.
+          </p>
+
+          <p style="font-size: 13px; color: #334155; margin: 0 0 10px 0; text-align: center;">
+            Please enter your 6-digit activation code:
+          </p>
+
+          <div style="background-color: #f0fdfa; border: 2px dashed #0d9488; border-radius: 10px; padding: 18px 10px; text-align: center; margin: 0 0 18px 0;">
+            <div style="font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #0f766e; font-family: monospace; user-select: all; -webkit-user-select: all;">
+              {otp_code}
+            </div>
+            <p style="margin: 6px 0 0 0; font-size: 11px; color: #0d9488; font-weight: 600;">
+              Tap &amp; hold or double tap to copy code
+            </p>
+          </div>
+
+          <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0; text-align: center;">
+            ⏱️ Code expires in <strong>10 minutes</strong> ({formatted_date}).<br/>
+            Once verified, you can sign in to the store Admin Panel with full privileges.
+          </p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="background-color: #f8fafc; padding: 12px 24px; border-top: 1px solid #e2e8f0; text-align: center;">
+          <p style="font-size: 11px; color: #94a3b8; margin: 0;">&copy; Meera Crackers World &bull; Secure Administrator Onboarding</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>"""
+
+        if settings.RESEND_API_KEY:
+            try:
+                import httpx
+                clean_api_key = settings.RESEND_API_KEY.strip().strip("'\"")
+                resend_sender = settings.EMAIL_FROM or settings.RESEND_FROM or "onboarding@resend.dev"
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    res = await client.post(
+                        "https://api.resend.com/emails",
+                        headers={"Authorization": f"Bearer {clean_api_key}", "Content-Type": "application/json"},
+                        json={"from": resend_sender, "to": [to_email], "subject": subject, "html": html_content},
+                    )
+                    if res.status_code in (200, 201, 202):
+                        return True
+            except Exception as e:
+                logger.warning(f"Resend candidate admin email error: {e}")
+
+        return await asyncio.to_thread(cls.send_otp_email_sync, to_email, otp_code, html_content, subject)
+
+    @classmethod
+    async def send_admin_role_granted_confirmation(
+        cls,
+        to_email: str,
+        user_name: str,
+    ) -> bool:
+        """Sends confirmation email to new admin after successful verification."""
+        subject = "Welcome to Meera Crackers Admin Team - Privileges Activated"
+        now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        formatted_date = now_ist.strftime("%b %d, %Y • %I:%M %p IST")
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8"></head>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f1f5f9; padding: 24px; margin: 0;">
+    <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; text-align: center; padding: 30px 24px;">
+      <div style="display: inline-block; background-color: #dcfce7; color: #15803d; border-radius: 50%; width: 56px; height: 56px; line-height: 56px; font-size: 28px; margin-bottom: 16px;">✓</div>
+      <h2 style="color: #0f172a; margin: 0 0 10px 0; font-size: 20px;">Administrator Role Activated</h2>
+      <p style="font-size: 14px; color: #475569; line-height: 1.5; margin: 0 0 20px 0;">
+        Hello <strong>{user_name or to_email}</strong>,<br/>
+        Your account ({to_email}) has been successfully verified and granted full Administrator privileges on Meera Crackers World as of {formatted_date}.
+      </p>
+      <p style="font-size: 13px; color: #64748b; margin: 0;">You can now log in and access the store management dashboard, inventory, orders, and financial analytics.</p>
+    </div>
+  </body>
+</html>"""
+        return await asyncio.to_thread(cls.send_otp_email_sync, to_email, "", html_content, subject)
+
+    @classmethod
+    async def send_dual_admin_demotion_email(
+        cls,
+        to_email: str,
+        admin_label: str,
+        requester_name: str,
+        target_admin_email: str,
+        otp_code: str,
+    ) -> bool:
+        """Sends Dual-Admin Administrator Revocation / Demotion authorization OTP email in clean, professional English."""
+        subject = f"{otp_code} is your authorization code to remove admin access ({admin_label})"
+        now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        formatted_date = now_ist.strftime("%b %d, %Y • %I:%M %p IST")
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{otp_code} is your authorization code</title>
+  </head>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px;">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+      <tr>
+        <td style="background-color: #b91c1c; padding: 20px 24px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.5px;">MEERA CRACKERS</h1>
+          <p style="color: #fecaca; margin: 4px 0 0 0; font-size: 12px;">Admin Revocation Authorization</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding: 24px;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b;">Action:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #b91c1c; font-weight: 700; text-align: right;">Revoke Administrator Privileges</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Admin to Remove:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{target_admin_email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Approving Admin:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{admin_label}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Requested by:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{requester_name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #64748b; border-top: 1px solid #f1f5f9;">Date &amp; Time:</td>
+              <td style="padding: 8px 12px; font-size: 12.5px; color: #0f172a; font-weight: 600; text-align: right; border-top: 1px solid #f1f5f9;">{formatted_date}</td>
+            </tr>
+          </table>
+
+          <p style="font-size: 13.5px; color: #334155; margin: 0 0 14px 0; text-align: center;">
+            Your 6-digit removal authorization code is:
+          </p>
+
+          <div style="background-color: #fef2f2; border: 2px dashed #dc2626; border-radius: 10px; padding: 18px 10px; text-align: center; margin: 0 0 18px 0;">
+            <div style="font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #990000; font-family: monospace; user-select: all; -webkit-user-select: all;">
+              {otp_code}
+            </div>
+            <p style="margin: 6px 0 0 0; font-size: 11px; color: #dc2626; font-weight: 600;">
+              Tap &amp; hold or double tap to copy code
+            </p>
+          </div>
+
+          <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin: 0; text-align: center;">
+            ⏱️ Code expires in <strong>10 minutes</strong>.<br/>
+            Both administrators must authorize this action before administrator privileges are revoked.
+          </p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="background-color: #f8fafc; padding: 12px 24px; border-top: 1px solid #e2e8f0; text-align: center;">
+          <p style="font-size: 11px; color: #94a3b8; margin: 0;">&copy; Meera Crackers World &bull; Multi-Admin Security</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>"""
+        if settings.RESEND_API_KEY:
+            try:
+                import httpx
+                clean_api_key = settings.RESEND_API_KEY.strip().strip("'\"")
+                resend_sender = settings.EMAIL_FROM or settings.RESEND_FROM or "onboarding@resend.dev"
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    res = await client.post(
+                        "https://api.resend.com/emails",
+                        headers={"Authorization": f"Bearer {clean_api_key}", "Content-Type": "application/json"},
+                        json={"from": resend_sender, "to": [to_email], "subject": subject, "html": html_content},
+                    )
+                    if res.status_code in (200, 201, 202):
+                        return True
+            except Exception as e:
+                logger.warning(f"Resend dual admin demotion email error: {e}")
+
+        return await asyncio.to_thread(cls.send_otp_email_sync, to_email, otp_code, html_content, subject)
+
+    @classmethod
+    async def send_admin_role_revoked_notification(
+        cls,
+        to_email: str,
+        user_name: str,
+        requester_name: str,
+        admin1_email: str,
+        admin2_email: str,
+    ) -> bool:
+        """Sends official notification email to the removed admin informing them their admin access has been revoked."""
+        subject = "Notice: Administrator Access Revoked - Meera Crackers"
+        now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        formatted_date = now_ist.strftime("%b %d, %Y • %I:%M %p IST")
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8"></head>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f1f5f9; padding: 24px; margin: 0;">
+    <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; text-align: center; padding: 30px 24px;">
+      <div style="display: inline-block; background-color: #fee2e2; color: #dc2626; border-radius: 50%; width: 56px; height: 56px; line-height: 56px; font-size: 26px; margin-bottom: 16px;">✕</div>
+      <h2 style="color: #0f172a; margin: 0 0 10px 0; font-size: 20px;">Administrator Access Revoked</h2>
+      <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 0 0 20px 0; text-align: left;">
+        Hello <strong>{user_name or to_email}</strong>,<br/><br/>
+        This is an official notice that your Administrator privileges for <strong>Meera Crackers World</strong> have been revoked as of <strong>{formatted_date}</strong>.
+      </p>
+      <div style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 14px; margin-bottom: 20px; text-align: left; font-size: 12.5px; color: #475569;">
+        <div><strong>Action:</strong> Demoted to Customer / User Role</div>
+        <div style="margin-top: 6px;"><strong>Dual Authorization:</strong> Verified by {admin1_email} &amp; {admin2_email}</div>
+        <div style="margin-top: 6px;"><strong>Initiated by:</strong> {requester_name}</div>
+      </div>
+      <p style="font-size: 13px; color: #64748b; margin: 0; line-height: 1.5; text-align: left;">
+        Your account will continue to function as a customer account. If you believe this action was made in error, please contact the primary store management.
+      </p>
+    </div>
+  </body>
+</html>"""
+        return await asyncio.to_thread(cls.send_otp_email_sync, to_email, "", html_content, subject)
+
     @staticmethod
-    def send_otp_email_sync(to_email: str, otp_code: str, html_content: str = None) -> bool:
+    def send_otp_email_sync(to_email: str, otp_code: str, html_content: str = None, subject: str = None) -> bool:
         smtp_host = settings.SMTP_HOST or "smtp.gmail.com"
         smtp_port = settings.SMTP_PORT or 587
         smtp_user = settings.SMTP_USER
@@ -164,7 +628,7 @@ class EmailService:
 
         try:
             msg = MIMEMultipart("alternative")
-            msg["Subject"] = "Your Meera Crackers Email Verification Code"
+            msg["Subject"] = subject or "Your Meera Crackers Email Verification Code"
             msg["From"] = f"Meera Crackers World <{smtp_from}>"
             msg["To"] = to_email
 

@@ -33,6 +33,18 @@ async def get_settings():
             "data": {
                 "min_online_delivery_amount": 5000.0,
                 "store_name": "Meera Crackers",
+                "announcement_text": "Direct Sivakasi Factory Prices | Express Delivery Across Tamil Nadu & All India",
+                "location_map_url": "https://maps.app.goo.gl/6BE5qX4vxyutrkAD6?g_st=aw",
+                "contact_email": "Meeracrackers@gmail.com",
+                "contact_phone": "7339624431",
+                "whatsapp_number": "7339624431",
+                "popup_enabled": True,
+                "popup_title": "⚡ Urgent Diwali Booking Notice!",
+                "popup_message": "Diwali parcel & transport bookings close 3 days prior to the festival. Place your cracker orders early to guarantee doorstep delivery across Tamil Nadu & India!",
+                "popup_image_type": "diwali",
+                "popup_image_url": None,
+                "popup_button_text": "Book Diwali Crackers Now ➔",
+                "popup_button_link": "Categories",
             },
         }
 
