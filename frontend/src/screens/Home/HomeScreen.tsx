@@ -50,6 +50,7 @@ import {
   BannerItem,
 } from '@/constants/mockData';
 import { RootStackParamList } from '@/navigation/types';
+import { MeeraHeroHome } from '@/components/home/MeeraHeroHome';
 import { ResponsiveContainer } from '@/components/common/ResponsiveContainer';
 import { useAppLayout } from '@/hooks/useAppLayout';
 import { useSmartTabNavigation } from '@/hooks/useSmartTabNavigation';
@@ -59,6 +60,7 @@ type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 const IS_DESKTOP_OR_TABLET = Platform.OS === 'web';
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  const flatListRef = useRef<FlatList>(null);
   const { handleTabPress } = useSmartTabNavigation();
   const { numGridColumns, isDesktopWeb } = useAppLayout();
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -447,6 +449,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
 
 
+
+
+
+
         {/* Search Bar */}
         <View nativeID="tour-target-search">
           <SearchBar
@@ -586,6 +592,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     <ResponsiveContainer>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <FlatList
+          ref={flatListRef}
           data={products}
           key={numGridColumns}
           numColumns={numGridColumns}

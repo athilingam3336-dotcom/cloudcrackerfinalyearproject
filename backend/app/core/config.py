@@ -83,6 +83,17 @@ class Settings(BaseSettings):
     UPI_PAYMENT_ID: Optional[str] = None   # e.g. meeracrackers@okaxis
     UPI_PAYEE_NAME: Optional[str] = None   # e.g. Meera Crackers
 
+    # Google OAuth Settings
+    # Obtain from Google Cloud Console → APIs & Services → Credentials
+    GOOGLE_CLIENT_ID: Optional[str] = None
+
+    # Clerk Authentication Settings
+    # Clerk issues signed JWTs for sessions; we verify them via Clerk's JWKS endpoint.
+    # CLERK_PUBLISHABLE_KEY: used to derive the frontend issuer/JWKS URL.
+    # CLERK_JWKS_URL: override if your Clerk instance uses a custom domain.
+    CLERK_PUBLISHABLE_KEY: Optional[str] = None
+    CLERK_JWKS_URL: Optional[str] = None  # e.g. https://<your-clerk-domain>/.well-known/jwks.json
+
     # Instagram Auth Settings
     INSTAGRAM_CLIENT_ID: Optional[str] = "2262885951230627"
     INSTAGRAM_CLIENT_SECRET: Optional[str] = None

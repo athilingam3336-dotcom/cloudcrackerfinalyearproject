@@ -1,148 +1,42 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  Animated,
-  Easing,
-  Dimensions,
-  Platform,
-} from 'react-native';
-import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
-import { Spacing, BorderRadius } from '@/constants/spacing';
-import { ParticleBackground } from '@/components/common/ParticleBackground';
+import React, { useEffect } from 'react';
+import { View, Text, Image, StyleSheet, Dimensions, Platform } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  interpolate,
+} from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
+import { LOCAL_PRODUCT_IMAGES } from '@/constants/productImages';
 import { tokenStorage } from '@/storage/tokenStorage';
 import { useAuthStore } from '@/store/authStore';
+import { GoldenTrailAnimation } from './GoldenTrailAnimation';
+
+const { width, height } = Dimensions.get('window');
 
 type SplashScreenProps = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
-  // Animation values
-  const sparkY = useRef(new Animated.Value(0)).current;
-  const sparkScale = useRef(new Animated.Value(1)).current;
-  const glowOpacity = useRef(new Animated.Value(0.2)).current;
-
-  const titleFade = useRef(new Animated.Value(0)).current;
-  const titleY = useRef(new Animated.Value(20)).current;
-
-  const sloganFade = useRef(new Animated.Value(0)).current;
-  const sloganY = useRef(new Animated.Value(20)).current;
-
-  const loadingFade = useRef(new Animated.Value(0)).current;
-  const loadingY = useRef(new Animated.Value(20)).current;
-
-  const progressBarWidth = useRef(new Animated.Value(0)).current;
+  const glow = useSharedValue(0);
+  const rotateX = useSharedValue(0);
+  const rotateY = useSharedValue(0);
 
   useEffect(() => {
-    // 1. Spark Floating & Pulsing Glow Loop
-    Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(sparkY, {
-            toValue: -10,
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(sparkScale, {
-            toValue: 1.06,
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowOpacity, {
-            toValue: 0.45,
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(sparkY, {
-            toValue: 0,
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(sparkScale, {
-            toValue: 1,
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowOpacity, {
-            toValue: 0.2,
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    ).start();
+    // 1. Start the glowing loop for the 3D text/logo
+    glow.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1200 }),
+        withTiming(0.4, { duration: 1200 })
+      ),
+      -1,
+      true
+    );
 
-    // 2. Entrance Stagger Animations
-    Animated.stagger(200, [
-      // Title entrance
-      Animated.parallel([
-        Animated.timing(titleFade, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(titleY, {
-          toValue: 0,
-          duration: 800,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Slogan entrance
-      Animated.parallel([
-        Animated.timing(sloganFade, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(sloganY, {
-          toValue: 0,
-          duration: 800,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Loading section entrance
-      Animated.parallel([
-        Animated.timing(loadingFade, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(loadingY, {
-          toValue: 0,
-          duration: 800,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-
-    // 3. Smooth Progress Bar Fill Animation (cubic bezier matching Stitch CSS)
-    Animated.timing(progressBarWidth, {
-      toValue: 1,
-      duration: 4000,
-      easing: Easing.bezier(0.65, 0, 0.35, 1),
-      useNativeDriver: false,
-    }).start();
-
-    // 4. Navigation Transition Timeout with Session & Role Auth Check (4.5 seconds)
+    // 2. Navigation Transition Timeout with Session Check
     const timer = setTimeout(async () => {
       try {
         const token = await tokenStorage.getAccessToken();
@@ -160,274 +54,186 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       } catch (e) {
         navigation.replace('Welcome');
       }
-    }, 4500);
+    }, 4500); // Redirects after 4.5 seconds
 
     return () => clearTimeout(timer);
-  }, [
-    navigation,
-    sparkY,
-    sparkScale,
-    glowOpacity,
-    titleFade,
-    titleY,
-    sloganFade,
-    sloganY,
-    loadingFade,
-    loadingY,
-    progressBarWidth,
-  ]);
+  }, []);
 
-  const progressInterpolate = progressBarWidth.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
+  // 3D tilt on card using pan gesture
+  const gesture = Gesture.Pan()
+    .onUpdate((e) => {
+      rotateY.value = interpolate(e.x, [0, width], [-15, 15]);
+      rotateX.value = interpolate(e.y, [0, 300], [15, -15]);
+    })
+    .onEnd(() => {
+      rotateX.value = withTiming(0);
+      rotateY.value = withTiming(0);
+    });
+
+  const logoGlowStyle = useAnimatedStyle(() => ({
+    shadowOpacity: glow.value,
+    shadowRadius: 20 + glow.value * 20,
+  }));
+
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 800 },
+      { rotateX: `${rotateX.value}deg` },
+      { rotateY: `${rotateY.value}deg` },
+    ],
+  }));
 
   return (
     <View style={styles.container}>
-      {/* Background Atmospheric Particles */}
-      <ParticleBackground />
+      {/* 1. Fullscreen Background Image (Vijay & Samantha Diwali Image) */}
+      <Image
+        source={LOCAL_PRODUCT_IMAGES.THERI_DIWALI}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
+      {/* Dark Dim Overlay */}
+      <View style={styles.backgroundDimOverlay} />
 
-      {/* Main Content Container */}
-      <View style={styles.contentContainer}>
-        {/* Stylized Firework Spark Logo */}
-        <Animated.View
-          style={[
-            styles.sparkWrapper,
-            {
-              transform: [{ translateY: sparkY }, { scale: sparkScale }],
-            },
-          ]}
-        >
-          {/* Multi-layered Atmospheric Glow */}
-          <Animated.View
-            style={[
-              styles.outerGlow,
-              { opacity: glowOpacity },
-            ]}
-          />
-          <View style={styles.innerGlow} />
+      {/* 2. Sleek Golden Light Trail Background Layer */}
+      <GoldenTrailAnimation />
 
-          {/* Central Firework Shop Logo Image */}
-          <View style={styles.iconCenter}>
-            <Image
-              source={LOCAL_PRODUCT_IMAGES.LOGO}
-              style={styles.splashShopLogo}
-              resizeMode="contain"
-            />
-          </View>
-        </Animated.View>
+      {/* 3. Foreground Reanimated Content */}
+      <View style={styles.contentContainer} pointerEvents="box-none">
+        {/* Parallax background dots - simulate depth (Native only) */}
+        {Platform.OS !== 'web' && (
+          <>
+            <View style={styles.starsFar} pointerEvents="none" />
+            <View style={styles.starsNear} pointerEvents="none" />
+          </>
+        )}
 
-        {/* Elegant Brand Name */}
-        <Animated.Text
-          style={[
-            styles.brandTitle,
-            {
-              opacity: titleFade,
-              transform: [{ translateY: titleY }],
-            },
-          ]}
-        >
-          Meera Crackers
-        </Animated.Text>
-
-        {/* Slogan */}
-        <Animated.Text
-          style={[
-            styles.sloganText,
-            {
-              opacity: sloganFade,
-              transform: [{ translateY: sloganY }],
-            },
-          ]}
-        >
-          Happy & Safety Guarantee • Wholesale & Retailer
-        </Animated.Text>
-
-        {/* Prominent Theri Diwali Celebration Showcase Image */}
-        <Animated.View
-          style={[
-            styles.kidsShowcaseCard,
-            {
-              opacity: sloganFade,
-              transform: [{ translateY: sloganY }],
-            },
-          ]}
-        >
+        {/* Glowing 3D Logo */}
+        <Animated.View style={[styles.logoWrapper, logoGlowStyle]}>
           <Image
-            source={LOCAL_PRODUCT_IMAGES.THERI_DIWALI}
-            style={styles.kidsShowcaseImage}
-            resizeMode="cover"
+            source={LOCAL_PRODUCT_IMAGES.LOGO}
+            style={styles.logo}
           />
-          <View style={styles.kidsImageOverlay} />
         </Animated.View>
-      </View>
 
-      {/* Loading Progress Section */}
-      <Animated.View
-        style={[
-          styles.loadingContainer,
-          {
-            opacity: loadingFade,
-            transform: [{ translateY: loadingY }],
-          },
-        ]}
-      >
-        <View style={styles.progressBarTrack}>
-          <Animated.View
-            style={[
-              styles.progressBarFill,
-              { width: progressInterpolate },
-            ]}
-          />
+        {/* Embossed 3D Text */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleShadow}>Meera Crackers</Text>
+          <Text style={styles.title}>Meera Crackers</Text>
         </View>
-        <Text style={styles.loadingText}>INITIALIZING</Text>
-      </Animated.View>
+        <Text style={styles.subtitle}>
+          Happy & Safety Guarantee • Wholesale & Retailer
+        </Text>
+
+        {/* 3D Tilt Image Card */}
+        <GestureDetector gesture={gesture}>
+          <Animated.View style={[styles.card, cardStyle]}>
+            <View style={styles.cardBorder}>
+              <Image
+                source={LOCAL_PRODUCT_IMAGES.THERI_DIWALI}
+                style={styles.cardImage}
+              />
+            </View>
+          </Animated.View>
+        </GestureDetector>
+      </View>
     </View>
   );
 };
 
+export default SplashScreen;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0d0d0d',
+    alignItems: 'center',
+    justifyContent: 'center',
     ...(Platform.OS === 'web'
       ? ({
           minHeight: '100vh',
           width: '100%',
-          boxSizing: 'border-box',
+          overflow: 'hidden',
         } as any)
       : {}),
-    backgroundColor: Colors.splashBackground,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.xl,
+  },
+  backgroundDimOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(13, 13, 13, 0.65)',
   },
   contentContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.marginMobile,
+    width: '100%',
+    height: '100%',
     zIndex: 10,
-    width: '100%',
-    marginTop: Spacing.md,
   },
-  sparkWrapper: {
-    marginBottom: Spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 155,
-    height: 155,
-  },
-  outerGlow: {
+  starsFar: {
     position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(255, 215, 0, 0.18)',
-    ...Platform.select({
-      web: {
-        boxShadow: '0px 0px 30px #FFD700',
-      },
-      default: {
-        shadowColor: '#FFD700',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.9,
-        shadowRadius: 30,
-      },
-    }),
-  },
-  innerGlow: {
-    position: 'absolute',
-    width: 105,
-    height: 105,
-    borderRadius: 52.5,
-    backgroundColor: Colors.primaryContainer,
-    opacity: 0.35,
-  },
-  iconCenter: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  splashShopLogo: {
-    width: 135,
-    height: 135,
-    borderRadius: 67.5,
-    borderWidth: 2.5,
-    borderColor: '#FFD700',
-  },
-  brandTitle: {
-    ...Typography.displayLg,
-    fontFamily: 'Inter-Bold',
-    color: '#ffffff',
-    marginBottom: 6,
-    textAlign: 'center',
-    fontSize: SCREEN_WIDTH < 380 ? 38 : 46,
-    lineHeight: SCREEN_WIDTH < 380 ? 44 : 54,
-    letterSpacing: 0.6,
-  },
-  sloganText: {
-    ...Typography.bodyLg,
-    fontFamily: 'Inter-Regular',
-    color: 'rgba(255, 255, 255, 0.85)',
-    textAlign: 'center',
-    maxWidth: 340,
-    marginBottom: Spacing.lg,
-    fontSize: 13.5,
-    letterSpacing: 0.2,
-  },
-  kidsShowcaseCard: {
-    width: SCREEN_WIDTH * 0.92,
-    maxWidth: 400,
-    height: 215,
-    borderRadius: 22,
-    overflow: 'hidden',
-    borderWidth: 2.5,
-    borderColor: 'rgba(255, 215, 0, 0.55)',
-    marginVertical: Spacing.xs,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 10,
-    backgroundColor: '#000000',
-  },
-  kidsShowcaseImage: {
     width: '100%',
     height: '100%',
+    opacity: 0.3,
   },
-  kidsImageOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  loadingContainer: {
-    width: 260,
-    alignItems: 'center',
-    gap: Spacing.xs,
-    marginBottom: Spacing.md,
-  },
-  progressBarTrack: {
+  starsNear: {
+    position: 'absolute',
     width: '100%',
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
     height: '100%',
-    backgroundColor: '#FFD700',
-    borderRadius: BorderRadius.full,
+    opacity: 0.6,
+  },
+  logoWrapper: {
     shadowColor: '#FFD700',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 12,
+    elevation: 20,
+    marginBottom: 20,
+    backgroundColor: 'transparent', // Added to ensure shadow appears on Android
+    borderRadius: 80,
   },
-  loadingText: {
-    ...Typography.labelLg,
-    fontFamily: 'Inter-SemiBold',
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 2.5,
-    textTransform: 'uppercase',
-    fontSize: 11,
+  logo: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+  },
+  titleContainer: {
+    position: 'relative',
+    height: 45,
+    marginBottom: 5,
+  },
+  titleShadow: {
+    position: 'absolute',
+    fontSize: 34,
+    fontWeight: 'bold',
+    color: '#000',
+    top: 2,
+    left: 2,
+  },
+  title: {
+    fontSize: 34,
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: '#FFD700',
+    textShadowOffset: { width: -1, height: -1 },
+    textShadowRadius: 4,
+  },
+  subtitle: {
+    color: '#ccc',
+    fontSize: 13,
+    marginBottom: 30,
+  },
+  card: {
+    width: Math.min(width * 0.85, 400),
+    height: 220,
+  },
+  cardBorder: {
+    flex: 1,
+    padding: 3,
+    borderRadius: 12,
+    backgroundColor: '#FFD700', // Replacing LinearGradient with solid color
+  },
+  cardImage: {
+    flex: 1,
+    borderRadius: 10,
+    width: '100%',
+    height: '100%',
   },
 });
-
-export default SplashScreen;

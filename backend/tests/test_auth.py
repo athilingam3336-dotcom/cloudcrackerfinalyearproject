@@ -297,15 +297,42 @@ async def test_reset_password(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_google_user_auth_flow(client: AsyncClient):
-    """Tests Google OAuth registration, password login guidance, and setting password via register."""
-    # 1. Google login creates user without password
+    """Tests Google OAuth registration, password login guidance, and setting password via register.
+
+    Uses development-mode ID token decoding (no GOOGLE_CLIENT_ID configured).
+    In production, GOOGLE_CLIENT_ID or CLERK_PUBLISHABLE_KEY must be set for
+    cryptographic verification. See test_google_auth_security.py for those tests.
+    """
+    import base64
+    import json
+    from unittest.mock import patch
+
+    def _make_fake_google_token(email: str, sub: str = "google_12345") -> str:
+        """Construct a minimal fake JWT with the given email in the payload."""
+        payload = {
+            "iss": "https://accounts.google.com",
+            "sub": sub,
+            "email": email,
+            "email_verified": True,
+            "name": "Google User",
+        }
+        header = base64.urlsafe_b64encode(b'{"alg":"RS256"}').rstrip(b"=").decode()
+        body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+        return f"{header}.{body}.fakesig"
+
+    # 1. Google login creates user without password (dev mode — no client_id set)
+    google_token = _make_fake_google_token("googleuser@example.com")
     google_payload = {
-        "email": "googleuser@example.com",
+        "id_token": google_token,
         "full_name": "Google User",
-        "google_id": "google_12345",
     }
-    g_res = await client.post("/api/v1/auth/google", json=google_payload)
-    assert g_res.status_code == 200
+    with patch("app.core.config.settings.GOOGLE_CLIENT_ID", None), \
+         patch("app.core.config.settings.CLERK_PUBLISHABLE_KEY", None), \
+         patch("app.core.config.settings.CLERK_JWKS_URL", None), \
+         patch("app.core.config.settings.ENVIRONMENT", "development"):
+        g_res = await client.post("/api/v1/auth/google", json=google_payload)
+    assert g_res.status_code == 200, g_res.text
+    assert g_res.json()["data"]["user"]["email"] == "googleuser@example.com"
 
     # 2. Attempt password login gives clear Google guidance
     pw_login = await client.post("/api/v1/auth/login", json={

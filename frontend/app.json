@@ -32,7 +32,8 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "@clerk/expo"
     ],
     "extra": {
       "eas": {

@@ -72,6 +72,11 @@ class VerifyEmailOtpRequest(BaseModel):
     otp: str = Field(..., min_length=6, max_length=6)
 
 
+class LoginWithOtpRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+
+
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
     password: str
@@ -133,11 +138,22 @@ class RefreshTokenRequest(BaseModel):
 
 
 class GoogleAuthRequest(BaseModel):
-    email: EmailStr
+    """Request body for POST /auth/google.
+
+    The ONLY trusted identity proof is the Google-issued ``id_token``.
+    All user identity fields (email, name, avatar, google_id) are derived
+    server-side from the verified token payload — never from the request body.
+    """
+
+    id_token: str = Field(
+        ...,
+        min_length=10,
+        description="Google-issued ID token or Clerk session JWT obtained from the frontend OAuth flow.",
+    )
+    # Optional profile hints forwarded by the frontend for richer display;
+    # these are NEVER used as identity proof — only the verified token is.
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
-    google_id: Optional[str] = None
-    id_token: Optional[str] = None
 
 
 class InstagramAuthRequest(BaseModel):

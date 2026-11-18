@@ -320,7 +320,7 @@ export const FloatingChatbot: React.FC = () => {
       friction: 8,
       tension: 60,
     }).start();
-  }, [isOpen]);
+  }, [isOpen, slideAnim]);
 
   useEffect(() => {
     Animated.spring(minimizeAnim, {
@@ -329,7 +329,7 @@ export const FloatingChatbot: React.FC = () => {
       friction: 8,
       tension: 60,
     }).start();
-  }, [isMinimized]);
+  }, [isMinimized, minimizeAnim]);
 
   // Admin role mattum chatbot kaatu
   const isAdmin = user?.role?.toLowerCase() === 'admin';

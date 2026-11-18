@@ -18,6 +18,8 @@ import { RootNavigator } from '@/navigation/RootNavigator';
 import { LoadingSpinner } from '@/components/loaders/LoadingSpinner';
 import { PyrotechnicEffectOverlay } from '@/components/effects/PyrotechnicEffectOverlay';
 import { FloatingChatbot } from '@/components/common/FloatingChatbot';
+import { ClerkProvider } from '@clerk/expo';
+import { ENV } from '@/config/env';
 
 import { useUiStore } from '@/store';
 
@@ -216,15 +218,19 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <ThemeAppController>
-        <NavigationContainer linking={linking}>
-          <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-          <RootNavigator />
-          <PyrotechnicEffectOverlay />
-          <FloatingChatbot />
-        </NavigationContainer>
-      </ThemeAppController>
-    </SafeAreaProvider>
+    <ClerkProvider
+      publishableKey={ENV.CLERK_PUBLISHABLE_KEY}
+    >
+      <SafeAreaProvider>
+        <ThemeAppController>
+          <NavigationContainer linking={linking}>
+            <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+            <RootNavigator />
+            <PyrotechnicEffectOverlay />
+            <FloatingChatbot />
+          </NavigationContainer>
+        </ThemeAppController>
+      </SafeAreaProvider>
+    </ClerkProvider>
   );
 }

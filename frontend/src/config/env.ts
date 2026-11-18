@@ -34,6 +34,8 @@ export const ENV = {
   GOOGLE_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '440996806558-k2ocedpa3p6ccv0m5a891c6fuqh65rqa.apps.googleusercontent.com',
   INSTAGRAM_CLIENT_ID: process.env.EXPO_PUBLIC_INSTAGRAM_CLIENT_ID || '2262885951230627',
   GEMINI_API_KEY: process.env.EXPO_PUBLIC_GEMINI_API_KEY || '',
+  // Clerk publishable key — safe to expose in frontend bundles (publishable, not secret)
+  CLERK_PUBLISHABLE_KEY: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '',
   APP_VERSION: '2.4.0',
   ENV_NAME: process.env.NODE_ENV || 'development',
 };
