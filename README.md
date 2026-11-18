@@ -1,203 +1,103 @@
-# 🎆 CloudCrackers
+# 🎆 Cloud Crackers
 
-> **Enterprise-grade Festive Pyrotechnics Sales, Inventory Management & Analytics Platform (Android + Web)**
+An app and website for a crackers shop. Customers can browse and buy crackers. The shop owner can manage stock, check payments and see sales reports.
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React Native](https://img.shields.io/badge/React_Native-Expo_51-61DAFB?style=flat&logo=react&logoColor=black)](https://reactnative.dev/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas_%26_Local-47A248?style=flat&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-[![CI/CD](https://img.shields.io/badge/GitHub_Actions-Automated_CI-2088FF?style=flat&logo=githubactions&logoColor=white)](https://github.com/features/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**[Live Demo](https://cloudcrackerfinalyearproject-1.onrender.com)** · **[API Docs](https://cloudcrackerfinalyearproject-1.onrender.com/docs)** · **[Download Android APK](https://expo.dev/artifacts/eas/8tzkaYqWxkZckAKj1a8Nx7FgUbqe247eDIvYaohop_c.apk)**
 
-🔗 **[Live Demo](https://cloudcrackerfinalyearproject-1.onrender.com)** | 📄 **[API Docs (Swagger)](https://cloudcrackerfinalyearproject-1.onrender.com/docs)** | 📱 **[Download APK (EAS Build)](#download-apk)**
-
-> ⏳ **Note on Cold Starts:** The backend is hosted on Render's free tier. If the instance is sleeping, the first request may take approximately 30–50 seconds to spin up.
+> The server runs on a free plan, so the first load can take 30 to 50 seconds. The demo uses sample data.
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
-| Customer Storefront | Interactive Cart & Checkout | Admin Analytics Dashboard |
+| Home | Cart | Admin Dashboard |
 | :---: | :---: | :---: |
-| *(Add `screenshots/home.png`)* | *(Add `screenshots/cart.png`)* | *(Add `screenshots/admin_dashboard.png`)* |
-
-| Daily Sales & Category Distribution | Gemini 1.5 Flash AI Copilot | Inventory & Stock Alert Guardrails |
-| :---: | :---: | :---: |
-| *(Add `screenshots/sales_report.png`)* | *(Add `screenshots/ai_copilot.png`)* | *(Add `screenshots/inventory.png`)* |
+| *add `screenshots/home.png`* | *add `screenshots/cart.png`* | *add `screenshots/admin.png`* |
 
 ---
 
-## 🚀 Features
+## What it does
 
-### 🛒 Customer Storefront
-* **Product Catalogue & Smart Filters:** Filter by categories (Sparklers, Aerial Fireworks, Ground Chakkars, Gift Boxes), sound levels, and green cracker eco-certifications.
-* **Wishlist & Cart Sync:** Persistent shopping cart with stock-exceed limits and dynamic price/discount calculations.
-* **Hybrid AI Customer Chatbot:** Dual-engine assistance with rule-based festive FAQs and generative fallback via Google Gemini 1.5 Flash.
-* **Dynamic UPI QR & UTR Verification:** Seamless zero-gateway-fee checkout generating instant UPI payment intents and UTR tracking.
-* **Diwali Loyalty Rewards:** Automated promotional discount coupons sent directly to registered emails for festival seasons.
-* **Order History & GST Invoicing:** Real-time order progress timeline with instant 18% GST invoice generation.
+**For customers**
+- Browse crackers with images, add to wishlist and cart
+- Chatbot for quick help
+- Pay with a UPI QR code, then enter the payment reference (UTR)
+- Get a Diwali discount coupon by email after the first order
 
-### 🛡️ Admin & Store Operations
-* **Executive Real-time Dashboard:** Today's vs. Total Revenue metrics, order status breakdowns, and SVG category distribution charts.
-* **Automated Midnight Sales Reports:** Background cron job running daily at 12:00 AM to aggregate sales data and email comprehensive summaries to store administrators.
-* **Real-time Inventory Management:** Instant stock alerts (Low Stock threshold `< 5`, Out of Stock badges, and restock actions).
-* **Payment & UTR Verification:** Admin approval portal to verify user-submitted UPI UTR reference codes against bank ledger entries.
-* **OTP-Secured Admin Elevation:** Critical administrative operations (promoting or removing admin users) require mandatory OTP email verification.
+**For the shop owner (admin)**
+- Add and edit products, and track stock
+- See top 5 products and which areas sell the most
+- Get a sales report by email every day at 12 AM
+- Approve payments by checking the UTR
+- Add or remove other admins, only after an email OTP check
 
 ---
 
-## 📊 Data Mining & Predictive Analytics
+## Smart features (data mining)
 
-| Algorithm | Business Use Case |
+| Algorithm | What it is used for |
 | :--- | :--- |
-| **Apriori Algorithm** | Frequent itemset mining for *"Frequently Bought Together"* cracker bundles and festive gift hampers. |
-| **K-Means Clustering** | Customer segmentation (Festive Bulk Buyers, Family Shoppers, Premium Aerial Enthusiasts) for targeted campaigns. |
-| **IQR (Interquartile Range)** | Anomaly detection flagging unusually high-value or abnormal order volumes for mandatory manual admin review. |
-| **Linear Regression** | Seasonal trend analysis and festive-season sales volume projection based on historical multi-week order velocity. |
+| Apriori | Shows "frequently bought together" products |
+| K-Means | Groups customers by buying habits |
+| IQR | Flags very large orders so the admin can check them first |
+| Linear Regression | Predicts sales going into the Diwali season |
 
 ---
 
-## 🛠️ Tech Stack
+## Why UPI QR and UTR?
 
-| Domain | Technologies |
-| :--- | :--- |
-| **Frontend** | React Native, Expo 51, React Native Web, TypeScript, React Navigation, Axios |
-| **Backend** | FastAPI (Python 3.12), AsyncIO, Uvicorn, Pydantic v2, Motor / Beanie ODM |
-| **Database** | MongoDB (Atlas Cloud & Local Replica fallback) |
-| **AI / GenAI** | Google Gemini 1.5 Flash API (Natural language business insights & customer chat) |
-| **Authentication** | JWT (JSON Web Tokens), Google OAuth 2.0, Native Passwordless Email OTP |
-| **Media & Storage** | Cloudinary API (Compressed high-resolution product pyrotechnic imagery) |
-| **DevOps & CI/CD** | Docker, Docker Compose, GitHub Actions CI Pipeline, Render Cloud Platform |
+Payment gateways like Razorpay do not allow crackers shops. So I built my own flow:
+
+1. The customer scans the shop's UPI QR and pays.
+2. The customer enters the UTR number from their payment app.
+3. The admin checks the UTR against the bank and confirms the order.
 
 ---
 
-## 🏛️ System Architecture
+## Tech stack
 
-```mermaid
-flowchart TD
-    subgraph Client["Frontend Layer (React Native / Expo Web)"]
-        UI[Storefront & Admin UI]
-        State[Token Storage & State Management]
-    end
+- **App:** React Native (Expo), also runs on web
+- **Backend:** FastAPI (Python)
+- **Database:** MongoDB
+- **Others:** JWT login, Email OTP, Cloudinary (images), Gemini API (chatbot)
+- **DevOps:** Docker, GitHub Actions (CI/CD), Render (hosting)
 
-    subgraph API["Backend API Gateway (FastAPI)"]
-        Router["/api/v1 Endpoints"]
-        AuthMid["JWT Auth & Role Guard Middleware"]
-        CORS["CORS & Request Logger"]
-    end
-
-    subgraph Services["Core Application Services"]
-        AuthSvc[Auth & Email OTP Service]
-        OrderSvc[Order & GST Invoice Engine]
-        DashSvc[Dashboard & Analytics Aggregator]
-        CronSvc[12 AM Midnight Email Cron Worker]
-    end
-
-    subgraph Integrations["External & Database Services"]
-        MongoDB[(MongoDB Atlas / Local)]
-        Gemini[Google Gemini 1.5 Flash AI]
-        Cloudinary[Cloudinary CDN]
-        SMTP[SMTP / Resend Email Gateway]
-    end
-
-    UI -->|HTTP / REST| Router
-    Router --> CORS
-    CORS --> AuthMid
-    AuthMid --> AuthSvc
-    AuthMid --> OrderSvc
-    AuthMid --> DashSvc
-
-    AuthSvc --> SMTP
-    AuthSvc --> MongoDB
-    OrderSvc --> MongoDB
-    DashSvc --> MongoDB
-    DashSvc --> Gemini
-    CronSvc --> SMTP
-    Router --> Cloudinary
-```
+How it fits together: `App → FastAPI → MongoDB` (plus Cloudinary, Gemini and Email)
 
 ---
 
-## 💻 Run Locally
+## Run it on your computer
 
-### Prerequisites
-* Python 3.11+ or 3.12+
-* Node.js 18+ or 20+
-* MongoDB running locally on `mongodb://localhost:27017` (or Docker)
-
----
-
-### Method A: Running with Docker Compose (Recommended)
+You need Python 3.11+, Node.js 18+ and MongoDB.
 
 ```bash
-# Clone the repository
-git clone https://github.com/athilingam3336/cloudcrackers.git
-cd cloudcrackers
-
-# Start MongoDB and FastAPI Backend
-docker compose up --build
+git clone https://github.com/athilingam3336-dotcom/cloudcrackerfinalyearproject.git
+cd cloudcrackerfinalyearproject
 ```
-The backend API will be available at `http://localhost:8000` and Swagger docs at `http://localhost:8000/docs`.
 
----
-
-### Method B: Manual Setup
-
-#### 1. Backend Setup
+**Backend**
 ```bash
 cd backend
-
-# Create and activate virtual environment
 python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-# Configure environment variables
-cp .env.example .env
-
-# Run FastAPI development server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+cp .env.example .env           # fill in your own keys
+uvicorn app.main:app --reload
 ```
 
-#### 2. Frontend Setup
+**Frontend**
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Configure environment variables
 cp .env.example .env
-
-# Start Expo Web & Mobile bundler
-npx expo start
+npx expo start                 # press "w" for web
 ```
-Press `w` in the Expo terminal to launch the web version in your browser (`http://localhost:8081`).
+
+Or with Docker: `docker compose up --build`
 
 ---
 
-## 💳 Why UPI QR + UTR Verification Flow?
-
-Standard Indian payment gateways (such as Razorpay, Cashfree, or Stripe) classify pyrotechnics and consumer fireworks under **Restricted / Prohibited Business Categories**, preventing direct credit card and payment gateway integration without specialized legal approvals.
-
-To solve this industry-wide hurdle:
-1. **Dynamic UPI Intent:** CloudCrackers dynamically generates standardized UPI payment strings and QR codes encoded with the merchant UPI ID, exact order total, and order reference ID.
-2. **UTR Reference Input:** Upon completing payment via Google Pay, PhonePe, or Paytm, the customer inputs their 12-digit bank UTR (Unique Transaction Reference) number.
-3. **Admin Verification Ledger:** Store administrators can verify the incoming bank credit against the submitted UTR code before transitioning the order to `Confirmed` and dispatching stock.
-
----
-
-## 👤 Author
+## Author
 
 **M. Athi Lingam**
-* 📧 Email: [athilingam3336@gmail.com](mailto:athilingam3336@gmail.com)
-* 💼 LinkedIn: [linkedin.com/in/athilingam-m](https://www.linkedin.com/in/athilingam-m)
-* 🐙 GitHub: [@athilingam3336](https://github.com/athilingam3336)
-
----
-
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
+[LinkedIn](https://www.linkedin.com/in/athi-lingam-8abaa53a9) · [GitHub](https://github.com/athilingam3336-dotcom) · athilingam3336@gmail.com
