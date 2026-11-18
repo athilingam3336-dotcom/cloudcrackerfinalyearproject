@@ -1,4 +1,5 @@
 # 🎆 Cloud Crackers
+[![CloudCrackers CI Pipeline](https://github.com/athilingam3336-dotcom/cloudcrackerfinalyearproject/actions/workflows/ci.yml/badge.svg)](https://github.com/athilingam3336-dotcom/cloudcrackerfinalyearproject/actions/workflows/ci.yml)
 
 An app and website for a crackers shop. Customers can browse and buy crackers. The shop owner can manage stock, check payments and see sales reports.
 
