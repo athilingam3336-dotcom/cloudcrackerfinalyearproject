@@ -10,9 +10,13 @@ An app and website for a crackers shop. Customers can browse and buy crackers. T
 
 ## Screenshots
 
-| Home | Cart | Admin Dashboard |
+| Storefront & AI Copilot | Cart & Checkout | Admin Dashboard |
 | :---: | :---: | :---: |
-| *add `screenshots/home.png`* | *add `screenshots/cart.png`* | *add `screenshots/admin.png`* |
+| ![Storefront & AI Copilot](screenshots/home.jpg) | ![Cart & Checkout](screenshots/cart.jpg) | ![Admin Dashboard](screenshots/admin_dashboard.jpg) |
+
+| Smart Data Mining (Apriori Combos) | Sales Analytics & Order Trends |
+| :---: | :---: |
+| ![Smart Data Mining](screenshots/data_mining.jpg) | ![Sales Analytics](screenshots/sales_charts.jpg) |
 
 ---
 
