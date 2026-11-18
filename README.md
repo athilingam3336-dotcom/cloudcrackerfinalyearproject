@@ -33,7 +33,7 @@ An app and website for a crackers shop. Customers can browse and buy crackers. T
 
 ---
 
-## Smart features (data mining)
+## Smart features (data mining used for admin)
 
 | Algorithm | What it is used for |
 | :--- | :--- |
